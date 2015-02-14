@@ -1,0 +1,10 @@
+*~
+
+# Build output
+*.o
+kernel.elf
+os.iso
+
+# Logs
+bochslog.txt
+com1-out.txt
