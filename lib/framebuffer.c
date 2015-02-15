@@ -9,6 +9,7 @@
 char* const fb = (char*) 0x000B8000;
 
 // Internal methods:
+void fb_print_int(int x);
 void fb_print_char(char c);
 void fb_write_cell(uint16_t i, char c, FbColor foreground, FbColor background);
 void fb_scroll();
@@ -75,11 +76,7 @@ void fb_println(const char* buf, ...) {
 	  fb_print_char('-');
 	  int_argument *= -1;
 	}
-	// TODO(chris): HORRIBLE BUG: Need to print this in reverse...
-	while (int_argument > 0) {
-	  fb_print_char('0' + (int_argument % 10));
-	  int_argument /= 10;
-	}
+	fb_print_int(int_argument);
 	i++;  // Skip the 'd'
       } else {
 	// TODO(chrsmith): Error, unknown formatting specifier.
@@ -92,6 +89,14 @@ void fb_println(const char* buf, ...) {
   // Handle an implicit '\n'.
   current_line++;
   current_col = 0;
+}
+
+void fb_print_int(int x) {
+  int digit = x % 10;
+  if (x >= 10) {
+    fb_print_int(x / 10);
+  }
+  fb_print_char('0' + digit);
 }
 
 void fb_print_char(char c) {
