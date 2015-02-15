@@ -10,6 +10,7 @@ char* const fb = (char*) 0x000B8000;
 
 // Internal methods:
 void fb_write_cell(uint16_t i, char c, FbColor foreground, FbColor background);
+void fb_scroll();
 
 void fb_clear(void) {
   // 80 x 25 cells at 2 bytes each.
@@ -56,9 +57,8 @@ void fb_println(const char* buf) {
     }
     // Scroll.
     if (current_line >= 25) {
-      // TODO(chris): Handle this. Copy the contents of
-      // the video buffer up, line-by-line.
       current_line = 24;
+      fb_scroll();
     }
 
     int fb_index = 80 * current_line + current_col;
@@ -75,4 +75,17 @@ void fb_println(const char* buf) {
 void fb_write_cell(uint16_t i, char c, FbColor foreground, FbColor background) {
     fb[i * 2] = c;
     fb[i * 2 + 1] = ((background & 0x0F) << 4) | (foreground & 0x0F);
+}
+
+// Moves the contents of the framebuffer "up", and clears the last line.
+void fb_scroll() {
+  int first_24_lines = 24 * 80;
+  for (int i = 0; i < first_24_lines; i++) {
+    fb[i*2] = fb[i*2 + 160];
+    fb[i*2+1] = fb[i*2 + 160 + 1];
+  }
+
+  for (int i = 0; i < 80; i++) {
+    fb_write_cell(24 * 80 + i, ' ', FB_GRAY, FB_BLACK);
+  }
 }

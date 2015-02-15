@@ -3,6 +3,7 @@
 #include "lib/string.h"
 
 void hack_print(int n);
+void hack_sleep();
 
 void kmain(void) {
   debug_log("Kernel loaded successfully.");
@@ -26,6 +27,8 @@ void kmain(void) {
       } else {
 	n /= 2;
       }
+
+      hack_sleep();
     }
   }
 }
@@ -37,6 +40,14 @@ void hack_print(int n) {
   while (n > 0) {
     buffer[idx] = '0' + (n % 10);
     n /= 10;
+    idx--;
   }
   fb_println(buffer);
+}
+
+// Workaround not having any timing routines.
+void hack_sleep() {
+  for (int i = 0; i < 100000; i++) {
+    fb_move_cursor(0);
+  }
 }
