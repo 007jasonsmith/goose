@@ -1,6 +1,6 @@
 # TODO(chris): Automatically generate C_FILES, S_FILES, etc.
 OBJECTS = loader.o \
-	  lib/debug.o lib/framebuffer.o lib/string.o \
+	  lib/debug.o lib/framebuffer.o lib/string.o lib/printf.o \
 	  sys/io.o \
 	  kmain.o
 

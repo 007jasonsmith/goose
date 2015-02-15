@@ -1,6 +1,7 @@
 #include "lib/framebuffer.h"
 
 #include "lib/string.h"
+#include "lib/printf.h"
 #include "sys/io.h"
 
 // TODO(chris): Figure out where this comes from... Does
@@ -9,7 +10,6 @@
 char* const fb = (char*) 0x000B8000;
 
 // Internal methods:
-void fb_print_int(int x);
 void fb_print_char(char c);
 void fb_write_cell(uint16_t i, char c, FbColor foreground, FbColor background);
 void fb_scroll();
@@ -51,52 +51,13 @@ void fb_println(const char* buf, ...) {
   va_list args;
   va_start(args, buf);
 
-  size_t len = strlen(buf);
-  for (size_t i = 0; i < len; i++) {
-    char c = buf[i];
+  base_printf(buf, args, &fb_print_char);
 
-    // Handle format specifiers.
-    if (c != '%') {
-      fb_print_char(c);
-    } else {
-      if (i > 0 && buf[i - 1] == '\\') {
-	fb_print_char('%');
-	continue;
-      }
-
-      if (i == len - 1) {
-	// TODO(chrsmith): Error, missing formatting specifier.
-	fb_print_char('%');  // Should panic instead.
-	continue;
-      }
-
-      if (buf[i + 1] == 'd') {
-	int int_argument = va_arg(args, int);
-	if (int_argument < 0) {
-	  fb_print_char('-');
-	  int_argument *= -1;
-	}
-	fb_print_int(int_argument);
-	i++;  // Skip the 'd'
-      } else {
-	// TODO(chrsmith): Error, unknown formatting specifier.
-	fb_print_char('%');  // Should panic instead.
-      }
-    }
-  }
   va_end(args);
 
   // Handle an implicit '\n'.
   current_line++;
   current_col = 0;
-}
-
-void fb_print_int(int x) {
-  int digit = x % 10;
-  if (x >= 10) {
-    fb_print_int(x / 10);
-  }
-  fb_print_char('0' + digit);
 }
 
 void fb_print_char(char c) {

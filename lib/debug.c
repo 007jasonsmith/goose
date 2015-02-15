@@ -1,6 +1,7 @@
 #include "lib/debug.h"
 
 #include "lib/types.h"
+#include "lib/printf.h"
 #include "sys/io.h"
 
 /**
@@ -9,6 +10,24 @@
  */
 
 const int COM1 = 0x3f8;
+
+void initialize(void);
+bool is_transmit_empty(void);
+void write_char(char c);
+
+void debug_log(const char* const buf, ...) {
+  static bool initialized = false;
+  if (!initialized) {
+    initialize();
+    initialized = true;
+  }
+
+  va_list args;
+  va_start(args, buf);
+
+  base_printf(buf, args, &write_char);
+  write_char('\n');
+}
 
 void initialize(void) {
   outb(COM1 + 1, 0x00);    // Disable all interrupts
@@ -24,21 +43,10 @@ bool is_transmit_empty(void) {
   return ((inb(COM1 + 5) & 0x20) != 0);
 }
 
-void debug_log(const char* const buf) {
-  static bool initialized = false;
-  if (!initialized) {
-    initialize();
-    initialized = true;
+void write_char(char c) {
+  while (!is_transmit_empty()) {
+    // Wait until the buffer is clear.
   }
 
-  int idx = 0;
-  while (buf[idx]) {
-    while (!is_transmit_empty()) {
-      // Wait until the buffer is clear.
-    }
-
-    outb(COM1, (uint32_t) buf[idx]);
-    idx++;
-  }
-  outb(COM1, (uint32_t) '\n');
+  outb(COM1, (uint32_t) c);
 }

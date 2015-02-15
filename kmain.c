@@ -5,15 +5,16 @@
 void hack_print(int n);
 void hack_sleep();
 
+const char version[] = "v0.1a";
 void kmain(void) {
-  debug_log("Kernel loaded successfully.");
+  debug_log("Kernel %s loaded successfully.", version);
 
   // Set up the VGA text mode.
   fb_clear();
   fb_disable_blink();
   // TODO(chris): Disable the cursor.
 
-  fb_println("Goose v0.1a - Collatz conjecture ed");
+  fb_println("Goose %s - %s", version, "Collatz conjecture ed");
   for (int i = 2; i < 9; i++) {
     fb_println("===== Processing %d =====", i);
     int n = i;
