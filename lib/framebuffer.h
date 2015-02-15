@@ -47,7 +47,10 @@ void fb_disable_blink(void);
 
 /**
  * Prints a string to the current window.
+ *
+ * Accepts variadic arguments for C-style formatting. Currently only
+ * %d, int is supported.
  */
-void fb_println(const char* buf);
+void fb_println(const char* buf, ...);
 
 #endif  // FRAMEBUFFER_H_

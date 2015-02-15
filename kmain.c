@@ -13,15 +13,12 @@ void kmain(void) {
   fb_disable_blink();
   // TODO(chris): Disable the cursor.
 
-  // TODO(chris): Implement printf.
   fb_println("Goose v0.1a - Collatz conjecture ed");
   for (int i = 2; i < 9; i++) {
-    char header[] = "===== Processing ? =====";
-    header[17] = '0' + i;
-    fb_println(header);
+    fb_println("===== Processing %d =====", i);
     int n = i;
     while (n != 1) {
-      hack_print(n);
+      fb_println("    %d", n);
       if (n % 2 == 1) {
 	n = n * 3 + 1;
       } else {
@@ -31,18 +28,6 @@ void kmain(void) {
       hack_sleep();
     }
   }
-}
-
-// Workaround until printf exists.
-void hack_print(int n) {
-  char buffer[] = "        ";
-  int idx = strlen(buffer) - 1;
-  while (n > 0) {
-    buffer[idx] = '0' + (n % 10);
-    n /= 10;
-    idx--;
-  }
-  fb_println(buffer);
 }
 
 // Workaround not having any timing routines.

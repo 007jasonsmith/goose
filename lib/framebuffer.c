@@ -9,6 +9,7 @@
 char* const fb = (char*) 0x000B8000;
 
 // Internal methods:
+void fb_print_char(char c);
 void fb_write_cell(uint16_t i, char c, FbColor foreground, FbColor background);
 void fb_scroll();
 
@@ -45,31 +46,71 @@ void fb_disable_blink(void) {
 static int current_line = 0;
 static int current_col = 0;
 
-void fb_println(const char* buf) {
+void fb_println(const char* buf, ...) {
+  va_list args;
+  va_start(args, buf);
+
   size_t len = strlen(buf);
   for (size_t i = 0; i < len; i++) {
     char c = buf[i];
 
-    // Wrap to next line and/or handle newlines.
-    if (c == '\n' || current_col >= 80) {
-      current_line++;
-      current_col = 0;
-    }
-    // Scroll.
-    if (current_line >= 25) {
-      current_line = 24;
-      fb_scroll();
-    }
+    // Handle format specifiers.
+    if (c != '%') {
+      fb_print_char(c);
+    } else {
+      if (i > 0 && buf[i - 1] == '\\') {
+	fb_print_char('%');
+	continue;
+      }
 
-    int fb_index = 80 * current_line + current_col;
-    if (c != '\n') {
-      fb_write_cell(fb_index, c, FB_GRAY, FB_BLACK);
-      current_col++;
+      if (i == len - 1) {
+	// TODO(chrsmith): Error, missing formatting specifier.
+	fb_print_char('%');  // Should panic instead.
+	continue;
+      }
+
+      if (buf[i + 1] == 'd') {
+	int int_argument = va_arg(args, int);
+	if (int_argument < 0) {
+	  fb_print_char('-');
+	  int_argument *= -1;
+	}
+	// TODO(chris): HORRIBLE BUG: Need to print this in reverse...
+	while (int_argument > 0) {
+	  fb_print_char('0' + (int_argument % 10));
+	  int_argument /= 10;
+	}
+	i++;  // Skip the 'd'
+      } else {
+	// TODO(chrsmith): Error, unknown formatting specifier.
+	fb_print_char('%');  // Should panic instead.
+      }
     }
   }
+  va_end(args);
+
   // Handle an implicit '\n'.
   current_line++;
   current_col = 0;
+}
+
+void fb_print_char(char c) {
+  // Wrap to next line and/or handle newlines.
+  if (c == '\n' || current_col >= 80) {
+    current_line++;
+    current_col = 0;
+  }
+  // Scroll.
+  if (current_line >= 25) {
+    current_line = 24;
+    fb_scroll();
+  }
+  
+  int fb_index = 80 * current_line + current_col;
+  if (c != '\n') {
+      fb_write_cell(fb_index, c, FB_GRAY, FB_BLACK);
+      current_col++;
+  }
 }
 
 void fb_write_cell(uint16_t i, char c, FbColor foreground, FbColor background) {
