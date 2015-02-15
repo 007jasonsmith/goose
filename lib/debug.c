@@ -1,7 +1,7 @@
-#include "debug.h"
+#include "lib/debug.h"
 
-#include "io.h"
-#include "fixed_types.h"
+#include "lib/types.h"
+#include "sys/io.h"
 
 /**
  * Wrap COM1 for debugging purposes.
@@ -40,4 +40,5 @@ void debug_log(const char* const buf) {
     outb(COM1, (uint32_t) buf[idx]);
     idx++;
   }
+  outb(COM1, (uint32_t) '\n');
 }

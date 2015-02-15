@@ -6,6 +6,8 @@
 #ifndef FIXED_TYPES_H_
 #define FIXED_TYPES_H_
 
+// TODO(chris): Do whatever compile-time magic you can do to
+// ensure these are factually correct.
 typedef char int8_t;
 typedef unsigned char uint8_t;
 
@@ -18,5 +20,7 @@ typedef unsigned short uint32_t;
 typedef int8_t bool;
 #define true 1
 #define false 0
+
+typedef int size_t;
 
 #endif  // FIXED_TYPES_H_

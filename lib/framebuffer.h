@@ -1,7 +1,7 @@
 #ifndef FRAMEBUFFER_H_
 #define FRAMEBUFFER_H_
 
-#include "fixed_types.h"
+#include "lib/types.h"
 
 typedef int8_t FbColor;
 
@@ -34,17 +34,6 @@ typedef int8_t FbColor;
 void fb_clear(void);
 
 /**
- * Writes a character with the given foreground and background to position i
- * in the framebuffer.
- *
- * @param i  The location in the framebuffer.
- * @param c  The character to write (ASCII).
- * @param foreground The foreground color.
- * @param background The background color.
- */
-void fb_write_cell(uint16_t i, char c, FbColor foreground, FbColor background);
-
-/**
  * Moves the cursor of the framebuffer to the given position.
  *
  * @param pos The new position of the cursor.
@@ -55,5 +44,10 @@ void fb_move_cursor(uint16_t pos);
  * Disables VGA blinking, enabling "bright" colors for the background.
  */
 void fb_disable_blink(void);
+
+/**
+ * Prints a string to the current window.
+ */
+void fb_println(const char* buf);
 
 #endif  // FRAMEBUFFER_H_

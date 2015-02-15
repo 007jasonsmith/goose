@@ -1,9 +1,14 @@
-OBJECTS = loader.o debug.o kmain.o io.o framebuffer.o
+# TODO(chris): Automatically generate C_FILES, S_FILES, etc.
+OBJECTS = loader.o \
+	  lib/debug.o lib/framebuffer.o lib/string.o \
+	  sys/io.o \
+	  kmain.o
 
 CC = gcc
 CCFLAGS = -m32 -nostdlib -nostdinc -fno-builtin -fno-stack-protector \
          -nostartfiles -nodefaultlibs -Wall -Wextra -Werror -c \
-         -std=c11
+         -std=c11 \
+	 -I .
 
 LD = ld
 LDFLAGS = -T link.ld -melf_i386

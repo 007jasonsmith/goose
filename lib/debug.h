@@ -6,4 +6,4 @@
 /**
  * Write a NULL-terminated string to the debugging log.
  */
-void debug_log(const char* const buf);
+void debug_log(const char* buf);
