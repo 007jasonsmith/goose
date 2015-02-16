@@ -31,10 +31,10 @@ void debug_log(const char* const buf, ...) {
 
 // TODO(chrsmith): This needs to be refactored to include leading
 // zeros. Things sould be aligned.
-void debug_log_obj(void* obj, size_t bytes) {
+void debug_log_obj(const char* name, void* obj, size_t bytes) {
   OutputFn fn = &write_char;
   uint32_t ptr_address = (uint32_t) obj;
-  print_va("Dump of object located at %p[%d bytes]\n", fn, obj, bytes);
+  print_va("Dump of object '%s' located at %p[%d bytes]\n", fn, name, obj, bytes);
   if (ptr_address % 4 != 0 || bytes % 4 != 0) {
     print_str("WARNING: Object is not aligned.", fn);
   }

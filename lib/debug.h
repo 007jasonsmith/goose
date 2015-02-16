@@ -16,6 +16,6 @@ void debug_log(const char* buf, ...);
 /**
  * Dump an object's hex value to the log.
  */
-void debug_log_obj(void* obj, size_t bytes);
+void debug_log_obj(const char* name, void* obj, size_t bytes);
 
 #endif  // LIB_DEBUG_H_

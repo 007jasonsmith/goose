@@ -33,7 +33,7 @@ void kmain(void) {
   cpu_state.edx = 0;
   cpu_state.esp = 0x0F0F;
 
-  debug_log_obj(&cpu_state, sizeof(cpu_state));
+  debug_log_obj("cpu_state", &cpu_state, sizeof(cpu_state));
 
   fb_clear();
   fb_println("Experiment finished. Inspect COM1 for results.");
