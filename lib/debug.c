@@ -29,6 +29,26 @@ void debug_log(const char* const buf, ...) {
   write_char('\n');
 }
 
+// TODO(chrsmith): This needs to be refactored to include leading
+// zeros. Things sould be aligned.
+void debug_log_obj(void* obj, size_t bytes) {
+  OutputFn fn = &write_char;
+  uint32_t ptr_address = (uint32_t) obj;
+  print_va("Dump of object located at %p[%d bytes]\n", fn, obj, bytes);
+  if (ptr_address % 4 != 0 || bytes % 4 != 0) {
+    print_str("WARNING: Object is not aligned.", fn);
+  }
+  if (obj == null) {
+    print_str("ERROR: null", &write_char);
+  }
+
+  int* obj2 = (int*) obj;
+  for (size_t i = 0; i < bytes / (size_t) sizeof(void*); i++) {
+    ptr_address = (uint32_t) obj2[i];
+    print_va("%d: %h %d %b\n", fn, i, ptr_address, ptr_address, ptr_address);
+  }
+}
+
 void initialize(void) {
   outb(COM1 + 1, 0x00);    // Disable all interrupts
   outb(COM1 + 3, 0x80);    // Enable DLAB (set baud rate divisor)
