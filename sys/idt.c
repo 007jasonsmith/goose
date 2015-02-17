@@ -1,40 +1,52 @@
 #include "sys/idt.h"
 
-/* Use this function to set an entry in the IDT. Alot simpler
-*  than twiddling with the GDT ;) */
-void idt_set_gate(unsigned char num, unsigned long base, unsigned short sel, unsigned char flags)
-{
-    /* We'll leave you to try and code this function: take the
-    *  argument 'base' and split it up into a high and low 16-bits,
-    *  storing them in idt[num].base_hi and base_lo. The rest of the
-    *  fields that you must set in idt[num] are fairly self-
-    *  explanatory when it comes to setup */
-    /* The interrupt routine's base address */
-    idt[num].base_lo = (base & 0xFFFF);
-    idt[num].base_hi = (base >> 16) & 0xFFFF;
+#include "lib/types.h"
 
-    /* The segment or 'selector' that this IDT entry will use
-    *  is set here, along with any access flags */
-    idt[num].sel = sel;
-    idt[num].always0 = 0;
-    idt[num].flags = flags;
+// The interrupt descriptor table here registers handlers for all 255 possible
+// interrupts, though in practice not every one will be registered. See isr.h/c.
+
+typedef struct __attribute__((packed)) {
+    uint16_t base_lo;
+    uint16_t sel;
+    uint8_t always0;
+    uint8_t flags;
+    uint16_t base_hi;
+} IdtEntry;
+
+typedef struct __attribute__((packed)) {
+    uint16_t limit;
+    uint32_t base;
+} IdtPointer;
+
+// Note that while we reserve *space* for all interrupts, we don't need to
+// support them all. If the 'presence' bit is not set, it will trigger an
+// "Unhandled Interrupt" exception (which we hopefully will handle).
+IdtPointer interrupt_descriptor_table_ptr;
+IdtEntry interrupt_descriptor_table[256];
+
+// Defined in idt_asm.s, used to load the IDT.
+extern void idt_load();
+
+// Setup a descriptor table entry.
+void idt_set_gate(uint8_t index, uint32_t base, uint16_t sel, uint8_t flags) {
+  IdtEntry* entry = &interrupt_descriptor_table[index];
+
+  entry->base_lo = (base & 0xFFFF);
+  entry->base_hi = (base >> 16) & 0xFFFF;
+
+  entry->sel = sel;
+  entry->always0 = 0;
+  entry->flags = flags;
 }
 
-/* Installs the IDT */
-void idt_install()
-{
-    /* Sets the special IDT pointer up, just like in 'gdt.c' */
-    idtp.limit = (sizeof (struct idt_entry) * 256) - 1;
-    idtp.base = (unsigned int) &idt;
+void idt_install() {
+  interrupt_descriptor_table_ptr.limit = sizeof(interrupt_descriptor_table) - 1;
+  interrupt_descriptor_table_ptr.base = (uint32_t) &interrupt_descriptor_table;
 
-    /* Clear out the entire IDT, initializing it to zeros */
-    // memset(&idt, 0, sizeof(struct idt_entry) * 256);
-    for (int i = 0; i < 256; i++) {
-      idt_set_gate(i, 0, 0, 0);
-    }
-
-    /* Add any new ISRs to the IDT here using idt_set_gate */
-
-    /* Points the processor's internal register to the new IDT */
-    idt_load();
+  // Clear out the IDT. Later isr_install will register custom handlers.
+  for (size_t i = 0; i < 256; i++) {
+    idt_set_gate(i, 0, 0, 0);
+  }
+  
+  idt_load();
 }

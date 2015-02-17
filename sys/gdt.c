@@ -1,5 +1,3 @@
-// http://wiki.osdev.org/GDT_Tutorial
-
 #include "sys/gdt.h"
 
 #include "lib/types.h"
@@ -52,9 +50,8 @@ void gdt_set_gate(GdtEntry* entry,
 }
 
 void gdt_install() {
-  // Rely on sizeof(X[3]) == sizeof(X * 3).
   global_descriptor_table_ptr.limit = sizeof(global_descriptor_table) - 1;
-  global_descriptor_table_ptr.base = (unsigned int) &global_descriptor_table;
+  global_descriptor_table_ptr.base = (uint32_t) &global_descriptor_table;
 
   // null, code, and data segments. The base address is 0, and the limit is
   // 4GiB. Uses 32-bit opcodes.
@@ -65,6 +62,5 @@ void gdt_install() {
   gdt_set_gate(&global_descriptor_table[2],
 	       0, 0xFFFFFFFF, 0x92, 0xCF);
 
-  // Clear out the old one, we are now on our own.
   gdt_flush();
 }
