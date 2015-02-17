@@ -3,19 +3,48 @@
 #include "lib/framebuffer.h"
 #include "sys/idt.h"
 
+// Registers when the ISR was triggered. Used for (hopefully) diagnosing bugs.
+typedef struct {
+  // Pushed the segments last.
+  uint32_t gs;
+  uint32_t fs;
+  uint32_t es;
+  uint32_t ds;
+
+  // Pushed by "pusha".
+  uint32_t edi;
+  uint32_t esi;
+  uint32_t ebp;
+  uint32_t esp;
+
+  uint32_t ebx;
+  uint32_t edx;
+  uint32_t ecx;
+  uint32_t eax;
+
+  // "push byte #" and ecodes does this.
+  uint32_t int_no;
+  uint32_t err_code;
+
+  // Pushed by the processor automcially.
+  uint32_t eip;
+  uint32_t cs;
+  uint32_t eflags;
+  uint32_t useresp;
+  uint32_t ss;
+} regs;
+
+
+// The actual interrupt service routines that process traps and events.
+//
+// http://en.wikipedia.org/wiki/Interrupt_handler
+// http://wiki.osdev.org/Interrupt_Service_Routines
+// http://www.osdever.net/bkerndev/Docs/isrs.htm
+
 /* These are function prototypes for all of the exception
 *  handlers: The first 32 entries in the IDT are reserved
 *  by Intel, and are designed to service exceptions! */
-extern void _isr0();
-extern void _isr1();
-extern void _isr2();
-extern void _isr3();
-
-                         /* Fill in the rest of the ISR prototypes here */
-
-extern void _isr29();
-extern void _isr30();
-extern void _isr31();
+extern void interrupt_handler_0();
 
 /* This is a very repetitive function... it's not hard, it's
 *  just annoying. As you can see, we set the first 32 entries
@@ -28,9 +57,9 @@ extern void _isr31();
 *  hex. */
 void isr_install()
 {
-    idt_set_gate(0, (unsigned)_isr0, 0x08, 0x8E);
-    idt_set_gate(1, (unsigned)_isr1, 0x08, 0x8E);
-    idt_set_gate(2, (unsigned)_isr2, 0x08, 0x8E);
+    idt_set_gate(0, (uint32_t) interrupt_handler_0, 0x08, 0x8E);
+    // idt_set_gate(1, (unsigned)_isr1, 0x08, 0x8E);
+    // idt_set_gate(2, (unsigned)_isr2, 0x08, 0x8E);
     // idt_set_gate(3, (unsigned)_isr3, 0x08, 0x8E);
 
                              /* Fill in the rest of these ISRs here */
@@ -61,7 +90,7 @@ const char *exception_messages[] =
 *  endless loop. All ISRs disable interrupts while they are being
 *  serviced as a 'locking' mechanism to prevent an IRQ from
 *  happening and messing up kernel data structures */
-void fault_handler(regs *r) {
+void interrupt_handler(regs *r) {
     /* Is this a fault whose number is from 0 to 31? */
     if (r->int_no < 32)
     {

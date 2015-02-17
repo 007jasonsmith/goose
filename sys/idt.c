@@ -4,6 +4,10 @@
 
 // The interrupt descriptor table here registers handlers for all 255 possible
 // interrupts, though in practice not every one will be registered. See isr.h/c.
+//
+// http://en.wikipedia.org/wiki/Interrupt_descriptor_table
+// http://wiki.osdev.org/IDT
+// http://www.osdever.net/bkerndev/Docs/idt.htm
 
 typedef struct __attribute__((packed)) {
     uint16_t base_lo;
