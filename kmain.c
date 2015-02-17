@@ -1,55 +1,39 @@
 #include "lib/debug.h"
 #include "lib/framebuffer.h"
-#include "lib/string.h"
-#include "lib/types.h"
 
 #include "sys/idt.h"
 #include "sys/isr.h"
 #include "sys/gdt.h"
 
-void hack_sleep();
-
-// EXPERIMENTAL.
-typedef struct  __attribute__((packed)) {
-  unsigned int eax;
-  unsigned int ebx;
-  unsigned int ecx;
-  unsigned int edx;
-  // TODO(chris): What other registers are important to persist?
-  unsigned int esp;
-} CpuState;
-
+// Expriments.
+void kmain_crash();
+void kmain_collatz_conjector();
 
 const char version[] = "v0.1a";
 void kmain(void) {
   debug_log("Kernel %s loaded successfully.", version);
-  debug_log("sizeof(int8_t)  = %d", sizeof(int8_t));
-  debug_log("sizeof(int16_t) = %d", sizeof(int16_t));
-  debug_log("sizeof(int32_t) = %d", sizeof(int32_t));
-  debug_log("sizeof(size_t)   = %d", sizeof(size_t));
-  debug_log("sizeof(void*) = %d", sizeof(void*));
 
-  // Install a new global descriptor table.
-  // TODO(chrsmith): Are the three, uh, descriptors, enough?
-  gdt_install();
-  // TODO(chrsmith): How does this gel with all the isrs we need/want?
-  idt_install();
-  isr_install();
+  // Initialize core CPU-based systems.
+  gdt_install();  // Global descriptor table.
+  idt_install();  // Interrupt descriptor table.
+  isr_install();  // Interrupt servicer routines.
 
+  // Get ready for users!
   fb_clear();
+  fb_disable_blink();
+
+  kmain_crash();
+}
+
+void kmain_crash() {
+  fb_println("Goose %s - %s", version, "divide by zero crash ed.");
 
   int denum = 1;
-  fb_println("div by zero = %d", 1 / (denum - 1));
-
-  fb_println("Experiment finished. Inspect COM1 for results.");
+  int result = 0 / (denum - 1);
+  fb_println("Result was %d", result);
 }
 
 void kmain_collatz_conjector() {
-  // Set up the VGA text mode.
-  fb_clear();
-  fb_disable_blink();
-  // TODO(chris): Disable the cursor.
-
   fb_println("Goose %s - %s", version, "Collatz conjecture ed");
   for (int i = 2; i < 9; i++) {
     fb_println("===== Processing %d =====", i);
@@ -61,15 +45,6 @@ void kmain_collatz_conjector() {
       } else {
 	n /= 2;
       }
-
-      hack_sleep();
     }
-  }
-}
-
-// Workaround not having any timing routines.
-void hack_sleep() {
-  for (int i = 0; i < 100000; i++) {
-    fb_move_cursor(0);
   }
 }
