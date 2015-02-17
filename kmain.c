@@ -3,6 +3,7 @@
 #include "lib/string.h"
 #include "lib/types.h"
 
+#include "sys/idt.h"
 #include "sys/gdt.h"
 
 void hack_print(int n);
@@ -31,6 +32,8 @@ void kmain(void) {
   // Install a new global descriptor table.
   // TODO(chrsmith): Are the three, uh, descriptors, enough?
   gdt_install();
+  // TODO(chrsmith): How does this gel with all the isrs we need/want?
+  idt_install();
 
   fb_clear();
   fb_println("Experiment finished. Inspect COM1 for results.");
