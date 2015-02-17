@@ -4,9 +4,9 @@
 #include "lib/types.h"
 
 #include "sys/idt.h"
+#include "sys/isr.h"
 #include "sys/gdt.h"
 
-void hack_print(int n);
 void hack_sleep();
 
 // EXPERIMENTAL.
@@ -34,8 +34,13 @@ void kmain(void) {
   gdt_install();
   // TODO(chrsmith): How does this gel with all the isrs we need/want?
   idt_install();
+  isr_install();
 
   fb_clear();
+
+  int denum = 1;
+  fb_println("div by zero = %d", 1 / (denum - 1));
+
   fb_println("Experiment finished. Inspect COM1 for results.");
 }
 
