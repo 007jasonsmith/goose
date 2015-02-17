@@ -3,6 +3,8 @@
 #include "lib/string.h"
 #include "lib/types.h"
 
+#include "sys/gdt.h"
+
 void hack_print(int n);
 void hack_sleep();
 
@@ -26,14 +28,9 @@ void kmain(void) {
   debug_log("sizeof(size_t)   = %d", sizeof(size_t));
   debug_log("sizeof(void*) = %d", sizeof(void*));
 
-  CpuState cpu_state;
-  cpu_state.eax = 0xFFFF;
-  cpu_state.ebx = 32;
-  cpu_state.ecx = 0x1234;
-  cpu_state.edx = 0;
-  cpu_state.esp = 0x0F0F;
-
-  debug_log_obj("cpu_state", &cpu_state, sizeof(cpu_state));
+  // Install a new global descriptor table.
+  // TODO(chrsmith): Are the three, uh, descriptors, enough?
+  gdt_install();
 
   fb_clear();
   fb_println("Experiment finished. Inspect COM1 for results.");
