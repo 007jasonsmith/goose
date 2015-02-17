@@ -23,6 +23,8 @@ typedef int8_t bool;
 
 typedef int size_t;
 
+typedef uint32_t* uintptr_t;
+
 #define null ((void*) 0)
 
 // Variadic argument
