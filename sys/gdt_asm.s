@@ -1,17 +1,16 @@
-; This will set up our new segment registers. We need to do
-; something special in order to set CS. We do what is called a
-; far jump. A jump that includes a segment as well as an offset.
-; This is declared in C as 'extern void gdt_flush();'
-global _gdt_flush     ; Allows the C code to link to this
-extern _gp            ; Says that '_gp' is in another file
-_gdt_flush:
-    lgdt [_gp]        ; Load the GDT with our '_gp' which is a special pointer
-    mov ax, 0x10      ; 0x10 is the offset in the GDT to our data segment
-    mov ds, ax
+; Global descriptor table definition. 
+extern global_descriptor_table_ptr
+
+global gdt_flush
+gdt_flush:
+    lgdt [global_descriptor_table_ptr]
+    mov ax, 0x10 		; 0x10 is the offset to the data segment.
+    mov ds, ax	
     mov es, ax
     mov fs, ax
     mov gs, ax
     mov ss, ax
-    jmp 0x08:flush2   ; 0x08 is the offset to our code segment: Far jump!
-flush2:
-    ret               ; Returns back to the C code!
+    jmp 0x08:gdt_flush2		; 0x08 is the offset to the code segment.
+	                        ; Execute a far jump, using the new gdt.  
+gdt_flush2:
+    ret
