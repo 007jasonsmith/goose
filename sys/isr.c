@@ -4,6 +4,7 @@
 #include "sys/io.h"
 #include "sys/idt.h"
 #include "sys/kernel.h"
+#include "sys/keyboard_us.h"
 
 // Registers when the ISR was triggered. Used for (hopefully) diagnosing bugs.
 typedef struct {
@@ -199,7 +200,9 @@ void isr_install() {
   idt_set_gate(47, (uint32_t) irq_handler_47, 0x08, 0x8E);
 
   // Set up timer cycle.
-  int hz = 100;
+  // TODO(chris): Research modes, etc.
+  // TODO(chris): Create some global variables...
+  int hz = 1;
   int divisor = 1193180 / hz;
   outb(0x43, 0x36);
   outb(0x40, divisor & 0xFF);
@@ -236,9 +239,47 @@ void handle_timer(regs* r) {
 
   static int ticks = 0;
   ticks++;
-  if (ticks % 18 == 0) {
+  if (ticks % 100 == 0) {
     fb_println("tick");
   }
+}
+
+void handle_keyboard(regs* r)
+{
+  if (r->int_no != 33) {
+    fb_println("Error");
+  }
+
+  uint32_t scancode;
+  scancode = inb(0x60);
+
+  fb_println("handle_keyboard with scancode[%d]", scancode);
+
+  /* If the top bit of the byte we read from the keyboard is
+   *  set, that means that a key has just been released */
+  if (scancode & 0x80)
+    {
+      /* You can use this one to see if the user released the
+       *  shift, alt, or control keys... */
+    }
+  else
+    {
+      /* Here, a key was just pressed. Please note that if you
+       *  hold a key down, you will get repeated key press
+       *  interrupts. */
+
+      /* Just to show you how this works, we simply translate
+       *  the keyboard scancode into an ASCII value, and then
+       *  display it to the screen. You can get creative and
+       *  use some flags to see if a shift is pressed and use a
+       *  different layout, or you can add another 128 entries
+       *  to the above layout to correspond to 'shift' being
+       *  held. If shift is held using the larger lookup table,
+       *  you would add 128 to the scancode when you look for it */
+      char msg[] = "?";
+      msg[0] = scancode;
+      fb_println("Key: %s", msg);
+    }
 }
 
 // Handles IRQs. The mechanism is the same for interrupts, but we use a separate
@@ -253,6 +294,9 @@ void irq_handler(regs* r) {
 
   if (irq_no == 0) {
     handle_timer(r);
+  }
+  if (irq_no == 1) {
+    handle_keyboard(r);
   }
 
   // Send "End of Interrupt"

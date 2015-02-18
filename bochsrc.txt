@@ -8,3 +8,4 @@ log: bochslog.txt
 clock:   sync=realtime, time0=local
 cpu: count=1, ips=1000000
 com1: enabled=1, mode=file, dev=com1-out.txt
+keyboard_mapping: enabled=1, map=/usr/share/bochs/keymaps/sdl-pc-us.map
