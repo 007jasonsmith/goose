@@ -84,24 +84,20 @@ const char *exception_messages[] =
     "Reserved"
 };
 
-/* All of our Exception handling Interrupt Service Routines will
-*  point to this function. This will tell us what exception has
-*  happened! Right now, we simply halt the system by hitting an
-*  endless loop. All ISRs disable interrupts while they are being
-*  serviced as a 'locking' mechanism to prevent an IRQ from
-*  happening and messing up kernel data structures */
+// TODO(chris): IMPORTANT! Disable interrupts in the assembly code
+// before the call to this method, and reenable them afterwards.
+// Handling interrupts while handling interrupts is probably a bad idea.
+
+// All interrupts trigger this method.
 void interrupt_handler(regs *r) {
-    /* Is this a fault whose number is from 0 to 31? */
-    if (r->int_no < 32)
-    {
-        /* Display the description for the Exception that occurred.
-        *  In this tutorial, we will simply halt the system using an
-        *  infinite loop */
-        fb_println("%s", exception_messages[r->int_no]);
-        fb_println(" Exception. System Halted!\n");
-	// TOOD(chris): Call an assembly method.
-	// To actually halt we need to disable interrupts
-	// and halt the CPU.
-        for (;;);
-    }
+  // Processor interrupts.
+  // TODO(chris): Handle custom, syscall interrupts.
+  if (r->int_no < 32) {
+    fb_println("%s", exception_messages[r->int_no]);
+    fb_println(" Exception. System Halted!\n");
+    // TODO(chris): Call an assembly method.
+    // To actually halt we need to disable interrupts
+    // and halt the CPU.
+    for (;;);
+  }
 }
