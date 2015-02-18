@@ -244,8 +244,7 @@ void handle_timer(regs* r) {
   }
 }
 
-void handle_keyboard(regs* r)
-{
+void handle_keyboard(regs* r) {
   if (r->int_no != 33) {
     fb_println("Error");
   }
@@ -253,33 +252,15 @@ void handle_keyboard(regs* r)
   uint32_t scancode;
   scancode = inb(0x60);
 
-  fb_println("handle_keyboard with scancode[%d]", scancode);
+  // The MSB of the scancode is whether or not the key was released.
+  bool key_released = (scancode & 0x80);
+  scancode &= ~0x80;  // Clear the flag.
 
-  /* If the top bit of the byte we read from the keyboard is
-   *  set, that means that a key has just been released */
-  if (scancode & 0x80)
-    {
-      /* You can use this one to see if the user released the
-       *  shift, alt, or control keys... */
-    }
-  else
-    {
-      /* Here, a key was just pressed. Please note that if you
-       *  hold a key down, you will get repeated key press
-       *  interrupts. */
-
-      /* Just to show you how this works, we simply translate
-       *  the keyboard scancode into an ASCII value, and then
-       *  display it to the screen. You can get creative and
-       *  use some flags to see if a shift is pressed and use a
-       *  different layout, or you can add another 128 entries
-       *  to the above layout to correspond to 'shift' being
-       *  held. If shift is held using the larger lookup table,
-       *  you would add 128 to the scancode when you look for it */
-      char msg[] = "?";
-      msg[0] = scancode;
-      fb_println("Key: %s", msg);
-    }
+  char key_name[] = "?";
+  key_name[0] = kbdus[scancode];
+  fb_println("keypress[%d] %s: %s",
+	     scancode, (key_released ? "RELEASED" : "PRESSED"),
+	     key_name);
 }
 
 // Handles IRQs. The mechanism is the same for interrupts, but we use a separate
