@@ -28,6 +28,7 @@ void kmain(void) {
 void kmain_crash() {
   fb_println("Goose %s - %s", version, "divide by zero crash ed.");
 
+  // Division by Zero
   int denum = 1;
   int result = 0 / (denum - 1);
   fb_println("Result was %d", result);
