@@ -1,11 +1,11 @@
 # TODO(chris): Automatically generate C_FILES, S_FILES, etc.
-OBJECTS = loader.o \
+OBJECTS = kmain.o kmain_asm.o \
 	  lib/debug.o lib/framebuffer.o lib/string.o lib/printf.o \
 	  sys/io.o \
 	  sys/gdt.o sys/gdt_asm.o \
 	  sys/idt.o sys/idt_asm.o \
 	  sys/isr.o sys/isr_asm.o \
-	  kmain.o
+	  sys/kernel_asm.o
 
 CC = gcc
 CCFLAGS = -m32 -nostdlib -nostdinc -fno-builtin -fno-stack-protector \

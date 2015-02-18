@@ -2,6 +2,7 @@
 
 #include "lib/framebuffer.h"
 #include "sys/idt.h"
+#include "sys/kernel.h"
 
 // Registers when the ISR was triggered. Used for (hopefully) diagnosing bugs.
 typedef struct {
@@ -95,9 +96,7 @@ void interrupt_handler(regs *r) {
   if (r->int_no < 32) {
     fb_println("%s", exception_messages[r->int_no]);
     fb_println(" Exception. System Halted!\n");
-    // TODO(chris): Call an assembly method.
-    // To actually halt we need to disable interrupts
-    // and halt the CPU.
-    for (;;);
+
+    kernel_exit();
   }
 }
