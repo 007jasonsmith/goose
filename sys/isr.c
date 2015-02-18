@@ -181,23 +181,32 @@ void isr_install() {
   idt_set_gate(30, (uint32_t) interrupt_handler_30, 0x08, 0x8E);
   idt_set_gate(31, (uint32_t) interrupt_handler_31, 0x08, 0x8E);
   // The next 16 are used for handling IRQs
-  idt_set_gate(12, (uint32_t) irq_handler_32, 0x08, 0x8E);
-  idt_set_gate(13, (uint32_t) irq_handler_33, 0x08, 0x8E);
-  idt_set_gate(14, (uint32_t) irq_handler_34, 0x08, 0x8E);
-  idt_set_gate(15, (uint32_t) irq_handler_35, 0x08, 0x8E);
-  idt_set_gate(16, (uint32_t) irq_handler_36, 0x08, 0x8E);
-  idt_set_gate(17, (uint32_t) irq_handler_37, 0x08, 0x8E);
-  idt_set_gate(18, (uint32_t) irq_handler_38, 0x08, 0x8E);
-  idt_set_gate(19, (uint32_t) irq_handler_39, 0x08, 0x8E);
-  idt_set_gate(20, (uint32_t) irq_handler_40, 0x08, 0x8E);
-  idt_set_gate(21, (uint32_t) irq_handler_41, 0x08, 0x8E);
-  idt_set_gate(22, (uint32_t) irq_handler_42, 0x08, 0x8E);
-  idt_set_gate(23, (uint32_t) irq_handler_43, 0x08, 0x8E);
-  idt_set_gate(24, (uint32_t) irq_handler_44, 0x08, 0x8E);
-  idt_set_gate(25, (uint32_t) irq_handler_45, 0x08, 0x8E);
-  idt_set_gate(26, (uint32_t) irq_handler_46, 0x08, 0x8E);
-  idt_set_gate(27, (uint32_t) irq_handler_47, 0x08, 0x8E);
+  idt_set_gate(32, (uint32_t) irq_handler_32, 0x08, 0x8E);
+  idt_set_gate(33, (uint32_t) irq_handler_33, 0x08, 0x8E);
+  idt_set_gate(34, (uint32_t) irq_handler_34, 0x08, 0x8E);
+  idt_set_gate(35, (uint32_t) irq_handler_35, 0x08, 0x8E);
+  idt_set_gate(36, (uint32_t) irq_handler_36, 0x08, 0x8E);
+  idt_set_gate(37, (uint32_t) irq_handler_37, 0x08, 0x8E);
+  idt_set_gate(38, (uint32_t) irq_handler_38, 0x08, 0x8E);
+  idt_set_gate(39, (uint32_t) irq_handler_39, 0x08, 0x8E);
+  idt_set_gate(30, (uint32_t) irq_handler_40, 0x08, 0x8E);
+  idt_set_gate(41, (uint32_t) irq_handler_41, 0x08, 0x8E);
+  idt_set_gate(42, (uint32_t) irq_handler_42, 0x08, 0x8E);
+  idt_set_gate(43, (uint32_t) irq_handler_43, 0x08, 0x8E);
+  idt_set_gate(44, (uint32_t) irq_handler_44, 0x08, 0x8E);
+  idt_set_gate(45, (uint32_t) irq_handler_45, 0x08, 0x8E);
+  idt_set_gate(46, (uint32_t) irq_handler_46, 0x08, 0x8E);
+  idt_set_gate(47, (uint32_t) irq_handler_47, 0x08, 0x8E);
 
+  // Set up timer cycle.
+  int hz = 100;
+  int divisor = 1193180 / hz;
+  outb(0x43, 0x36);
+  outb(0x40, divisor & 0xFF);
+  outb(0x40, divisor >> 8);
+ 
+  // TODO(chris): Wrap this in a file "asm_ops.h" or similer.
+  // Safe to handle interrupts.
   __asm__ __volatile__ ("sti");
 }
 
@@ -219,6 +228,19 @@ void interrupt_handler(regs* r) {
   kernel_exit();
 }
 
+// TODO(chris): Put this elsewhere.
+void handle_timer(regs* r) {
+  if (r->int_no != 32) {
+    fb_println("Error");
+  }
+
+  static int ticks = 0;
+  ticks++;
+  if (ticks % 18 == 0) {
+    fb_println("tick");
+  }
+}
+
 // Handles IRQs. The mechanism is the same for interrupts, but we use a separate
 // function to send the "End of Interrupt" command (0x20) to hardware.
 void irq_handler(regs* r) {
@@ -229,7 +251,9 @@ void irq_handler(regs* r) {
     outb(0xA0, 0x20);
   }
 
-  // TODO(chris): Handle it.
+  if (irq_no == 0) {
+    handle_timer(r);
+  }
 
   // Send "End of Interrupt"
   outb(0x20, 0x20);
