@@ -1,8 +1,10 @@
 #include "sys/isr.h"
 
 #include "lib/framebuffer.h"
+#include "sys/io.h"
 #include "sys/idt.h"
 #include "sys/kernel.h"
+#include "sys/keyboard_us.h"
 
 // Registers when the ISR was triggered. Used for (hopefully) diagnosing bugs.
 typedef struct {
@@ -76,6 +78,23 @@ extern void interrupt_handler_28();
 extern void interrupt_handler_29();
 extern void interrupt_handler_30();
 extern void interrupt_handler_31();
+// We use the next 16 IDT slots for handling IRQs.
+extern void irq_handler_32();
+extern void irq_handler_33();
+extern void irq_handler_34();
+extern void irq_handler_35();
+extern void irq_handler_36();
+extern void irq_handler_37();
+extern void irq_handler_38();
+extern void irq_handler_39();
+extern void irq_handler_40();
+extern void irq_handler_41();
+extern void irq_handler_42();
+extern void irq_handler_43();
+extern void irq_handler_44();
+extern void irq_handler_45();
+extern void irq_handler_46();
+extern void irq_handler_47();
 
 // User friendly descriptions of CPU-defined interrupts.
 // "Intel® 64 and IA-32 Architectures Software Developer’s Manual
@@ -116,6 +135,19 @@ const char *kInterruptDescriptions[] = {
 };
 
 void isr_install() {
+  // By default IRQs are mapped to IDT entries 8-15, but in protected mode
+  // those indexes take on a different meaning. Remap IRQ handlers.
+  outb(0x20, 0x11);
+  outb(0xA0, 0x11);
+  outb(0x21, 0x20);
+  outb(0xA1, 0x28);
+  outb(0x21, 0x04);
+  outb(0xA1, 0x02);
+  outb(0x21, 0x01);
+  outb(0xA1, 0x01);
+  outb(0x21, 0x0);
+  outb(0xA1, 0x0);
+
   // Register all known ISRs. The first 32 are CPU-defined.
   idt_set_gate(0, (uint32_t) interrupt_handler_0, 0x08, 0x8E);
   idt_set_gate(1, (uint32_t) interrupt_handler_1, 0x08, 0x8E);
@@ -149,13 +181,43 @@ void isr_install() {
   idt_set_gate(29, (uint32_t) interrupt_handler_29, 0x08, 0x8E);
   idt_set_gate(30, (uint32_t) interrupt_handler_30, 0x08, 0x8E);
   idt_set_gate(31, (uint32_t) interrupt_handler_31, 0x08, 0x8E);
+  // The next 16 are used for handling IRQs
+  idt_set_gate(32, (uint32_t) irq_handler_32, 0x08, 0x8E);
+  idt_set_gate(33, (uint32_t) irq_handler_33, 0x08, 0x8E);
+  idt_set_gate(34, (uint32_t) irq_handler_34, 0x08, 0x8E);
+  idt_set_gate(35, (uint32_t) irq_handler_35, 0x08, 0x8E);
+  idt_set_gate(36, (uint32_t) irq_handler_36, 0x08, 0x8E);
+  idt_set_gate(37, (uint32_t) irq_handler_37, 0x08, 0x8E);
+  idt_set_gate(38, (uint32_t) irq_handler_38, 0x08, 0x8E);
+  idt_set_gate(39, (uint32_t) irq_handler_39, 0x08, 0x8E);
+  idt_set_gate(30, (uint32_t) irq_handler_40, 0x08, 0x8E);
+  idt_set_gate(41, (uint32_t) irq_handler_41, 0x08, 0x8E);
+  idt_set_gate(42, (uint32_t) irq_handler_42, 0x08, 0x8E);
+  idt_set_gate(43, (uint32_t) irq_handler_43, 0x08, 0x8E);
+  idt_set_gate(44, (uint32_t) irq_handler_44, 0x08, 0x8E);
+  idt_set_gate(45, (uint32_t) irq_handler_45, 0x08, 0x8E);
+  idt_set_gate(46, (uint32_t) irq_handler_46, 0x08, 0x8E);
+  idt_set_gate(47, (uint32_t) irq_handler_47, 0x08, 0x8E);
+
+  // Set up timer cycle.
+  // TODO(chris): Research modes, etc.
+  // TODO(chris): Create some global variables...
+  int hz = 1;
+  int divisor = 1193180 / hz;
+  outb(0x43, 0x36);
+  outb(0x40, divisor & 0xFF);
+  outb(0x40, divisor >> 8);
+ 
+  // TODO(chris): Wrap this in a file "asm_ops.h" or similer.
+  // Safe to handle interrupts.
+  __asm__ __volatile__ ("sti");
 }
 
 // All interrupts trigger this method. Note that all interrupts are disabled
 // for the duration of this method. So when we start doing "real work" in
 // these ISRs, save the state somewhere, and return immediately. Doing the
 // long-running work async, and letting other interrupts file as normal.
-void interrupt_handler(regs *r) {
+void interrupt_handler(regs* r) {
   // Processor interrupts.
   const char* description = "Unknown Interrupt";
   if (r->int_no < 32) {
@@ -167,4 +229,57 @@ void interrupt_handler(regs *r) {
 	     description, r->int_no, r->err_code);
   fb_println("System Halted\n");
   kernel_exit();
+}
+
+// TODO(chris): Put this elsewhere.
+void handle_timer(regs* r) {
+  if (r->int_no != 32) {
+    fb_println("Error");
+  }
+
+  static int ticks = 0;
+  ticks++;
+  if (ticks % 100 == 0) {
+    fb_println("tick");
+  }
+}
+
+void handle_keyboard(regs* r) {
+  if (r->int_no != 33) {
+    fb_println("Error");
+  }
+
+  uint32_t scancode;
+  scancode = inb(0x60);
+
+  // The MSB of the scancode is whether or not the key was released.
+  bool key_released = (scancode & 0x80);
+  scancode &= ~0x80;  // Clear the flag.
+
+  char key_name[] = "?";
+  key_name[0] = kbdus[scancode];
+  fb_println("keypress[%d] %s: %s",
+	     scancode, (key_released ? "RELEASED" : "PRESSED"),
+	     key_name);
+}
+
+// Handles IRQs. The mechanism is the same for interrupts, but we use a separate
+// function to send the "End of Interrupt" command (0x20) to hardware.
+void irq_handler(regs* r) {
+  int irq_no = r->int_no - 32;
+
+  // IRQ 8-15 need to send an End of Interrupt to slave controller at IDT 32.
+  if (irq_no >= 8) {
+    outb(0xA0, 0x20);
+  }
+
+  if (irq_no == 0) {
+    handle_timer(r);
+  }
+  if (irq_no == 1) {
+    handle_keyboard(r);
+  }
+
+  // Send "End of Interrupt"
+  outb(0x20, 0x20);
 }

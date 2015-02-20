@@ -22,7 +22,9 @@ void kmain(void) {
   fb_clear();
   fb_disable_blink();
 
-  kmain_crash();
+  fb_println("Sitting idle...");
+  while(true) {
+  }
 }
 
 void kmain_crash() {
