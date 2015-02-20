@@ -1,3 +1,6 @@
+# Required software:
+# sudo apt-get install bochs-sdl
+
 # TODO(chris): Automatically generate C_FILES, S_FILES, etc.
 OBJECTS = kmain.o kmain_asm.o \
 	  lib/debug.o lib/framebuffer.o lib/string.o lib/printf.o \
