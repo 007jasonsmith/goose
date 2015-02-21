@@ -61,10 +61,17 @@ void con_win_print_char_active(char c) {
 
 // Initialize the console. Clears the screen, initializes data structures, etc.
 void con_initialize() {
+  // Disable the console blink. This also means we can use up to 16 colors.
+  inb(0x3DA);
+  outb(0x3C0, 0x30);
+  inb(0x3C1);
+  outb(0x3C0, 0x30);
+
   // Clear the string, defaulting to gray on black.
-  const uint16 cell = (GRAY >> 8) | BLACK;
+  const uint8 formatting = (BLACK << 4) | GRAY;
   for (int i = 0; i < 80 * 25; i++) {
-    screen_buffer[i * 2] = cell;
+    screen_buffer[i * 2] = ' ';
+    screen_buffer[i * 2 + 1] = formatting;
   }
 
   // Initialize the kernel windows.
@@ -72,12 +79,6 @@ void con_initialize() {
                   0, 1, 40, 24, WHITE, BLUE);
   con_init_window(&con_windows[WIN_DEBUG], "Debug",
                   40, 1, 40, 24, BLACK, RED);
-
-  // Disable the console blink. This also means we can use up to 16 colors.
-  inb(0x3DA);
-  outb(0x3C0, 0x30);
-  inb(0x3C1);
-  outb(0x3C0, 0x30);
 }
 
 // Writes the text to the window. Scrolling text as necessary.
@@ -117,9 +118,10 @@ void con_init_window(Window* win, const char* title,
   // TODO(chris): Print the window title.
 
   // Clear the window region.
-  for (; y < height; y++) {
-    for (; x < width; x++) {
-      con_set_color(x, y, foreground, background);
+  for (int yidx = y; yidx < height + y; yidx++) {
+    for (int xidx = x; xidx < width + x; xidx++) {
+      con_set_char(xidx, yidx, title[0]);
+      con_set_color(xidx, yidx, foreground, background);
     }
   }
 
@@ -147,7 +149,7 @@ void con_set_char(uint8 x, uint8 y, char c) {
 
 void con_set_color(uint8 x, uint8 y, Color foreground, Color background) {
   uint16 index = con_pos_to_idx(x, y);
-  screen_buffer[index] = ((background & 0x0F) << 4) | (foreground & 0x0F);
+  screen_buffer[index + 1] = ((background & 0x0F) << 4) | (foreground & 0x0F);
 }
 
 void con_win_set_focus(Window* win) {
