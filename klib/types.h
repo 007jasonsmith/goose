@@ -25,7 +25,7 @@ typedef int8 bool;
 
 // size is used as an index into any form of array. It is defined such that
 // it will work even if the raw pointer size changes.
-typedef uint size;
+typedef uint32 size;
 
 // raw_ptr is used as a pointer into memory. It is defined such that
 // it will work even if the raw pointer size changes.

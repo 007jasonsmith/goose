@@ -16,11 +16,34 @@
 // For the initialize release of klib, Windows may not overlap. A future version
 // may give Window objects their own buffers for text, and the ability to redraw
 // themselves.
+#ifndef SYS_CONSOLE_H_
+#define SYS_CONSOLE_H_
 
 #include "klib/types.h"
 
 typedef uint8 Color;
-// TODO(chris): Define the 16 beautiful colors here.
+// There are eight colors, which can be optionally set to have a "bright bit".
+// (Which covers values 8-15.) See:
+// http://wiki.osdev.org/VGA_Hardware
+// http://wiki.osdev.org/Printing_To_Screen
+// http://wiki.osdev.org/Text_UI
+#define BLACK    0
+#define BLUE     1
+#define GREEN    2
+#define CYAN     3
+#define RED      4
+#define MAGENTA  5
+#define BROWN    6
+#define GRAY     7
+
+#define LGRAY    8
+#define LBLUE    9
+#define LGREEN   10
+#define LCYAN    11
+#define LRED     12
+#define LMAGENTA 13
+#define LBROWN   14
+#define WHITE    15
 
 typedef struct {
   const char* title;
@@ -48,14 +71,20 @@ typedef struct {
   uint8 cursor_line;
 } Window;
 
+// Global windows.
+#define WIN_OUTPUT  0
+#define WIN_DEBUG   1
+#define NUM_WINDOWS 2
+extern Window con_windows[];
+
 // Initialize the console. Clears the screen, initializes data structures, etc.
 void con_initialize();
 
 // Writes the text to the window. Scrolling text as necessary.
-void con_writeline(const Window& win, const char* fmt, ...);
+void con_writeline(Window* win, const char* fmt, ...);
 
 // Read text into the buffer, blocking until the return key is pressed.
 // Output is echoed to the console.
-void con_win_readline(const Window& win, char* buffer, size buffer_size);
+void con_win_readline(Window* win, char* buffer, size buffer_size);
 
-#ifndef
+#endif  // SYS_CONSOLE_H_

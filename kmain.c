@@ -5,6 +5,8 @@
 #include "sys/isr.h"
 #include "sys/gdt.h"
 
+#include "klib/console.h"
+
 // Expriments.
 void kmain_crash();
 void kmain_collatz_conjector();
@@ -14,15 +16,25 @@ void kmain(void) {
   debug_log("Kernel %s loaded successfully.", version);
 
   // Initialize core CPU-based systems.
-  gdt_install();  // Global descriptor table.
-  idt_install();  // Interrupt descriptor table.
-  isr_install();  // Interrupt servicer routines.
+  // gdt_install();  // Global descriptor table.
+  // idt_install();  // Interrupt descriptor table.
+  // isr_install();  // Interrupt servicer routines.
 
   // Get ready for users!
-  fb_clear();
-  fb_disable_blink();
+  // fb_clear();
+  // fb_disable_blink();
 
-  fb_println("Sitting idle...");
+  // EXPERIMENTAL
+  con_initialize();
+  con_writeline(&con_windows[WIN_OUTPUT], "Hello, world");
+  con_writeline(&con_windows[WIN_OUTPUT], "Hello from klib!");
+
+  con_writeline(&con_windows[WIN_DEBUG], "alpha");
+  con_writeline(&con_windows[WIN_DEBUG], "beta");
+  con_writeline(&con_windows[WIN_DEBUG], "gamma");
+
+  // TODO(chris): Remove this, and verify if kmain returns the
+  // system halts.
   while(true) {
   }
 }
