@@ -68,7 +68,7 @@ typedef struct {
 
   // Where the current cursor is. As text is written, it "moves"
   // to the bottom right. Once there, it will scroll the text
-  // up.
+  // up. Values [0, width), [0, height).
   uint8 cursor_col;
   uint8 cursor_line;
 } Window;
@@ -84,6 +84,8 @@ typedef int WindowId;
 void con_initialize();
 
 // Writes the text to the window. Scrolling text as necessary.
+void con_write(WindowId win, const char* fmt, ...);
+void con_write_va(WindowId win, const char* fmt, va_list args);
 void con_writeline(WindowId win, const char* fmt, ...);
 void con_writeline_va(WindowId win, const char* fmt, va_list args);
 

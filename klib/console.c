@@ -47,20 +47,21 @@ void con_win_set_active(Window* win) {
 void con_win_print_char_active(char c) {
   Window* win = con_win_get_active();
   // Wrap the cursor as necessary.
-  if (c == '\n' || win->cursor_col >= 80) {
+  if (c == '\n' || win->cursor_col >= win->width - win->has_border) {
     win->cursor_line++;
-    win->cursor_col = 0;
+    win->cursor_col = win->has_border;
   }
   // Scroll as necessary.
-  if (win->cursor_line >= win->height - win->offset_y) {
-    win->cursor_line = win->height - win->offset_y;
+  if (win->cursor_line >= win->height - win->has_border) {
+    win->cursor_line = win->height - win->has_border - 1;
     con_win_scroll(win);
   }
   // Print.
   if (c != '\n') {
-    con_set_char(win->cursor_col, win->cursor_line, c);
+    con_set_char(win->offset_x + win->cursor_col,
+		 win->offset_y + win->cursor_line,
+		 c);
     win->cursor_col++;
-    con_set_cursor(win->cursor_col, win->cursor_line);
   }
 }
 
@@ -80,31 +81,42 @@ void con_initialize() {
   }
 
   // Initialize the kernel windows.
-  con_init_window(&con_windows[WIN_HEADER], "Goose",
+  con_init_window(&con_windows[HEADER_WIN], "Goose",
                   0, 0, 80, 1, WHITE, RED, false);
-  con_init_window(&con_windows[WIN_OUTPUT], "Output",
+  con_init_window(&con_windows[OUTPUT_WIN], "Output",
                   0, 1, 55, 24, WHITE, BLUE, true);
-  con_init_window(&con_windows[WIN_DEBUG], "Debug",
+  con_init_window(&con_windows[DEBUG_WIN], "Debug",
 		  55, 1, 25, 24, WHITE, BLACK, true);
 
   con_set_cursor(79, 24);
 }
 
-// Writes the text to the window. Scrolling text as necessary.
-void con_writeline(WindowId win, const char* fmt, ...) {
+void con_write(WindowId win, const char* fmt, ...) {
   va_list args;
   va_start(args, fmt);
-  con_writeline_va(win, fmt, args);
+  con_write_va(win, fmt, args);
   va_end(args);
 }
 
-void con_writeline_va(WindowId window, const char* fmt, va_list args) {
+void con_write_va(WindowId window, const char* fmt, va_list args) {
   Window* win = &con_windows[window];
   con_win_set_active(win);
 
   base_printf_va(fmt, args, &con_win_print_char_active);
+}
 
-  // Handle an implicit '\n'.
+void con_writeline(WindowId win, const char* fmt, ...) {
+  va_list args;
+  va_start(args, fmt);
+  con_write_va(win, fmt, args);
+  va_end(args);
+
+  base_printf("\n", &con_win_print_char_active);
+}
+
+void con_writeline_va(WindowId win, const char* fmt, va_list args) {
+  con_write_va(win, fmt, args);
+
   base_printf("\n", &con_win_print_char_active);
 }
 
@@ -165,8 +177,9 @@ void con_init_window(Window* win, const char* title,
     con_set_char(title_start + title_len, offset_y, ' ');
   }
  
-  win->cursor_col = 0;
-  win->cursor_line = 0;
+  // Start at [0,0] or [1,1].
+  win->cursor_col = has_border;
+  win->cursor_line = has_border;
 }
 
 void con_set_cursor(uint8 x, uint8 y) {
@@ -192,11 +205,19 @@ void con_set_color(uint8 x, uint8 y, Color foreground, Color background) {
 }
 
 void con_win_scroll(Window* win) {
-  for (int y = win->height - win->offset_y; y <= win->offset_y - 1; y--) {
-    for (int x = 0; x < win->width - win->offset_x; x++) {
-        uint16 from = con_pos_to_idx(x, y);
-        uint16 to = con_pos_to_idx(x, y - 1);
+  int b = win->has_border;
+  for (int y = win->offset_y + b; y < win->offset_y + win->height - b - 1; y++) {
+    for (int x = win->offset_x + b; x < win->offset_x + win->width - b; x++) {
+        uint16 from = con_pos_to_idx(x, y + 1);
+        uint16 to = con_pos_to_idx(x, y);
+	// Only move the character. Keep the formatting the same.
         screen_buffer[to] = screen_buffer[from];
     }
+  }
+  // Clear out the last line. (-1 since width/height aren't 0-indexed.)
+  int last_line_y = win->offset_y + win->height - b - 1;
+  for (int x = win->offset_x + b; x < win->offset_x + win->width - b; x++) {
+    uint16 idx = con_pos_to_idx(x, last_line_y);
+    screen_buffer[idx] = ' ';
   }
 }

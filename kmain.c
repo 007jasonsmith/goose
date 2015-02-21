@@ -20,17 +20,14 @@ void kmain(void) {
 
   // EXPERIMENTAL
   con_initialize();
-  //  con_writeline(&con_windows[WIN_OUTPUT], "Hello, world");
-  // con_writeline(&con_windows[WIN_OUTPUT], "Hello from klib!");
+  con_write(HEADER_WIN, "Goose %s", version);
+  con_writeline(OUTPUT_WIN, "Hello from klib!");
 
-  // con_writeline(&con_windows[WIN_DEBUG], "alpha");
-  // con_writeline(&con_windows[WIN_DEBUG], "beta");
-  // con_writeline(&con_windows[WIN_DEBUG], "gamma");
-
-  // TODO(chris): Remove this, and verify if kmain returns the
-  // system halts.
-  while(true) {
+  for (int i = 0; i < 100; i++) {
+    con_writeline(OUTPUT_WIN, "Idx %d %d %d", i, i, i);
   }
+
+  debug_log("Kernel halted.");
 }
 #if 0
 void kmain_crash() {
