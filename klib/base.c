@@ -4,7 +4,6 @@
 #include "klib/strings.h"
 
 // TODO(chris): Rename to base_.
-void print_va(const char* msg, va_list args, OutputFn fn);
 void print_str(const char* msg, OutputFn fn);
 void print_int(int x, OutputFn fn);
 void print_hex(int x, OutputFn fn);
@@ -14,11 +13,11 @@ void print_bin(int x, OutputFn fn);
 void base_printf(const char* msg, OutputFn fn, ...) {
   va_list args;
   va_start(args, fn);
-  print_va(msg, args, fn);
+  base_printf_va(msg, args, fn);
   va_end(args);
 }
 
-void print_va(const char* msg, va_list args, OutputFn fn) {
+void base_printf_va(const char* msg, va_list args, OutputFn fn, ...) {
   size len = str_length(msg);
   for (size i = 0; i < len; i++) {
     char c = msg[i];

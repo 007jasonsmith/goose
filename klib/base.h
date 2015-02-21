@@ -19,5 +19,6 @@ typedef void(*OutputFn)(char);
 // be called.
 // TODO(chris): base_printf(const char* msg, OutputFn fn);
 void base_printf(const char* msg, OutputFn fn, ...);
+void base_printf_va(const char* msg, va_list args, OutputFn fn, ...);
 
 #endif  // KLIB_BASE_H_

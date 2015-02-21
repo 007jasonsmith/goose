@@ -1,11 +1,5 @@
-#include "lib/debug.h"
-#include "lib/framebuffer.h"
-
-#include "sys/idt.h"
-#include "sys/isr.h"
-#include "sys/gdt.h"
-
 #include "klib/console.h"
+#include "klib/debug.h"
 
 // Expriments.
 void kmain_crash();
@@ -38,7 +32,7 @@ void kmain(void) {
   while(true) {
   }
 }
-
+#if 0
 void kmain_crash() {
   fb_println("Goose %s - %s", version, "divide by zero crash ed.");
 
@@ -63,3 +57,4 @@ void kmain_collatz_conjector() {
     }
   }
 }
+#endif
