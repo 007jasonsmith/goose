@@ -1,6 +1,7 @@
 #include "sys/isr.h"
 
-#include "lib/framebuffer.h"
+#include "klib/debug.h"
+#include "klib/types.h"
 #include "sys/io.h"
 #include "sys/idt.h"
 #include "sys/kernel.h"
@@ -9,32 +10,32 @@
 // Registers when the ISR was triggered. Used for (hopefully) diagnosing bugs.
 typedef struct {
   // Pushed the segments last.
-  uint32_t gs;
-  uint32_t fs;
-  uint32_t es;
-  uint32_t ds;
+  uint32 gs;
+  uint32 fs;
+  uint32 es;
+  uint32 ds;
 
   // Pushed by "pusha".
-  uint32_t edi;
-  uint32_t esi;
-  uint32_t ebp;
-  uint32_t esp;
+  uint32 edi;
+  uint32 esi;
+  uint32 ebp;
+  uint32 esp;
 
-  uint32_t ebx;
-  uint32_t edx;
-  uint32_t ecx;
-  uint32_t eax;
+  uint32 ebx;
+  uint32 edx;
+  uint32 ecx;
+  uint32 eax;
 
   // "push byte #" and ecodes does this.
-  uint32_t int_no;
-  uint32_t err_code;
+  uint32 int_no;
+  uint32 err_code;
 
   // Pushed by the processor automatically.
-  uint32_t eip;
-  uint32_t cs;
-  uint32_t eflags;
-  uint32_t useresp;
-  uint32_t ss;
+  uint32 eip;
+  uint32 cs;
+  uint32 eflags;
+  uint32 useresp;
+  uint32 ss;
 } regs;
 
 
@@ -149,55 +150,55 @@ void isr_install() {
   outb(0xA1, 0x0);
 
   // Register all known ISRs. The first 32 are CPU-defined.
-  idt_set_gate(0, (uint32_t) interrupt_handler_0, 0x08, 0x8E);
-  idt_set_gate(1, (uint32_t) interrupt_handler_1, 0x08, 0x8E);
-  idt_set_gate(2, (uint32_t) interrupt_handler_2, 0x08, 0x8E);
-  idt_set_gate(3, (uint32_t) interrupt_handler_3, 0x08, 0x8E);
-  idt_set_gate(4, (uint32_t) interrupt_handler_4, 0x08, 0x8E);
-  idt_set_gate(5, (uint32_t) interrupt_handler_5, 0x08, 0x8E);
-  idt_set_gate(6, (uint32_t) interrupt_handler_6, 0x08, 0x8E);
-  idt_set_gate(7, (uint32_t) interrupt_handler_7, 0x08, 0x8E);
-  idt_set_gate(8, (uint32_t) interrupt_handler_8, 0x08, 0x8E);
-  idt_set_gate(9, (uint32_t) interrupt_handler_9, 0x08, 0x8E);
-  idt_set_gate(10, (uint32_t) interrupt_handler_10, 0x08, 0x8E);
-  idt_set_gate(11, (uint32_t) interrupt_handler_11, 0x08, 0x8E);
-  idt_set_gate(12, (uint32_t) interrupt_handler_12, 0x08, 0x8E);
-  idt_set_gate(13, (uint32_t) interrupt_handler_13, 0x08, 0x8E);
-  idt_set_gate(14, (uint32_t) interrupt_handler_14, 0x08, 0x8E);
-  idt_set_gate(15, (uint32_t) interrupt_handler_15, 0x08, 0x8E);
-  idt_set_gate(16, (uint32_t) interrupt_handler_16, 0x08, 0x8E);
-  idt_set_gate(17, (uint32_t) interrupt_handler_17, 0x08, 0x8E);
-  idt_set_gate(18, (uint32_t) interrupt_handler_18, 0x08, 0x8E);
-  idt_set_gate(19, (uint32_t) interrupt_handler_19, 0x08, 0x8E);
-  idt_set_gate(20, (uint32_t) interrupt_handler_20, 0x08, 0x8E);
-  idt_set_gate(21, (uint32_t) interrupt_handler_21, 0x08, 0x8E);
-  idt_set_gate(22, (uint32_t) interrupt_handler_22, 0x08, 0x8E);
-  idt_set_gate(23, (uint32_t) interrupt_handler_23, 0x08, 0x8E);
-  idt_set_gate(24, (uint32_t) interrupt_handler_24, 0x08, 0x8E);
-  idt_set_gate(25, (uint32_t) interrupt_handler_25, 0x08, 0x8E);
-  idt_set_gate(26, (uint32_t) interrupt_handler_26, 0x08, 0x8E);
-  idt_set_gate(27, (uint32_t) interrupt_handler_27, 0x08, 0x8E);
-  idt_set_gate(28, (uint32_t) interrupt_handler_28, 0x08, 0x8E);
-  idt_set_gate(29, (uint32_t) interrupt_handler_29, 0x08, 0x8E);
-  idt_set_gate(30, (uint32_t) interrupt_handler_30, 0x08, 0x8E);
-  idt_set_gate(31, (uint32_t) interrupt_handler_31, 0x08, 0x8E);
+  idt_set_gate(0, (uint32) interrupt_handler_0, 0x08, 0x8E);
+  idt_set_gate(1, (uint32) interrupt_handler_1, 0x08, 0x8E);
+  idt_set_gate(2, (uint32) interrupt_handler_2, 0x08, 0x8E);
+  idt_set_gate(3, (uint32) interrupt_handler_3, 0x08, 0x8E);
+  idt_set_gate(4, (uint32) interrupt_handler_4, 0x08, 0x8E);
+  idt_set_gate(5, (uint32) interrupt_handler_5, 0x08, 0x8E);
+  idt_set_gate(6, (uint32) interrupt_handler_6, 0x08, 0x8E);
+  idt_set_gate(7, (uint32) interrupt_handler_7, 0x08, 0x8E);
+  idt_set_gate(8, (uint32) interrupt_handler_8, 0x08, 0x8E);
+  idt_set_gate(9, (uint32) interrupt_handler_9, 0x08, 0x8E);
+  idt_set_gate(10, (uint32) interrupt_handler_10, 0x08, 0x8E);
+  idt_set_gate(11, (uint32) interrupt_handler_11, 0x08, 0x8E);
+  idt_set_gate(12, (uint32) interrupt_handler_12, 0x08, 0x8E);
+  idt_set_gate(13, (uint32) interrupt_handler_13, 0x08, 0x8E);
+  idt_set_gate(14, (uint32) interrupt_handler_14, 0x08, 0x8E);
+  idt_set_gate(15, (uint32) interrupt_handler_15, 0x08, 0x8E);
+  idt_set_gate(16, (uint32) interrupt_handler_16, 0x08, 0x8E);
+  idt_set_gate(17, (uint32) interrupt_handler_17, 0x08, 0x8E);
+  idt_set_gate(18, (uint32) interrupt_handler_18, 0x08, 0x8E);
+  idt_set_gate(19, (uint32) interrupt_handler_19, 0x08, 0x8E);
+  idt_set_gate(20, (uint32) interrupt_handler_20, 0x08, 0x8E);
+  idt_set_gate(21, (uint32) interrupt_handler_21, 0x08, 0x8E);
+  idt_set_gate(22, (uint32) interrupt_handler_22, 0x08, 0x8E);
+  idt_set_gate(23, (uint32) interrupt_handler_23, 0x08, 0x8E);
+  idt_set_gate(24, (uint32) interrupt_handler_24, 0x08, 0x8E);
+  idt_set_gate(25, (uint32) interrupt_handler_25, 0x08, 0x8E);
+  idt_set_gate(26, (uint32) interrupt_handler_26, 0x08, 0x8E);
+  idt_set_gate(27, (uint32) interrupt_handler_27, 0x08, 0x8E);
+  idt_set_gate(28, (uint32) interrupt_handler_28, 0x08, 0x8E);
+  idt_set_gate(29, (uint32) interrupt_handler_29, 0x08, 0x8E);
+  idt_set_gate(30, (uint32) interrupt_handler_30, 0x08, 0x8E);
+  idt_set_gate(31, (uint32) interrupt_handler_31, 0x08, 0x8E);
   // The next 16 are used for handling IRQs
-  idt_set_gate(32, (uint32_t) irq_handler_32, 0x08, 0x8E);
-  idt_set_gate(33, (uint32_t) irq_handler_33, 0x08, 0x8E);
-  idt_set_gate(34, (uint32_t) irq_handler_34, 0x08, 0x8E);
-  idt_set_gate(35, (uint32_t) irq_handler_35, 0x08, 0x8E);
-  idt_set_gate(36, (uint32_t) irq_handler_36, 0x08, 0x8E);
-  idt_set_gate(37, (uint32_t) irq_handler_37, 0x08, 0x8E);
-  idt_set_gate(38, (uint32_t) irq_handler_38, 0x08, 0x8E);
-  idt_set_gate(39, (uint32_t) irq_handler_39, 0x08, 0x8E);
-  idt_set_gate(30, (uint32_t) irq_handler_40, 0x08, 0x8E);
-  idt_set_gate(41, (uint32_t) irq_handler_41, 0x08, 0x8E);
-  idt_set_gate(42, (uint32_t) irq_handler_42, 0x08, 0x8E);
-  idt_set_gate(43, (uint32_t) irq_handler_43, 0x08, 0x8E);
-  idt_set_gate(44, (uint32_t) irq_handler_44, 0x08, 0x8E);
-  idt_set_gate(45, (uint32_t) irq_handler_45, 0x08, 0x8E);
-  idt_set_gate(46, (uint32_t) irq_handler_46, 0x08, 0x8E);
-  idt_set_gate(47, (uint32_t) irq_handler_47, 0x08, 0x8E);
+  idt_set_gate(32, (uint32) irq_handler_32, 0x08, 0x8E);
+  idt_set_gate(33, (uint32) irq_handler_33, 0x08, 0x8E);
+  idt_set_gate(34, (uint32) irq_handler_34, 0x08, 0x8E);
+  idt_set_gate(35, (uint32) irq_handler_35, 0x08, 0x8E);
+  idt_set_gate(36, (uint32) irq_handler_36, 0x08, 0x8E);
+  idt_set_gate(37, (uint32) irq_handler_37, 0x08, 0x8E);
+  idt_set_gate(38, (uint32) irq_handler_38, 0x08, 0x8E);
+  idt_set_gate(39, (uint32) irq_handler_39, 0x08, 0x8E);
+  idt_set_gate(30, (uint32) irq_handler_40, 0x08, 0x8E);
+  idt_set_gate(41, (uint32) irq_handler_41, 0x08, 0x8E);
+  idt_set_gate(42, (uint32) irq_handler_42, 0x08, 0x8E);
+  idt_set_gate(43, (uint32) irq_handler_43, 0x08, 0x8E);
+  idt_set_gate(44, (uint32) irq_handler_44, 0x08, 0x8E);
+  idt_set_gate(45, (uint32) irq_handler_45, 0x08, 0x8E);
+  idt_set_gate(46, (uint32) irq_handler_46, 0x08, 0x8E);
+  idt_set_gate(47, (uint32) irq_handler_47, 0x08, 0x8E);
 
   // Set up timer cycle.
   // TODO(chris): Research modes, etc.
@@ -225,42 +226,42 @@ void interrupt_handler(regs* r) {
   }
 
   // TODO(chris): Make a kick-ass BSOD.
-  fb_println("Received interrupt %s[%d] with code %d",
-	     description, r->int_no, r->err_code);
-  fb_println("System Halted\n");
+  debug_log("Received interrupt %s[%d] with code %d",
+	    description, r->int_no, r->err_code);
+
   kernel_exit();
 }
 
 // TODO(chris): Put this elsewhere.
 void handle_timer(regs* r) {
   if (r->int_no != 32) {
-    fb_println("Error");
+    debug_log("Error");
   }
 
   static int ticks = 0;
   ticks++;
   if (ticks % 100 == 0) {
-    fb_println("tick");
+    debug_log("tick");
   }
 }
 
 void handle_keyboard(regs* r) {
   if (r->int_no != 33) {
-    fb_println("Error");
+    debug_log("Error");
   }
 
-  uint32_t scancode;
+  uint32 scancode;
   scancode = inb(0x60);
 
   // The MSB of the scancode is whether or not the key was released.
   bool key_released = (scancode & 0x80);
   scancode &= ~0x80;  // Clear the flag.
 
-  char key_name[] = "?";
+  char key_name[] = "?  \0";
   key_name[0] = kbdus[scancode];
-  fb_println("keypress[%d] %s: %s",
-	     scancode, (key_released ? "RELEASED" : "PRESSED"),
-	     key_name);
+  debug_log("keypress[%d] %s: %s",
+	    scancode, (key_released ? "RELEASED" : "PRESSED"),
+	    key_name);
 }
 
 // Handles IRQs. The mechanism is the same for interrupts, but we use a separate

@@ -1,7 +1,7 @@
 #ifndef SYS_IO_H_
 #define SYS_IO_H_
 
-#include "lib/types.h"
+#include "klib/types.h"
 
 // NOTE: These are C-stubs for functions written in assembly,
 // see io.s.
@@ -13,7 +13,7 @@
  *  @param port The I/O port to send the data to.
  *  @param data The data to send to the I/O port
  */
-void outb(uint32_t port, uint32_t data);
+void outb(uint32 port, uint32 data);
 
  /**
   * inb:
@@ -22,6 +22,6 @@ void outb(uint32_t port, uint32_t data);
   *  @param  port The address of the I/O port.
   *  @return      The read byte
   */
-unsigned char inb(uint32_t port);
+unsigned char inb(uint32 port);
 
 #endif  // SYS_IO_H_

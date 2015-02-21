@@ -1,8 +1,6 @@
 #ifndef KLIB_BASE_H_
 #define KLIB_BASE_H_
 
-#include "lib/types.h"
-
 // THIS WILL TOTALLY BREAK IF THE KERNEL'S CALLING CONVENTION CHANGES.
 // TODO(chris): Create a unit test for this.
 typedef unsigned char *va_list;

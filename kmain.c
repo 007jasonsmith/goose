@@ -1,5 +1,8 @@
 #include "klib/console.h"
 #include "klib/debug.h"
+#include "sys/gdt.h"
+#include "sys/idt.h"
+#include "sys/isr.h"
 
 // Expriments.
 void kmain_crash();
@@ -10,15 +13,10 @@ void kmain(void) {
   debug_log("Kernel started.");
 
   // Initialize core CPU-based systems.
-  // gdt_install();  // Global descriptor table.
-  // idt_install();  // Interrupt descriptor table.
-  // isr_install();  // Interrupt servicer routines.
+  gdt_install();  // Global descriptor table.
+  idt_install();  // Interrupt descriptor table.
+  isr_install();  // Interrupt servicer routines.
 
-  // Get ready for users!
-  // fb_clear();
-  // fb_disable_blink();
-
-  // EXPERIMENTAL
   con_initialize();
   con_write(HEADER_WIN, "Goose %s", version);
   con_writeline(OUTPUT_WIN, "Hello from klib!");
@@ -26,6 +24,9 @@ void kmain(void) {
   for (int i = 0; i < 100; i++) {
     con_writeline(OUTPUT_WIN, "Idx %d %d %d", i, i, i);
   }
+
+  // Wait forever.
+  while(true) ;
 
   debug_log("Kernel halted.");
 }
