@@ -7,7 +7,7 @@ void kmain_collatz_conjector();
 
 const char version[] = "v0.1a";
 void kmain(void) {
-  debug_log("Kernel %s loaded successfully.", version);
+  debug_log("Kernel started.");
 
   // Initialize core CPU-based systems.
   // gdt_install();  // Global descriptor table.
@@ -20,12 +20,12 @@ void kmain(void) {
 
   // EXPERIMENTAL
   con_initialize();
-  con_writeline(&con_windows[WIN_OUTPUT], "Hello, world");
-  con_writeline(&con_windows[WIN_OUTPUT], "Hello from klib!");
+  //  con_writeline(&con_windows[WIN_OUTPUT], "Hello, world");
+  // con_writeline(&con_windows[WIN_OUTPUT], "Hello from klib!");
 
-  con_writeline(&con_windows[WIN_DEBUG], "alpha");
-  con_writeline(&con_windows[WIN_DEBUG], "beta");
-  con_writeline(&con_windows[WIN_DEBUG], "gamma");
+  // con_writeline(&con_windows[WIN_DEBUG], "alpha");
+  // con_writeline(&con_windows[WIN_DEBUG], "beta");
+  // con_writeline(&con_windows[WIN_DEBUG], "gamma");
 
   // TODO(chris): Remove this, and verify if kmain returns the
   // system halts.

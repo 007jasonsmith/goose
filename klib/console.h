@@ -19,6 +19,7 @@
 #ifndef SYS_CONSOLE_H_
 #define SYS_CONSOLE_H_
 
+#include "klib/base.h"
 #include "klib/types.h"
 
 typedef uint8 Color;
@@ -51,18 +52,19 @@ typedef struct {
   // 0-indexed offset for the top-left of the Window.
   // Text will be one character smaller, to account
   // for the border.
+  // Width and height are not 0-indexed, so be careful.
   uint8 offset_x;
   uint8 offset_y;
   uint8 width;
   uint8 height;
 
+  // If set, the window will have a border of chrome that will
+  // reduce the printable area and generally make implementation
+  // more difficult.
+  bool has_border;
+
   Color foreground;
   Color background;
-
-  // Only one window in the system can have focus at a time.
-  // Having focus means that the cursor will appear at the end
-  // of its text.
-  bool has_focus;
 
   // Where the current cursor is. As text is written, it "moves"
   // to the bottom right. Once there, it will scroll the text
@@ -71,20 +73,22 @@ typedef struct {
   uint8 cursor_line;
 } Window;
 
-// Global windows.
-#define WIN_OUTPUT  0
-#define WIN_DEBUG   1
-#define NUM_WINDOWS 2
-extern Window con_windows[];
+// Global windows
+typedef int WindowId;
+#define HEADER_WIN  (WindowId) 0
+#define OUTPUT_WIN  (WindowId) 1
+#define DEBUG_WIN   (WindowId) 2
+#define NUM_WINDOWS 3
 
 // Initialize the console. Clears the screen, initializes data structures, etc.
 void con_initialize();
 
 // Writes the text to the window. Scrolling text as necessary.
-void con_writeline(Window* win, const char* fmt, ...);
+void con_writeline(WindowId win, const char* fmt, ...);
+void con_writeline_va(WindowId win, const char* fmt, va_list args);
 
 // Read text into the buffer, blocking until the return key is pressed.
 // Output is echoed to the console.
-void con_win_readline(Window* win, char* buffer, size buffer_size);
+void con_win_readline(WindowId win, char* buffer, size buffer_size);
 
 #endif  // SYS_CONSOLE_H_

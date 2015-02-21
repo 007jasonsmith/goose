@@ -1,6 +1,7 @@
 #include "klib/debug.h"
 
 #include "klib/base.h"
+#include "klib/console.h"
 #include "sys/io.h"
 #include "klib/types.h"
 
@@ -15,12 +16,20 @@ bool debug_com_is_transmit_empty();
 void debug_com_write_char(char c);
 
 void debug_log(const char* msg, ...) {
+  // Print it to our debug log.
   va_list args;
   va_start(args, msg);
   base_printf_va(msg, args, debug_com_write_char);
   va_end(args);
 
   debug_com_write_char('\n');
+
+  // Also print it to the debug window.
+  // NOTE: You cannot traverse va_args twice!
+  va_list args2;
+  va_start(args2, msg);
+  con_writeline(DEBUG_WIN, msg, args2);
+  va_end(args2);
 }
 
 void debug_com_initialize() {
