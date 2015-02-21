@@ -235,7 +235,7 @@ void interrupt_handler(regs* r) {
 // TODO(chris): Put this elsewhere.
 void handle_timer(regs* r) {
   if (r->int_no != 32) {
-    debug_log("Error");
+    debug_log("Error: Interrupt doesn't match expected.");
   }
 
   static int ticks = 0;
@@ -247,7 +247,7 @@ void handle_timer(regs* r) {
 
 void handle_keyboard(regs* r) {
   if (r->int_no != 33) {
-    debug_log("Error");
+    debug_log("Error: Interrupt doesn't match expected.");
   }
 
   uint32 scancode;
@@ -257,11 +257,11 @@ void handle_keyboard(regs* r) {
   bool key_released = (scancode & 0x80);
   scancode &= ~0x80;  // Clear the flag.
 
-  char key_name[] = "?  \0";
+  char key_name[] = "?";
   key_name[0] = kbdus[scancode];
   debug_log("keypress[%d] %s: %s",
 	    scancode, (key_released ? "RELEASED" : "PRESSED"),
-	    key_name);
+  	    key_name);
 }
 
 // Handles IRQs. The mechanism is the same for interrupts, but we use a separate
@@ -274,11 +274,15 @@ void irq_handler(regs* r) {
     outb(0xA0, 0x20);
   }
 
-  if (irq_no == 0) {
+  switch (irq_no) {
+  case 0:
     handle_timer(r);
-  }
-  if (irq_no == 1) {
+    break;
+  case 1:
     handle_keyboard(r);
+    break;
+  default:
+    debug_log("Unknown IRQ[%d]", irq_no);
   }
 
   // Send "End of Interrupt"

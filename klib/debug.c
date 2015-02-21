@@ -28,7 +28,7 @@ void debug_log(const char* msg, ...) {
   // NOTE: You cannot traverse va_args twice!
   va_list args2;
   va_start(args2, msg);
-  con_writeline(DEBUG_WIN, msg, args2);
+  con_writeline_va(DEBUG_WIN, msg, args2);
   va_end(args2);
 }
 
@@ -56,5 +56,5 @@ void debug_com_write_char(char c) {
   while (!debug_com_is_transmit_empty()) {
     // Wait until the buffer is clear.
   }
-  outb(COM1, (uint32_t) c);
+  outb(COM1, (uint32) c);
 }

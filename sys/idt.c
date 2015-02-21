@@ -1,6 +1,6 @@
 #include "sys/idt.h"
 
-#include "lib/types.h"
+#include "klib/types.h"
 
 // The interrupt descriptor table here registers handlers for all 255 possible
 // interrupts, though in practice not every one will be registered. See isr.h/c.
@@ -10,16 +10,16 @@
 // http://www.osdever.net/bkerndev/Docs/idt.htm
 
 typedef struct __attribute__((packed)) {
-    uint16_t base_lo;
-    uint16_t sel;
-    uint8_t always0;
-    uint8_t flags;
-    uint16_t base_hi;
+    uint16 base_lo;
+    uint16 sel;
+    uint8 always0;
+    uint8 flags;
+    uint16 base_hi;
 } IdtEntry;
 
 typedef struct __attribute__((packed)) {
-    uint16_t limit;
-    uint32_t base;
+    uint16 limit;
+    uint32 base;
 } IdtPointer;
 
 // Note that while we reserve *space* for all interrupts, we don't need to
@@ -32,7 +32,7 @@ IdtEntry interrupt_descriptor_table[256];
 extern void idt_load();
 
 // Setup a descriptor table entry.
-void idt_set_gate(uint8_t index, uint32_t base, uint16_t sel, uint8_t flags) {
+void idt_set_gate(uint8 index, uint32 base, uint16 sel, uint8 flags) {
   IdtEntry* entry = &interrupt_descriptor_table[index];
 
   entry->base_lo = (base & 0xFFFF);
@@ -45,10 +45,10 @@ void idt_set_gate(uint8_t index, uint32_t base, uint16_t sel, uint8_t flags) {
 
 void idt_install() {
   interrupt_descriptor_table_ptr.limit = sizeof(interrupt_descriptor_table) - 1;
-  interrupt_descriptor_table_ptr.base = (uint32_t) &interrupt_descriptor_table;
+  interrupt_descriptor_table_ptr.base = (uint32) &interrupt_descriptor_table;
 
   // Clear out the IDT. Later isr_install will register custom handlers.
-  for (size_t i = 0; i < 256; i++) {
+  for (size i = 0; i < 256; i++) {
     idt_set_gate(i, 0, 0, 0);
   }
   
