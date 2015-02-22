@@ -42,12 +42,17 @@ void base_printf_va(const char* msg, va_list args, OutputFn fn, ...) {
     c = msg[i + 1];
 
     // TODO(chris): Put these into a union.
+    char char_arg;
     int int_arg;
     uint32 uint_arg;
     char* char_ptr;
     uint32 ptr_address;
 
     switch (c) {
+    case 'c':
+      char_arg = va_arg(args, char);
+      fn(char_arg);
+      break;
     case 'd':
       int_arg = va_arg(args, int);
       if (int_arg < 0) {

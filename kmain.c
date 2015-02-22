@@ -20,11 +20,13 @@ void kmain(void) {
   con_initialize();
   con_write(HEADER_WIN, "Goose %s", version);
 
-  con_writeline(OUTPUT_WIN, "World's most basic I/O program.");
-  con_write(OUTPUT_WIN, "Press a character: ");
-  con_win_readkey(OUTPUT_WIN);
-  con_writeline(OUTPUT_WIN, "<newline>");
-  con_writeline(OUTPUT_WIN, "Thanks!");
+  con_writeline(OUTPUT_WIN, "Keyboard echo.");
+
+  while (true) {
+    con_write(OUTPUT_WIN, ": ");
+    char c = con_win_readkey(OUTPUT_WIN);
+    con_writeline(OUTPUT_WIN, "\nRead '%c'", c);
+  }
 
   // Crash, yo!
   //int denum = 1;

@@ -122,16 +122,10 @@ void con_writeline_va(WindowId win, const char* fmt, va_list args) {
 }
 
 char con_win_readkey(WindowId win) {
-  KeyPress key;
-  do {
-    keyboard_getchar(&key);
-  } while (!key.is_printable);
-
-  char msg[] = "?";
-  msg[0] = key.c;
-  con_write(win, msg);
-
-  return key.c;
+  char c;
+  keyboard_getchar(&c);
+  con_write(win, "%c", c);
+  return c;
 }
 
 void con_init_window(Window* win, const char* title,

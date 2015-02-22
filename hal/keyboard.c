@@ -2,28 +2,17 @@
 
 #include "klib/types.h"
 
-// Bake the keyboard map directly into the kernel.
-#define ESCAPE "Escape"
-#define KEY_1  "Key 1"
-#define KEY_2  "Key 2"
-#define KEY_3  "Key 3"
-#define KEY_4  "Key 4"
-
-typedef struct {
-  uint32 scancode;
-  const char* name;
-  char c;
-  char shifted_c;
-} KeyMapChar;
-
+// Load the keymap file.
 #define NOP '\0'
-KeyMapChar keyboard_keymap[] = {
+KeyboardKey keyboard_keymap[] = {
   { 0x00, "ERROR", NOP, NOP },
   #include "hal/en-us-keyboard.map"
 };
+#undef NOP
 
 // http://wiki.osdev.org/PS/2_Keyboard
 
+volatile uint32 key_generation = 0;
 volatile KeyPress last_keypress;
 
 void keyboard_process(uint32 scancode) {
@@ -31,21 +20,22 @@ void keyboard_process(uint32 scancode) {
   bool key_released = (scancode & 0x80);
   scancode &= ~0x80;
 
+  // EXPERIMENTAL - Keymap not finished yet.
+  if (scancode > 0x1C) return;
+
   // TODO(chrsmith): Implement atomic reads/writes for crying out loud!
-  // lock-free ring buffer.
-  // IDEA: Clang's list of node types, expression types.
+  // TODO(chrsmith): Store in a lock-free ring buffer?
+  key_generation++;
+  last_keypress.key = keyboard_keymap[scancode];
   last_keypress.was_released = key_released;
-  // EXPERIMENTAL.
-  last_keypress.c = keyboard_keymap[scancode].c;
-  last_keypress.is_printable = true;
 }
 
-void keyboard_getchar(KeyPress* key) {
-  while (last_keypress.was_released) {
-    // Wait until a key was _pressed_.
+void keyboard_getchar(char* c) {
+  uint32 starting_generation = key_generation;
+  while (!last_keypress.was_released &&
+         last_keypress.key.c != '\0' &&
+         key_generation == starting_generation) {
+    // Wait for the right condition...
   }
-  // TODO(chrsmith): memcpy?
-  key->is_printable = last_keypress.is_printable;
-  key->c = last_keypress.c;
-  key->was_released = last_keypress.was_released;
+  *c = last_keypress.key.c;
 }

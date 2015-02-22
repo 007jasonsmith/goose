@@ -7,9 +7,16 @@
 
 // TODO(chris): Support capslock.
 // TODO(chris): Support shift+x for capitals, etc.
+
 typedef struct {
-  bool is_printable;
-  char c;  // Undefined if the KeyPress is not printable.
+  uint32 scancode;
+  const char* name;
+  char c;
+  char shifted_c;
+} KeyboardKey;
+
+typedef struct {
+  KeyboardKey key;
   bool was_released;
 } KeyPress;
 
@@ -17,8 +24,7 @@ typedef struct {
 // internal buffers.
 void keyboard_process(uint32 scancode);
 
-// Wait until a printable character is pressed, at which time key
-// will be populated.
-void keyboard_getchar(KeyPress* key);
+// Wait until a printable character is pressed.
+void keyboard_getchar(char* c);
 
 #endif  // HAL_KEYBOARD_H_
