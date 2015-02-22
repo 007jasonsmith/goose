@@ -2,6 +2,28 @@
 
 #include "klib/types.h"
 
+// Bake the keyboard map directly into the kernel.
+#define ESCAPE "Escape"
+#define KEY_1  "Key 1"
+#define KEY_2  "Key 2"
+#define KEY_3  "Key 3"
+#define KEY_4  "Key 4"
+
+typedef struct {
+  uint32 scancode;
+  const char* name;
+  char c;
+  char shifted_c;
+} KeyMapChar;
+
+#define NOP '\0'
+KeyMapChar keyboard_keymap[] = {
+  { 0x00, "ERROR", NOP, NOP },
+  #include "hal/en-us-keyboard.map"
+};
+
+// http://wiki.osdev.org/PS/2_Keyboard
+
 volatile KeyPress last_keypress;
 
 void keyboard_process(uint32 scancode) {
@@ -14,7 +36,7 @@ void keyboard_process(uint32 scancode) {
   // IDEA: Clang's list of node types, expression types.
   last_keypress.was_released = key_released;
   // EXPERIMENTAL.
-  last_keypress.c = 'X';
+  last_keypress.c = keyboard_keymap[scancode].c;
   last_keypress.is_printable = true;
 }
 
