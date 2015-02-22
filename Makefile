@@ -5,11 +5,11 @@
 OBJECTS = kmain.o kmain_asm.o \
           klib/base.o klib/console.o klib/debug.o \
 	  klib/strings.o \
-	  sys/io.o \
-	  sys/kernel_asm.o \
+	  sys/io.o sys/kernel_asm.o \
 	  sys/gdt.o sys/gdt_asm.o \
 	  sys/idt.o sys/idt_asm.o \
-	  sys/isr.o sys/isr_asm.o
+	  sys/isr.o sys/isr_asm.o \
+          hal/keyboard.o
 
 CC = gcc
 CCFLAGS = -m32 -nostdlib -nostdinc -fno-builtin -fno-stack-protector \

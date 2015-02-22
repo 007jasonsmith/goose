@@ -1,11 +1,11 @@
 #include "sys/isr.h"
 
+#include "hal/keyboard.h"
 #include "klib/debug.h"
 #include "klib/types.h"
 #include "sys/io.h"
 #include "sys/idt.h"
 #include "sys/kernel.h"
-#include "sys/keyboard_us.h"
 
 // Registers when the ISR was triggered. Used for (hopefully) diagnosing bugs.
 typedef struct {
@@ -208,7 +208,7 @@ void isr_install() {
   outb(0x43, 0x36);
   outb(0x40, divisor & 0xFF);
   outb(0x40, divisor >> 8);
- 
+
   // TODO(chris): Wrap this in a file "asm_ops.h" or similer.
   // Safe to handle interrupts.
   __asm__ __volatile__ ("sti");
@@ -245,25 +245,6 @@ void handle_timer(regs* r) {
   }
 }
 
-void handle_keyboard(regs* r) {
-  if (r->int_no != 33) {
-    debug_log("Error: Interrupt doesn't match expected.");
-  }
-
-  uint32 scancode;
-  scancode = inb(0x60);
-
-  // The MSB of the scancode is whether or not the key was released.
-  bool key_released = (scancode & 0x80);
-  scancode &= ~0x80;  // Clear the flag.
-
-  char key_name[] = "?";
-  key_name[0] = kbdus[scancode];
-  debug_log("keypress[%d] %s: %s",
-	    scancode, (key_released ? "RELEASED" : "PRESSED"),
-  	    key_name);
-}
-
 // Handles IRQs. The mechanism is the same for interrupts, but we use a separate
 // function to send the "End of Interrupt" command (0x20) to hardware.
 void irq_handler(regs* r) {
@@ -274,12 +255,17 @@ void irq_handler(regs* r) {
     outb(0xA0, 0x20);
   }
 
+  // TODO(chrsmith): Put this into a union with the other switch case variables.
+  uint32 scancode;
+
   switch (irq_no) {
   case 0:
     handle_timer(r);
     break;
   case 1:
-    handle_keyboard(r);
+    // Keyboard
+    scancode = inb(0x60);
+    keyboard_process(scancode);
     break;
   default:
     debug_log("Unknown IRQ[%d]", irq_no);

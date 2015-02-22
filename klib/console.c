@@ -1,5 +1,6 @@
 #include "klib/console.h"
 
+#include "hal/keyboard.h"
 #include "klib/base.h"
 #include "klib/strings.h"
 #include "klib/types.h"
@@ -120,13 +121,17 @@ void con_writeline_va(WindowId win, const char* fmt, va_list args) {
   base_printf("\n", &con_win_print_char_active);
 }
 
-// Read text into the buffer, blocking until the return key is pressed.
-// Output is echoed to the console.
-void con_win_readline(WindowId win, char* buffer, size buffer_size) {
-  // TODO(chris): Implement me. This will be hard.
-  win++;
-  buffer++;
-  buffer_size++;
+char con_win_readkey(WindowId win) {
+  KeyPress key;
+  do {
+    keyboard_getchar(&key);
+  } while (!key.is_printable);
+
+  char msg[] = "?";
+  msg[0] = key.c;
+  con_write(win, msg);
+
+  return key.c;
 }
 
 void con_init_window(Window* win, const char* title,

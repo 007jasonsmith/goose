@@ -19,14 +19,17 @@ void kmain(void) {
 
   con_initialize();
   con_write(HEADER_WIN, "Goose %s", version);
-  con_writeline(OUTPUT_WIN, "Hello from klib!");
 
-  for (int i = 0; i < 100; i++) {
-    con_writeline(OUTPUT_WIN, "Idx %d %d %d", i, i, i);
-  }
+  con_writeline(OUTPUT_WIN, "World's most basic I/O program.");
+  con_write(OUTPUT_WIN, "Press a character: ");
+  con_win_readkey(OUTPUT_WIN);
+  con_writeline(OUTPUT_WIN, "<newline>");
+  con_writeline(OUTPUT_WIN, "Thanks!");
 
-  // Wait forever.
-  while(true) ;
+  // Crash, yo!
+  //int denum = 1;
+  //int result = 0 / (denum - 1);
+  //con_writeline(OUTPUT_WIN, "Result was %d", result);
 
   debug_log("Kernel halted.");
 }

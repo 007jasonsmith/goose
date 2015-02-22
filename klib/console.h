@@ -89,8 +89,12 @@ void con_write_va(WindowId win, const char* fmt, va_list args);
 void con_writeline(WindowId win, const char* fmt, ...);
 void con_writeline_va(WindowId win, const char* fmt, va_list args);
 
+// Read the next printable key from the keyboard, echoing it to the window.
+// ('\n' and '\t' are considered printable.)
+char con_win_readkey(WindowId win);
+
 // Read text into the buffer, blocking until the return key is pressed.
 // Output is echoed to the console.
-void con_win_readline(WindowId win, char* buffer, size buffer_size);
+// void con_win_readline(WindowId win, char* buffer, size buffer_size);
 
 #endif  // SYS_CONSOLE_H_
