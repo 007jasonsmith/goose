@@ -1,5 +1,6 @@
 #include "hal/keyboard.h"
 
+#include "klib/debug.h"
 #include "klib/types.h"
 
 // Load the keymap file.
@@ -8,6 +9,7 @@ KeyboardKey keyboard_keymap[] = {
   { 0x00, "ERROR", NOP, NOP },
   #include "hal/en-us-keyboard.map"
 };
+const uint32 keyboard_keymap_size = sizeof(keyboard_keymap) / sizeof(KeyboardKey);
 #undef NOP
 
 // http://wiki.osdev.org/PS/2_Keyboard
@@ -21,7 +23,10 @@ void keyboard_process(uint32 scancode) {
   scancode &= ~0x80;
 
   // EXPERIMENTAL - Keymap not finished yet.
-  if (scancode > 0x1C) return;
+  if (scancode > keyboard_keymap_size) {
+    debug_log("Got unknown keyboard scancode[%d]", scancode);
+    return;
+  }
 
   // TODO(chrsmith): Implement atomic reads/writes for crying out loud!
   // TODO(chrsmith): Store in a lock-free ring buffer?
@@ -32,8 +37,9 @@ void keyboard_process(uint32 scancode) {
 
 void keyboard_getchar(char* c) {
   uint32 starting_generation = key_generation;
-  while (!last_keypress.was_released &&
-         last_keypress.key.c != '\0' &&
+  debug_log("keyboard_getchar for generation %d", starting_generation);
+  while (last_keypress.was_released ||
+         last_keypress.key.c == '\0' ||
          key_generation == starting_generation) {
     // Wait for the right condition...
   }
