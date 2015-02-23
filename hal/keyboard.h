@@ -17,7 +17,7 @@ typedef struct {
 
 typedef struct {
   KeyboardKey key;
-  bool was_released;
+  bool was_pressed;
 } KeyPress;
 
 // Handle the keyboard interrupt taking the scancode and moving into

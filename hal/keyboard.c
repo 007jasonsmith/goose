@@ -19,26 +19,37 @@ volatile KeyPress last_keypress;
 
 void keyboard_process(uint32 scancode) {
   // The most signifgant bit of a scancode is whether or not the key was released.
-  bool key_released = (scancode & 0x80);
+  bool key_pressed = !(scancode & 0x80);
   scancode &= ~0x80;
 
-  // EXPERIMENTAL - Keymap not finished yet.
   if (scancode > keyboard_keymap_size) {
-    debug_log("Got unknown keyboard scancode[%d]", scancode);
+    debug_log("Got unknown key scancode[%d]", scancode);
     return;
+  }
+
+  // EXPERIMENTAL
+  if (key_pressed && scancode >= keyboard_keymap_size) {
+    debug_log("Unknown keypress. Scancode: %d", scancode);
+  }
+
+  if (scancode >= keyboard_keymap_size) {
+    return;
+  }
+  if (key_pressed) {
+    key_generation++;
+    debug_log("Key '%s'", keyboard_keymap[scancode].name);
   }
 
   // TODO(chrsmith): Implement atomic reads/writes for crying out loud!
   // TODO(chrsmith): Store in a lock-free ring buffer?
-  key_generation++;
   last_keypress.key = keyboard_keymap[scancode];
-  last_keypress.was_released = key_released;
+  last_keypress.was_pressed = key_pressed;
 }
 
 void keyboard_getchar(char* c) {
   uint32 starting_generation = key_generation;
   debug_log("keyboard_getchar for generation %d", starting_generation);
-  while (last_keypress.was_released ||
+  while (!last_keypress.was_pressed ||
          last_keypress.key.c == '\0' ||
          key_generation == starting_generation) {
     // Wait for the right condition...

@@ -30,26 +30,26 @@
 { 0x19, "P",         'p', 'P' },
 { 0x1A, "[",         '[', '{' },
 { 0x1B, "]",         ']', '}' },
-{ 0x1C, "\\",       '\\', '|' },
+{ 0x1C, "`",         '`', '~' },
 
 // Third row
-{ 0x1D, "CapsLock",  NOP, NOP },
+{ 0x1D, "L Ctrl",    NOP, NOP },
 { 0x1E, "A",         'a', 'A' },
 { 0x1F, "S",         's', 'S' },
 { 0x20, "D",         'd', 'D' },
 { 0x21, "F",         'f', 'F' },
-{37 0x22, "G",         'g', 'G' },
+{ 0x22, "G",         'g', 'G' },
 { 0x23, "H",         'h', 'H' },
 { 0x24, "J",         'j', 'J' },
 { 0x25, "K",         'k', 'K' },
 { 0x26, "L",         'l', 'L' },
 { 0x27, ";",         ';', ':' },
 { 0x28, "'",       '\'', '\"' },
-{ 0x29, "Enter",     NOP, NOP },
+{ 0x29, "???",       '?', '?' },
 
 // Fourth row
 { 0x2A, "L Shift",   NOP, NOP },
-{ 0x2B, "#",         NOP, NOP },  // 102-key only (???)
+{ 0x2B, "\",         '\', '|' },  // 102-key only (???)
 { 0x2C, "Z",         'z', 'Z' },
 { 0x2D, "X",         'x', 'X' },
 { 0x2E, "C",         'c', 'C' },
@@ -63,11 +63,6 @@
 { 0x36, "R Shift",   NOP, NOP },
 
 // Fifth row
-{ 0x36, "L Ctrl",    NOP, NOP },
+{ 0x36, "????",      '?', '?' },
 { 0x37, "L OS Key",  NOP, NOP },
-{ 0x38, "L Alt",     NOP, NOP },
-{ 0x39, "Spacebar",  ' ', ' ' },
-{ 0x40, "R Alt",     NOP, NOP },
-{ 0x41, "R OS Key",  NOP, NOP },
-{ 0x42, "R OS Key2", NOP, NOP },
-{ 0x43, "R Ctrl",    NOP, NOP }
+{ 0x38, "Spacebar",  ' ', ' ' }
