@@ -25,6 +25,9 @@ typedef struct {
 void keyboard_process(uint32 scancode);
 
 // Wait until a printable character is pressed.
-void keyboard_getchar(char* c);
+void keyboard_get_char(char* c);
+
+// Wait until the next key is pressed.
+KeyPress keyboard_get_keypress();
 
 #endif  // HAL_KEYBOARD_H_

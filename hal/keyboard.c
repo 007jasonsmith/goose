@@ -17,6 +17,8 @@ const uint32 keyboard_keymap_size = sizeof(keyboard_keymap) / sizeof(KeyboardKey
 volatile uint32 key_generation = 0;
 volatile KeyPress last_keypress;
 
+void keyboard_wait_for_keypress();
+
 void keyboard_process(uint32 scancode) {
   // The most signifgant bit of a scancode is whether or not the key was released.
   bool key_pressed = !(scancode & 0x80);
@@ -38,13 +40,22 @@ void keyboard_process(uint32 scancode) {
   last_keypress.was_pressed = key_pressed;
 }
 
-void keyboard_getchar(char* c) {
+void keyboard_wait_for_keypress() {
   uint32 starting_generation = key_generation;
-  debug_log("keyboard_getchar for generation %d", starting_generation);
   while (!last_keypress.was_pressed ||
-         last_keypress.key.c == '\0' ||
-         key_generation == starting_generation) {
-    // Wait for the right condition...
+	 key_generation == starting_generation) {
+    // Wait.
   }
+}
+
+void keyboard_get_char(char* c) {
+  do {
+    keyboard_wait_for_keypress();
+  } while (last_keypress.key.c == '\0');
   *c = last_keypress.key.c;
+}
+
+KeyPress keyboard_get_keypress() {
+  keyboard_wait_for_keypress();
+  return last_keypress;
 }

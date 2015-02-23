@@ -20,6 +20,7 @@ Window* con_win_get_active();
 void con_win_set_active(Window* win);
 
 void con_win_print_char_active(char c);
+void con_win_erase_char_active();
 void con_set_cursor(uint8 x, uint8 y);
 void con_set_char(uint8 x, uint8 y, char c);
 void con_set_color(uint8 x, uint8 y, Color foreground, Color background);
@@ -66,6 +67,17 @@ void con_win_print_char_active(char c) {
   }
 }
 
+void con_win_erase_char_active() {
+  Window* win = con_win_get_active();
+  if (win->cursor_col == 0) {
+    return;
+  }
+  win->cursor_col--;
+  con_set_char(win->offset_x + win->cursor_col,
+	       win->offset_y + win->cursor_line,
+	       ' ');
+}
+
 // Initialize the console. Clears the screen, initializes data structures, etc.
 void con_initialize() {
   // Disable the console blink. This also means we can use up to 16 colors.
@@ -92,10 +104,13 @@ void con_initialize() {
   con_set_cursor(79, 24);
 }
 
-void con_write(WindowId win, const char* fmt, ...) {
+void con_write(WindowId window, const char* fmt, ...) {
+  Window* win = &con_windows[window];
+  con_win_set_active(win);
+
   va_list args;
   va_start(args, fmt);
-  con_write_va(win, fmt, args);
+  con_write_va(window, fmt, args);
   va_end(args);
 }
 
@@ -106,10 +121,13 @@ void con_write_va(WindowId window, const char* fmt, va_list args) {
   base_printf_va(fmt, args, &con_win_print_char_active);
 }
 
-void con_writeline(WindowId win, const char* fmt, ...) {
+void con_writeline(WindowId window, const char* fmt, ...) {
+  Window* win = &con_windows[window];
+  con_win_set_active(win);
+
   va_list args;
   va_start(args, fmt);
-  con_write_va(win, fmt, args);
+  con_write_va(window, fmt, args);
   va_end(args);
 
   base_printf("\n", &con_win_print_char_active);
@@ -121,11 +139,46 @@ void con_writeline_va(WindowId win, const char* fmt, va_list args) {
   base_printf("\n", &con_win_print_char_active);
 }
 
-char con_win_readkey(WindowId win) {
+char con_win_readkey(WindowId window) {
+  Window* win = &con_windows[window];
+  con_win_set_active(win);
+
   char c;
-  keyboard_getchar(&c);
-  con_write(win, "%c", c);
+  keyboard_get_char(&c);
+  con_write(window, "%c", c);
   return c;
+}
+
+void con_win_readline(WindowId window, char* buffer, size buffer_size) {
+  Window* win = &con_windows[window];
+  con_win_set_active(win);  
+
+  size i = 0;
+  buffer[buffer_size - 1] = 0;
+
+  while (true) {
+    KeyPress key_press = keyboard_get_keypress();
+    if (str_compare(key_press.key.name, "Enter")) {
+      buffer[i] = 0;
+      con_write(window, "%c", '\n');
+      return;
+    }
+    if (str_compare(key_press.key.name, "Backspace")) {
+      if (i == 0) continue;
+      i--;
+      buffer[i] = ' ';
+      con_win_erase_char_active();
+    }
+    if (key_press.key.c != '\0') {
+      buffer[i] = key_press.key.c;
+      con_write(window, "%c", key_press.key.c);
+      i++;
+      if (i >= buffer_size - 1) {
+	buffer[i] = 0;
+      }
+    }
+  }
+
 }
 
 void con_init_window(Window* win, const char* title,

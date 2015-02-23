@@ -9,3 +9,16 @@ size str_length(const char* buf) {
   }
   return i;
 }
+
+bool str_compare(const char* lhs, const char* rhs) {
+  while (true) {
+    if (*lhs != *rhs) {
+      return false;
+    }
+    if (*lhs == 0) {
+      return true;
+    }
+    lhs++;
+    rhs++;
+  }
+}

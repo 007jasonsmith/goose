@@ -95,6 +95,6 @@ char con_win_readkey(WindowId win);
 
 // Read text into the buffer, blocking until the return key is pressed.
 // Output is echoed to the console.
-// void con_win_readline(WindowId win, char* buffer, size buffer_size);
+void con_win_readline(WindowId win, char* buffer, size buffer_size);
 
 #endif  // SYS_CONSOLE_H_

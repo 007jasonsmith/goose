@@ -22,10 +22,11 @@ void kmain(void) {
 
   con_writeline(OUTPUT_WIN, "Keyboard echo.");
 
+  char command[256];
   while (true) {
-    con_write(OUTPUT_WIN, ": ");
-    char c = con_win_readkey(OUTPUT_WIN);
-    con_writeline(OUTPUT_WIN, "\nRead '%c'", c);
+    con_write(OUTPUT_WIN, "> ");
+    con_win_readline(OUTPUT_WIN, command, 256);
+    con_writeline(OUTPUT_WIN, "Executing '%s'", command);
   }
 
   // Crash, yo!
