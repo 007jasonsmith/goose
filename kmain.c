@@ -1,5 +1,6 @@
 #include "klib/console.h"
 #include "klib/debug.h"
+#include "klib/strings.h"
 #include "sys/gdt.h"
 #include "sys/idt.h"
 #include "sys/isr.h"
@@ -27,38 +28,16 @@ void kmain(void) {
     con_write(OUTPUT_WIN, "> ");
     con_win_readline(OUTPUT_WIN, command, 256);
     con_writeline(OUTPUT_WIN, "Executing '%s'", command);
-  }
 
-  // Crash, yo!
-  //int denum = 1;
-  //int result = 0 / (denum - 1);
-  //con_writeline(OUTPUT_WIN, "Result was %d", result);
+    if (str_compare(command, "crash")) {
+      int denum = 1;
+      int result = 0 / (denum - 1);
+      con_writeline(OUTPUT_WIN, "Result was %d", result);
+    }
+    if (str_compare(command, "exit")) {
+      break;
+    }
+  }
 
   debug_log("Kernel halted.");
 }
-#if 0
-void kmain_crash() {
-  fb_println("Goose %s - %s", version, "divide by zero crash ed.");
-
-  // Division by Zero
-  int denum = 1;
-  int result = 0 / (denum - 1);
-  fb_println("Result was %d", result);
-}
-
-void kmain_collatz_conjector() {
-  fb_println("Goose %s - %s", version, "Collatz conjecture ed");
-  for (int i = 2; i < 9; i++) {
-    fb_println("===== Processing %d =====", i);
-    int n = i;
-    while (n != 1) {
-      fb_println("    %d", n);
-      if (n % 2 == 1) {
-	n = n * 3 + 1;
-      } else {
-	n /= 2;
-      }
-    }
-  }
-}
-#endif
