@@ -54,6 +54,7 @@ clean:
 	rm -rf *.o        \
                ./klib/*.o \
                ./sys/*.o  \
+               ./hal/*.o  \
                kernel.elf \
                os.iso     \
                iso/boot/kernel.elf

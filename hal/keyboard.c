@@ -22,26 +22,18 @@ void keyboard_process(uint32 scancode) {
   bool key_pressed = !(scancode & 0x80);
   scancode &= ~0x80;
 
-  if (scancode > keyboard_keymap_size) {
-    debug_log("Got unknown key scancode[%d]", scancode);
-    return;
-  }
-
-  // EXPERIMENTAL
-  if (key_pressed && scancode >= keyboard_keymap_size) {
-    debug_log("Unknown keypress. Scancode: %d", scancode);
-  }
-
   if (scancode >= keyboard_keymap_size) {
+    if (key_pressed) {
+      debug_log("Unknown key scancode[%d]", scancode);
+    }
     return;
-  }
-  if (key_pressed) {
-    key_generation++;
-    debug_log("Key '%s'", keyboard_keymap[scancode].name);
   }
 
   // TODO(chrsmith): Implement atomic reads/writes for crying out loud!
   // TODO(chrsmith): Store in a lock-free ring buffer?
+  if (key_pressed) {
+    key_generation++;
+  }
   last_keypress.key = keyboard_keymap[scancode];
   last_keypress.was_pressed = key_pressed;
 }

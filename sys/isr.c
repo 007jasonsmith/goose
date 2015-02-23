@@ -237,12 +237,7 @@ void handle_timer(regs* r) {
   if (r->int_no != 32) {
     debug_log("Error: Interrupt doesn't match expected.");
   }
-
-  static int ticks = 0;
-  ticks++;
-  if (ticks % 100 == 0) {
-    debug_log("tick");
-  }
+  // TODO(chris): Thread scheduling or something?
 }
 
 // Handles IRQs. The mechanism is the same for interrupts, but we use a separate
