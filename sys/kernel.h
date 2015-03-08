@@ -3,6 +3,8 @@
 
 // Exit function for the kernel. Once you call this nothing can
 // possibly happen again.
+extern "C" {
 void kernel_exit(void);
+}
 
 #endif  // SYS_KERNEL_H_

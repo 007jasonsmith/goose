@@ -3,6 +3,8 @@
 
 #include "klib/types.h"
 
+extern "C" {
+
 // NOTE: These are C-stubs for functions written in assembly,
 // see io.s.
 
@@ -23,5 +25,7 @@ void outb(uint32 port, uint32 data);
   *  @return      The read byte
   */
 unsigned char inb(uint32 port);
+
+}
 
 #endif  // SYS_IO_H_

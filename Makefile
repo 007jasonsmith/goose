@@ -14,7 +14,8 @@ OBJECTS = kmain.o kmain_asm.o \
 CC = gcc
 CCFLAGS = -m32 -nostdlib -nostdinc -fno-builtin -fno-stack-protector \
          -nostartfiles -nodefaultlibs -Wall -Wextra -Werror -c \
-         -std=c11 \
+         -fno-exceptions -fno-rtti \
+         -std=c++11 \
 	 -I .
 
 LD = ld
@@ -44,7 +45,7 @@ os.iso: kernel.elf
 run: os.iso
 	bochs -f bochsrc.txt -q
 
-%.o: %.c
+%.o: %.cpp
 	$(CC) $(CCFLAGS) $< -o $@
 
 %o: %.s

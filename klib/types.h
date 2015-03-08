@@ -19,10 +19,6 @@ typedef unsigned short uint16;
 typedef int int32;
 typedef unsigned int uint32;
 
-typedef int8 bool;
-#define true 1
-#define false 0
-
 // size is used as an index into any form of array. It is defined such that
 // it will work even if the raw pointer size changes.
 typedef uint32 size;

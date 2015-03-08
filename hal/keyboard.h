@@ -8,17 +8,22 @@
 // TODO(chris): Support capslock.
 // TODO(chris): Support shift+x for capitals, etc.
 
-typedef struct {
+struct KeyboardKey {
   uint32 scancode;
   const char* name;
   char c;
   char shifted_c;
-} KeyboardKey;
 
-typedef struct {
+  KeyboardKey& operator=(const KeyboardKey&);
+};
+
+struct KeyPress {
+  KeyPress();
+  KeyPress(const KeyPress&);
+
   KeyboardKey key;
   bool was_pressed;
-} KeyPress;
+};
 
 // Handle the keyboard interrupt taking the scancode and moving into
 // internal buffers.
