@@ -21,6 +21,8 @@ align 4                         ; the code must be 4 byte aligned
 
 global loader
 loader:                         ; the loader label (entry point from linker.ldt)
+	; TODO(chris): Stop using this and rely on a different boot loader.
+	push ebx                ; Push EBX, where GRUB stores the Memory Map info.
 	call kmain
 	call kernel_exit	; If the kernel does return. Shut it down.
 

@@ -9,10 +9,52 @@
 void kmain_crash();
 void kmain_collatz_conjector();
 
+// EXPERIMENTAL
+// Parse memory that is laid out from GRUB.
+// http://wiki.osdev.org/Detecting_Memory_%28x86%29#Memory_Map_Via_GRUB
+typedef struct aout_symbol_table {
+  unsigned long tabsize;
+  unsigned long strsize;
+  unsigned long addr;
+  unsigned long reserved;
+} aout_symbol_table_t;
+
+typedef struct elf_section_header_table {
+  unsigned long num;
+  unsigned long size;
+  unsigned long addr;
+  unsigned long shndx;
+} elf_section_header_table_t;
+
+typedef struct multiboot_info {
+  unsigned long flags;
+  unsigned long mem_lower;
+  unsigned long mem_upper;
+  unsigned long boot_device;
+  unsigned long cmdline;
+  unsigned long mods_count;
+  unsigned long mods_addr;
+  union {
+    aout_symbol_table_t aout_sym;
+    elf_section_header_table_t elf_sec;
+  } u;
+  unsigned long mmap_length;
+  unsigned long mmap_addr;
+} multiboot_info_t;
+
+typedef struct multiboot_memory_map {
+  unsigned int size;
+  unsigned int base_addr_low,base_addr_high;
+  // You can also use: unsigned long long int base_addr; if supported.
+  unsigned int length_low,length_high;
+  // You can also use: unsigned long long int length; if supported.
+  unsigned int type;
+} multiboot_memory_map_t;
+
 extern "C" {
 
 const char version[] = "v0.1a";
-void kmain(void) {
+void kmain(multiboot_info_t* mbt, unsigned int magic) {
   debug_log("Kernel started.");
 
   // Initialize core CPU-based systems.
@@ -22,6 +64,22 @@ void kmain(void) {
 
   con_initialize();
   con_write(HEADER_WIN, "Goose %s", version);
+
+  // EXPERIMENTAL
+  con_writeline(OUTPUT_WIN, "memory map = %p, magic = %d", mbt, magic);
+  con_writeline(OUTPUT_WIN, "mmap_length = %d", mbt->mmap_length);
+  con_writeline(OUTPUT_WIN, "mmap_addr = %d", mbt->mmap_addr);
+
+  multiboot_memory_map_t* mmap = (multiboot_memory_map*) mbt->mmap_addr;
+  int map_idx = 0;
+  while (((unsigned int) mmap) < mbt->mmap_addr + mbt->mmap_length) {
+    con_writeline(OUTPUT_WIN, "Memory Map [%d][%p] : size %d, type %d", map_idx, mmap, mmap->size, mmap->type);
+    con_writeline(OUTPUT_WIN, "  address %d / %d", mmap->base_addr_low, mmap->base_addr_high);
+    con_writeline(OUTPUT_WIN, "  length  %d / %d", mmap->length_low, mmap->length_high);
+
+    mmap = (multiboot_memory_map_t*) ( (unsigned int) mmap + mmap->size + sizeof(unsigned int) );
+    map_idx++;
+  }
 
   con_writeline(OUTPUT_WIN, "Keyboard echo.");
 
