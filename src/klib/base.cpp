@@ -6,6 +6,7 @@
 // TODO(chris): Rename to base_.
 void print_str(const char* msg, OutputFn fn);
 void print_int(int x, OutputFn fn);
+void print_uint(uint32 x, OutputFn fn);
 void print_hex(int x, OutputFn fn);
 void print_bin(int x, OutputFn fn);
 
@@ -53,6 +54,10 @@ void base_printf_va(const char* msg, va_list args, OutputFn fn, ...) {
       char_arg = va_arg(args, char);
       fn(char_arg);
       break;
+    case 'u':
+      uint_arg = va_arg(args, uint32);
+      print_uint(uint_arg, fn);
+      break;
     case 'd':
       int_arg = va_arg(args, int);
       if (int_arg < 0) {
@@ -94,6 +99,14 @@ void print_str(const char* msg, OutputFn fn) {
 }
 
 void print_int(int x, OutputFn fn) {
+  int digit = x % 10;
+  if (x >= 10) {
+    print_int(x / 10, fn);
+  }
+  fn('0' + digit);
+}
+
+void print_uint(uint32 x, OutputFn fn) {
   int digit = x % 10;
   if (x >= 10) {
     print_int(x / 10, fn);

@@ -13,48 +13,48 @@ void kmain_collatz_conjector();
 // Parse memory that is laid out from GRUB.
 // http://wiki.osdev.org/Detecting_Memory_%28x86%29#Memory_Map_Via_GRUB
 typedef struct aout_symbol_table {
-  unsigned long tabsize;
-  unsigned long strsize;
-  unsigned long addr;
-  unsigned long reserved;
+  uint32 tabsize;
+  uint32 strsize;
+  uint32 addr;
+  uint32 reserved;
 } aout_symbol_table_t;
 
 typedef struct elf_section_header_table {
-  unsigned long num;
-  unsigned long size;
-  unsigned long addr;
-  unsigned long shndx;
+  uint32 num;
+  uint32 size;
+  uint32 addr;
+  uint32 shndx;
 } elf_section_header_table_t;
 
 typedef struct multiboot_info {
-  unsigned long flags;
-  unsigned long mem_lower;
-  unsigned long mem_upper;
-  unsigned long boot_device;
-  unsigned long cmdline;
-  unsigned long mods_count;
-  unsigned long mods_addr;
+  uint32 flags;
+  uint32 mem_lower;
+  uint32 mem_upper;
+  uint32 boot_device;
+  uint32 cmdline;
+  uint32 mods_count;
+  uint32 mods_addr;
   union {
     aout_symbol_table_t aout_sym;
     elf_section_header_table_t elf_sec;
   } u;
-  unsigned long mmap_length;
-  unsigned long mmap_addr;
+  uint32 mmap_length;
+  uint32 mmap_addr;
 } multiboot_info_t;
 
 typedef struct multiboot_memory_map {
-  unsigned int size;
-  unsigned int base_addr_low,base_addr_high;
-  // You can also use: unsigned long long int base_addr; if supported.
-  unsigned int length_low,length_high;
-  // You can also use: unsigned long long int length; if supported.
-  unsigned int type;
+  uint32 size;
+  uint32 base_addr_low,base_addr_high;
+  // You can also use: uint32 long int base_addr; if supported.
+  uint32 length_low,length_high;
+  // You can also use: uint32 long int length; if supported.
+  uint32 type;
 } multiboot_memory_map_t;
 
 extern "C" {
 
 const char version[] = "v0.1a";
-void kmain(multiboot_info_t* mbt, unsigned int magic) {
+void kmain(multiboot_info_t* mbt, uint32 magic) {
   debug_log("Kernel started.");
 
   // Initialize core CPU-based systems.
@@ -67,17 +67,17 @@ void kmain(multiboot_info_t* mbt, unsigned int magic) {
 
   // EXPERIMENTAL
   con_writeline(OUTPUT_WIN, "memory map = %p, magic = %d", mbt, magic);
-  con_writeline(OUTPUT_WIN, "mmap_length = %d", mbt->mmap_length);
-  con_writeline(OUTPUT_WIN, "mmap_addr = %d", mbt->mmap_addr);
+  con_writeline(OUTPUT_WIN, "mem %u %u KiB / %u %u MiB", mbt->mem_lower, mbt->mem_upper, mbt->mem_lower / 1024, mbt->mem_upper / 1024);
 
   multiboot_memory_map_t* mmap = (multiboot_memory_map*) mbt->mmap_addr;
   int map_idx = 0;
-  while (((unsigned int) mmap) < mbt->mmap_addr + mbt->mmap_length) {
-    con_writeline(OUTPUT_WIN, "Memory Map [%d][%p] : size %d, type %d", map_idx, mmap, mmap->size, mmap->type);
-    con_writeline(OUTPUT_WIN, "  address %d / %d", mmap->base_addr_low, mmap->base_addr_high);
-    con_writeline(OUTPUT_WIN, "  length  %d / %d", mmap->length_low, mmap->length_high);
+  while (((uint32) mmap) < mbt->mmap_addr + mbt->mmap_length) {
+    con_writeline(OUTPUT_WIN, "Memory Map [%u][%p][type %u]", map_idx, mmap, mmap->type);
+    con_writeline(OUTPUT_WIN, "  address %u / %u // %u / %u", mmap->base_addr_low, mmap->base_addr_high, mmap->base_addr_low / 1024, mmap->base_addr_high / 1024);
+    con_writeline(OUTPUT_WIN, "  length  %u / %u // %u / %u", mmap->length_low, mmap->length_high, mmap->length_low / 1024, mmap->length_high / 1024);
+    con_writeline(OUTPUT_WIN, "  to  %u / %u", mmap->length_low + mmap->base_addr_low, mmap->length_high + mmap->base_addr_high);
 
-    mmap = (multiboot_memory_map_t*) ( (unsigned int) mmap + mmap->size + sizeof(unsigned int) );
+    mmap = (multiboot_memory_map_t*) ( (uint32) mmap + mmap->size + sizeof(uint32) );
     map_idx++;
   }
 
