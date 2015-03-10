@@ -12,13 +12,13 @@ void print_bin(int x, OutputFn fn);
 
 // TODO(chris): Conform to some standard. (Ideally Go's printf, not libc's.)
 void base_printf(const char* msg, OutputFn fn, ...) {
-  va_list args;
-  va_start(args, fn);
+  vararg_list args;
+  vararg_start(args, fn);
   base_printf_va(msg, args, fn);
-  va_end(args);
+  vararg_end(args);
 }
 
-void base_printf_va(const char* msg, va_list args, OutputFn fn, ...) {
+void base_printf_va(const char* msg, vararg_list args, OutputFn fn, ...) {
   size len = str_length(msg);
   for (size i = 0; i < len; i++) {
     char c = msg[i];
@@ -44,22 +44,22 @@ void base_printf_va(const char* msg, va_list args, OutputFn fn, ...) {
 
     // TODO(chris): Put these into a union.
     char char_arg;
-    int int_arg;
+    int32 int_arg;
     uint32 uint_arg;
     char* char_ptr;
     uint32 ptr_address;
 
     switch (c) {
     case 'c':
-      char_arg = va_arg(args, char);
+      char_arg = vararg_arg(args, char);
       fn(char_arg);
       break;
     case 'u':
-      uint_arg = va_arg(args, uint32);
+      uint_arg = vararg_arg(args, uint32);
       print_uint(uint_arg, fn);
       break;
     case 'd':
-      int_arg = va_arg(args, int);
+      int_arg = vararg_arg(args, int32);
       if (int_arg < 0) {
         fn('-');
         int_arg *= -1;
@@ -67,17 +67,17 @@ void base_printf_va(const char* msg, va_list args, OutputFn fn, ...) {
       print_int(int_arg, fn);
       break;
     case 's':
-      char_ptr = va_arg(args, char*);
+      char_ptr = vararg_arg(args, char*);
       print_str(char_ptr, fn);
       break;
     case 'b':
-      uint_arg = va_arg(args, uint32);
+      uint_arg = vararg_arg(args, uint32);
       print_str("0b", fn);
       print_bin(uint_arg, fn);
       break;
     case 'p':
     case 'h':  // pointers and hex behave the same.
-      ptr_address = va_arg(args, uint32);
+      ptr_address = vararg_arg(args, uint32);
       print_str("0x", fn);
       print_hex(ptr_address, fn);
       break;

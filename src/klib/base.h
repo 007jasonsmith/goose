@@ -1,12 +1,14 @@
 #ifndef KLIB_BASE_H_
 #define KLIB_BASE_H_
 
+#include "klib/types.h"
+
 // THIS WILL TOTALLY BREAK IF THE KERNEL'S CALLING CONVENTION CHANGES.
 // TODO(chris): Create a unit test for this.
-typedef unsigned char *va_list;
-#define va_start(list, param) (list = (((va_list)&param) + sizeof(param)))
-#define va_arg(list, type)    (*(type *)((list += sizeof(type)) - sizeof(type)))
-#define va_end(list)          {} /* noop */
+typedef size* vararg_list;
+#define vararg_start(list, param) (list = (((vararg_list)&param) + sizeof(param)))
+#define vararg_arg(list, type)    (*(type *)((list += sizeof(type)) - sizeof(type)))
+#define vararg_end(list)          {} /* noop */
 
 typedef void(*OutputFn)(char);
 
@@ -17,6 +19,6 @@ typedef void(*OutputFn)(char);
 // be called.
 // TODO(chris): base_printf(const char* msg, OutputFn fn);
 void base_printf(const char* msg, OutputFn fn, ...);
-void base_printf_va(const char* msg, va_list args, OutputFn fn, ...);
+void base_printf_va(const char* msg, vararg_list args, OutputFn fn, ...);
 
 #endif  // KLIB_BASE_H_
