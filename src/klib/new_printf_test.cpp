@@ -1,11 +1,14 @@
 #include <string>
 #include "gtest/gtest.h"
 
-enum class ArgType { CHAR, CSTR };
+#include "klib/types.h"
+
+enum class ArgType { CHAR, CSTR, INT32 };
 
 union ArgValue {
   char c;
   const char* cstr;
+  int32 i32;
 };
 
 struct Arg {
@@ -15,6 +18,14 @@ struct Arg {
 
 class ArgAccumulator {
 public:
+  template<typename... Args>
+  static ArgAccumulator Parse(Args... args) {
+    ArgAccumulator acc;
+    acc_args(&acc, args...);
+    return acc;
+  }
+
+
   ArgAccumulator() : count_(0) {}
 
   #define ADD(type1, type2, value_name)  \
@@ -25,6 +36,7 @@ public:
   }
   ADD(char, CHAR, c)
   ADD(char*, CSTR, cstr)
+  ADD(int32, INT32, i32)
   #undef ADD
 
   Arg Get(int idx) {
@@ -67,7 +79,7 @@ TEST(ArgAccumulator, Char) {
   EXPECT_EQ(arg.value.c, 'c');
 }
 
-TEST(ArgAccumulator, CharPtr) {
+TEST(ArgAccumulator, CStr) {
   ArgAccumulator acc;
   acc_args(&acc, "foo");
   EXPECT_EQ(acc.Count(), 1);
@@ -75,6 +87,16 @@ TEST(ArgAccumulator, CharPtr) {
   Arg arg = acc.Get(0);
   EXPECT_EQ(arg.type, ArgType::CSTR);
   EXPECT_STREQ(arg.value.cstr, "foo");
+}
+
+TEST(ArgAccumulator, Int32) {
+  ArgAccumulator acc;
+  acc_args(&acc, 0xffff);
+  EXPECT_EQ(acc.Count(), 1);
+
+  Arg arg = acc.Get(0);
+  EXPECT_EQ(arg.type, ArgType::INT32);
+  EXPECT_EQ(arg.value.i32, 0xffff);
 }
 
 class TestPrinter {
@@ -158,6 +180,40 @@ TEST(BasePrintf, String) {
   TestPrinter p;
   new_printf("alpha [%s]", &p, "alpha");
   EXPECT_STREQ(p.Get(), "alpha [alpha]");
+}
+
+
+template<typename... Args>
+void newer_printf(const char *s, TestPrinter* printer, Args... args) {
+  ArgAccumulator acc;
+  acc_args(&acc, args...);
+  printer->Print(acc.Count());
+  (void)s;
+}
+
+template<typename... Args>
+void newer_printf2(TestPrinter* printer, Args... args) {
+  auto acc = ArgAccumulator::Parse(args...);
+  printer->Print(acc.Get(0).value.i32);
+  printer->Print(acc.Get(1).value.i32);
+  printer->Print(acc.Get(2).value.i32);
+}
+
+
+TEST(NewerPrintf, Basic) {
+  TestPrinter p;
+  newer_printf("ASDF", &p);
+  newer_printf("ASDF", &p, 1);
+  newer_printf("ASDF", &p, 1, 2);
+  EXPECT_STREQ(p.Get(), "012");
+}
+
+TEST(NewerPrintf, Adv) {
+  TestPrinter p;
+  newer_printf2(&p, 1, 2, 3);
+  EXPECT_STREQ(p.Get(), "123");
+  newer_printf2(&p, 4, 5, 6);
+  EXPECT_STREQ(p.Get(), "123456");
 }
 
 int main (int argc, char** argv) {
