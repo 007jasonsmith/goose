@@ -22,6 +22,12 @@ typedef unsigned int uint32;
 typedef long long int int64;
 typedef unsigned long long int uint64;
 
+#define MAX_INT32 int32(2147483647)
+#define MIN_INT32 int32(-2147483648)
+
+#define MAX_UINT32 uint32(4294967295)
+#define MIN_UINT32 uint32(0)
+
 // size is used as an index into any form of array. It is defined such that
 // it will work even if the raw pointer size changes.
 typedef uint32 size;

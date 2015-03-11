@@ -1,3 +1,4 @@
+rm unit-test
 set -e
 set -x
 clear

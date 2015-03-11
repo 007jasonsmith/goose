@@ -7,18 +7,35 @@
 #define SUPPRESS_UNUSED_WARNING(x) \
   (void) (x);
 
-enum class ArgType { CHAR, CSTR, INT32, UINT32 };
+enum class ArgType { CHAR, CSTR, INT32, UINT32, INT64, UINT64 };
 
 union ArgValue {
   char c;
   const char* cstr;
   int32 i32;
   uint32 ui32;
+  int64 i64;
+  uint64 ui64;
 };
 
 struct Arg {
   ArgType type;
   ArgValue value;
+
+  #define OF(type1, type2, value_name) \
+  static Arg Of(const type1 x) {       \
+    Arg arg;                           \
+    arg.type = ArgType::type2;         \
+    arg.value.value_name = x;          \
+    return arg;                        \
+  }
+  OF(char, CHAR, c)
+  OF(char*, CSTR, cstr)
+  OF(int32, INT32, i32)
+  OF(uint32, UINT32, ui32)
+  OF(int64, INT64, i64)
+  OF(uint64, UINT64, ui64)
+  #undef OF
 };
 
 class ArgAccumulator {
@@ -56,6 +73,8 @@ private:
   ADD(char*, CSTR, cstr)
   ADD(int32, INT32, i32)
   ADD(uint32, UINT32, ui32)
+  ADD(int64, INT64, i64)
+  ADD(uint64, UINT64, ui64)
   #undef ADD
 
   static void Accumulate(ArgAccumulator* accumulator) {
@@ -68,10 +87,12 @@ private:
     ArgAccumulator::Accumulate(accumulator, args...);
   }
 
+  // TODO(chris): Error if there are more than X args.
   int count_;
   Arg args_[10];
 };
 
+// TODO(chris): Test max number of args (> 10).
 TEST(ArgAccumulator, NoArgs) {
   ArgAccumulator acc = ArgAccumulator::Parse();
   EXPECT_EQ(acc.Count(), 0);
@@ -111,26 +132,116 @@ TEST(ArgAccumulator, UInt32) {
 
   Arg arg = acc.Get(0);
   EXPECT_EQ(arg.type, ArgType::UINT32);
-  EXPECT_EQ(arg.value.ui32, 0xffff);
+  EXPECT_EQ(arg.value.ui32, ui);
 }
 
-class TestPrinter {
- public:
-  TestPrinter() : msg_("") {}
+TEST(ArgAccumulator, Int64) {
+  int64 i = 0xffffffffffffffff;
+  ArgAccumulator acc = ArgAccumulator::Parse(i);
+  EXPECT_EQ(acc.Count(), 1);
 
-  void Print(char c) {
-    msg_ += c;
+  Arg arg = acc.Get(0);
+  EXPECT_EQ(arg.type, ArgType::INT64);
+  EXPECT_EQ(arg.value.i64, i);
+}
+
+TEST(ArgAccumulator, UInt64) {
+  uint64 ui = 0xffffffffffffffff;
+  ArgAccumulator acc = ArgAccumulator::Parse(ui);
+  EXPECT_EQ(acc.Count(), 1);
+
+  Arg arg = acc.Get(0);
+  EXPECT_EQ(arg.type, ArgType::UINT64);
+  EXPECT_EQ(arg.value.ui64, ui);
+}
+
+class IOutputFn {
+ public:
+  virtual void Print(char c) = 0;
+};
+
+// Wrap a function for pinting characters. Used to provide
+// higher-level primitives, such as printing values in hex,
+// binary, etc.
+//
+// Errors encountered will be printed directly to fn.
+class TypePrinter {
+ public:
+  explicit TypePrinter(IOutputFn* out) : out_(out) {
+    // TODO(chris): CHECK_NOTNULL(out_);
   }
 
-  void Print(const char* msg) {
+  // Print the default value. e.g. base-10.
+  void Print(Arg arg) {
+    switch (arg.type) {
+    case ArgType::CHAR:
+      out_->Print(arg.value.c);
+      break;
+    case ArgType::CSTR:
+      PrintCStr(arg.value.cstr);
+      break;
+    case ArgType::INT32:
+      PrintDec(arg.value.i32);
+      break;
+    case ArgType::UINT32:
+      PrintDec(arg.value.ui32);
+      break;
+    case ArgType::INT64:
+      PrintCStr("TODO-support-int64");
+      break;
+    case ArgType::UINT64:
+      PrintCStr("TODO-support-uint64");
+      break;      
+    }
+  }
+
+ private:
+  void PrintCStr(const char* msg) {
     while (*msg) {
-      msg_ += *msg;
+      out_->Print(*msg);
       msg++;
     }
   }
 
-  void Print(int x) {
-    PrintInt(x);
+  void PrintDec(int32 x) {
+    // LOL, -1*MIN_INT32 == BOOM.
+    if (x == MIN_INT32) {
+      const char* digits = "-2147483648";
+      while (*digits) {
+	out_->Print(*digits);
+	digits++;
+      }
+      return;
+    }
+
+    if (x < 0) {
+      out_->Print('-');
+      x *= -1;
+    }
+
+    int digit = x % 10;
+    if (x >= 10) {
+      PrintDec(x / 10);
+    }
+    out_->Print('0' + digit);
+  }
+
+  void PrintDec(uint32 x) {
+    int digit = x % 10;
+    if (x >= 10) {
+      PrintDec(x / 10);
+    }
+    out_->Print('0' + digit);
+  }
+
+  IOutputFn* out_;  // We do not own.
+};
+
+// Test class wrapping an OutputFn.
+class TestPrinter : public IOutputFn {
+ public:
+  virtual void Print(char c) {
+    msg_ += c;
   }
 
   const char* Get() {
@@ -140,19 +251,59 @@ class TestPrinter {
   void Reset() {
     msg_ = "";
   }
-
  private:
-  void PrintInt(int x) {
-    int digit = x % 10;
-    if (x >= 10) {
-      PrintInt(x / 10);
-    }
-    msg_ += ('0' + digit);
-  }
-
   std::string msg_;
 };
 
+
+TEST(TypePrinter, Basic) {
+  TestPrinter p;
+  TypePrinter tp(&p);
+
+  tp.Print(Arg::Of(uint32(42)));
+  tp.Print(Arg::Of('|'));
+  tp.Print(Arg::Of(-42));
+  EXPECT_STREQ(p.Get(), "42|-42");
+}
+
+TEST(TypePrinter, Chars) {
+  TestPrinter p;
+  TypePrinter tp(&p);
+
+  tp.Print(Arg::Of('['));
+  tp.Print(Arg::Of('\n'));
+  tp.Print(Arg::Of('\t'));
+  tp.Print(Arg::Of(' '));
+  tp.Print(Arg::Of('@'));
+  tp.Print(Arg::Of(']'));
+  EXPECT_STREQ(p.Get(), "[\n\t @]");
+}
+
+
+TEST(TypePrinter, MaxInt32s) {
+  TestPrinter p;
+  TypePrinter tp(&p);
+
+  tp.Print(Arg::Of("max:"));
+  tp.Print(Arg::Of(MAX_INT32));
+  tp.Print(Arg::Of(" min:"));
+  tp.Print(Arg::Of(MIN_INT32));
+  EXPECT_STREQ(p.Get(), "max:2147483647 min:-2147483648");
+}
+
+TEST(TypePrinter, MaxUInt32s) {
+  TestPrinter p;
+  TypePrinter tp(&p);
+
+  tp.Print(Arg::Of("max:"));
+  tp.Print(Arg::Of(MAX_UINT32));
+  tp.Print(Arg::Of(" min:"));
+  tp.Print(Arg::Of(MIN_UINT32));
+  EXPECT_STREQ(p.Get(), "max:4294967295 min:0");
+}
+
+// TODO(chris): Tests for new printf and friends.
+/*
 void new_printf(const char* msg, TestPrinter* printer) {
   // TODO(chris): Account for existing % modifiers.
   while (*msg) {
@@ -179,57 +330,12 @@ void new_printf(const char *s, TestPrinter* printer, T value, Args... args) {
   }    
 }
 
-TEST(BasePrintf, Basic) {
+TEST(Printf, Basic) {
   TestPrinter p;
   new_printf("this is a test", &p);
   EXPECT_STREQ(p.Get(), "this is a test");
 }
-
-TEST(BasePrintf, Number) {
-  TestPrinter p;
-  new_printf("eleven [%d]", &p, 11);
-  EXPECT_STREQ(p.Get(), "eleven [11]");
-}
-
-TEST(BasePrintf, String) {
-  TestPrinter p;
-  new_printf("alpha [%s]", &p, "alpha");
-  EXPECT_STREQ(p.Get(), "alpha [alpha]");
-}
-
-
-template<typename... Args>
-void newer_printf(const char *s, TestPrinter* printer, Args... args) {
-  ArgAccumulator acc = ArgAccumulator::Parse(args...);
-  printer->Print(acc.Count());
-  (void)s;
-}
-
-template<typename... Args>
-void newer_printf2(TestPrinter* printer, Args... args) {
-  auto acc = ArgAccumulator::Parse(args...);
-  printer->Print(acc.Get(0).value.i32);
-  printer->Print(acc.Get(1).value.i32);
-  printer->Print(acc.Get(2).value.i32);
-}
-
-
-TEST(NewerPrintf, Basic) {
-  TestPrinter p;
-  newer_printf("ASDF", &p);
-  newer_printf("ASDF", &p, 1);
-  newer_printf("ASDF", &p, 1, 2);
-  EXPECT_STREQ(p.Get(), "012");
-}
-
-TEST(NewerPrintf, Adv) {
-  TestPrinter p;
-  newer_printf2(&p, 1, 2, 3);
-  EXPECT_STREQ(p.Get(), "123");
-  newer_printf2(&p, 4, 5, 6);
-  EXPECT_STREQ(p.Get(), "123456");
-}
-
+*/
 int main (int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
