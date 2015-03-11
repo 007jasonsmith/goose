@@ -31,9 +31,15 @@ void PrintChar(char c) {
 
 TEST(BasePrintf, Basic) {
   ResetBuffer();
-  base_printf("test %c", &PrintChar, '!');
+  base_printf("this is a test", &PrintChar);
+  EXPECT_STREQ(print_buffer, "this is a test");
+}
 
-  EXPECT_STREQ(print_buffer, "test !");
+TEST(BasePrintf, Chars) {
+  ResetBuffer();
+  base_printf("test: %c", &PrintChar, 'g');
+  //  base_printf("%c %c %c %c %c", &PrintChar, 'a', 'e', 'i', 'o', 'u');
+  EXPECT_STREQ(print_buffer, "a e i o u");
 }
 
 int main (int argc, char** argv) {

@@ -5,10 +5,10 @@
 
 // THIS WILL TOTALLY BREAK IF THE KERNEL'S CALLING CONVENTION CHANGES.
 // TODO(chris): Create a unit test for this.
-typedef size* vararg_list;
+typedef unsigned char* vararg_list;
 #define vararg_start(list, param) (list = (((vararg_list)&param) + sizeof(param)))
 #define vararg_arg(list, type)    (*(type *)((list += sizeof(type)) - sizeof(type)))
-#define vararg_end(list)          {} /* noop */
+#define vararg_end(list)          { list = 0; }
 
 typedef void(*OutputFn)(char);
 
@@ -19,6 +19,6 @@ typedef void(*OutputFn)(char);
 // be called.
 // TODO(chris): base_printf(const char* msg, OutputFn fn);
 void base_printf(const char* msg, OutputFn fn, ...);
-void base_printf_va(const char* msg, vararg_list args, OutputFn fn, ...);
+void base_printf_va(const char* msg, vararg_list args, OutputFn fn);
 
 #endif  // KLIB_BASE_H_

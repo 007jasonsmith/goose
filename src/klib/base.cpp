@@ -18,7 +18,7 @@ void base_printf(const char* msg, OutputFn fn, ...) {
   vararg_end(args);
 }
 
-void base_printf_va(const char* msg, vararg_list args, OutputFn fn, ...) {
+void base_printf_va(const char* msg, vararg_list args, OutputFn fn) {
   size len = str_length(msg);
   for (size i = 0; i < len; i++) {
     char c = msg[i];
@@ -42,18 +42,26 @@ void base_printf_va(const char* msg, vararg_list args, OutputFn fn, ...) {
     }
     c = msg[i + 1];
 
-    // TODO(chris): Put these into a union.
     char char_arg;
-    int32 int_arg;
-    uint32 uint_arg;
-    char* char_ptr;
-    uint32 ptr_address;
 
     switch (c) {
     case 'c':
       char_arg = vararg_arg(args, char);
+      fn('[');
       fn(char_arg);
+      fn(']');
+      fn('[');
+      fn(char_arg & 128 ? '1' : '0');
+      fn(char_arg & 64 ? '1' : '0');
+      fn(char_arg & 32 ? '1' : '0');
+      fn(char_arg & 16 ? '1' : '0');
+      fn(char_arg & 8 ? '1' : '0');
+      fn(char_arg & 4 ? '1' : '0');
+      fn(char_arg & 2 ? '1' : '0');
+      fn(char_arg & 1 ? '1' : '0');
+      fn(']');
       break;
+      /*
     case 'u':
       uint_arg = vararg_arg(args, uint32);
       print_uint(uint_arg, fn);
@@ -81,6 +89,7 @@ void base_printf_va(const char* msg, vararg_list args, OutputFn fn, ...) {
       print_str("0x", fn);
       print_hex(ptr_address, fn);
       break;
+      */
     default:
       // TODO(chris): Panic.
       // debug_log("Error: Unknown format specifier.");

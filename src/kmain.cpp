@@ -78,6 +78,8 @@ void kmain(multiboot_info_t* mbt, uint32 magic) {
     map_idx++;
   }
 
+  con_writeline(DEBUG_WIN, "G[%c]ose", 'o');
+
   con_writeline(OUTPUT_WIN, "Keyboard echo.");
 
   char command[256];
