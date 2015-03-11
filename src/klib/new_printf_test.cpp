@@ -205,6 +205,12 @@ class TypePrinter {
     case ArgType::UINT32:
       PrintHex(arg.value.ui32, 0);
       break;
+    case ArgType::INT64:
+      PrintHex(arg.value.i64, 0);
+      break;
+    case ArgType::UINT64:
+      PrintHex(arg.value.ui64, 0);
+      break;
     default:
       PrintCStr("[ERROR: invalid type for hex]");
     }
@@ -250,6 +256,7 @@ class TypePrinter {
   }
 
   void PrintHex(int32 x, int digits_so_far) {
+    const char kHexDigits[] = "0123456789ABCDEF";
     if (digits_so_far == 0) {
       out_->Print('0');
       out_->Print('x');
@@ -257,13 +264,13 @@ class TypePrinter {
     if (digits_so_far >= 8) {
       return;
     }
-    const char kHexDigits[] = "0123456789ABCDEF";
     int digit_idx = x % 16;
     PrintHex(x / 16, digits_so_far + 1);
     out_->Print(kHexDigits[digit_idx]);
   }
 
   void PrintHex(uint32 x, int digits_so_far) {
+    const char kHexDigits[] = "0123456789ABCDEF";
     if (digits_so_far == 0) {
       out_->Print('0');
       out_->Print('x');
@@ -271,7 +278,35 @@ class TypePrinter {
     if (digits_so_far >= 8) {
       return;
     }
+    int digit_idx = x % 16;
+    PrintHex(x / 16, digits_so_far + 1);
+    out_->Print(kHexDigits[digit_idx]);
+  }
+
+  void PrintHex(int64 x, int digits_so_far) {
     const char kHexDigits[] = "0123456789ABCDEF";
+    if (digits_so_far == 0) {
+      out_->Print('0');
+      out_->Print('x');
+    }
+    if (digits_so_far >= 16) {
+      return;
+    }
+    // int digit_idx = x % 16;
+    int digit_idx = (x & 0b1111);
+    PrintHex(x / 16, digits_so_far + 1);
+    out_->Print(kHexDigits[digit_idx]);
+  }
+
+  void PrintHex(uint64 x, int digits_so_far) {
+    const char kHexDigits[] = "0123456789ABCDEF";
+    if (digits_so_far == 0) {
+      out_->Print('0');
+      out_->Print('x');
+    }
+    if (digits_so_far >= 16) {
+      return;
+    }
     int digit_idx = x % 16;
     PrintHex(x / 16, digits_so_far + 1);
     out_->Print(kHexDigits[digit_idx]);
@@ -357,6 +392,19 @@ TEST(TypePrinter, HexInt32s) {
   tp.Print(Arg::Of(' '));
   tp.PrintHex(Arg::Of(0));
   EXPECT_STREQ(p.Get(), "0x7FFFFFFF 0xFFFFFFFF 0x00000000");
+}
+
+TEST(TypePrinter, HexInt64s) {
+  TestPrinter p;
+  TypePrinter tp(&p);
+
+  tp.PrintHex(Arg::Of(MAX_INT64));
+  tp.Print(Arg::Of(' '));
+  tp.PrintHex(Arg::Of(MIN_INT64));
+  tp.Print(Arg::Of(' '));
+  tp.PrintHex(Arg::Of(MAX_UINT64));
+  EXPECT_STREQ(
+      p.Get(), "0x7FFFFFFFFFFFFFFF 0x8000000000000000 0xFFFFFFFFFFFFFFFF");
 }
 
 TEST(TypePrinter, HexError) {
