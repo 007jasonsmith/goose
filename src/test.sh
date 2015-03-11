@@ -9,5 +9,5 @@ g++ \
     -fno-stack-protector -Wall -Wextra \
     ./klib/base.cpp ./klib/new_printf_test.cpp ./klib/strings.cpp \
     ../libgtest.a \
-    -o test
-./test
+    -o unit-test
+./unit-test

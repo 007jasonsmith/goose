@@ -3,12 +3,17 @@
 
 #include "klib/types.h"
 
-enum class ArgType { CHAR, CSTR, INT32 };
+// Suppress compiler warning for an unused variable.
+#define SUPPRESS_UNUSED_WARNING(x) \
+  (void) (x);
+
+enum class ArgType { CHAR, CSTR, INT32, UINT32 };
 
 union ArgValue {
   char c;
   const char* cstr;
   int32 i32;
+  uint32 ui32;
 };
 
 struct Arg {
@@ -18,26 +23,17 @@ struct Arg {
 
 class ArgAccumulator {
 public:
-  template<typename... Args>
-  static ArgAccumulator Parse(Args... args) {
+  static ArgAccumulator Parse() {
     ArgAccumulator acc;
-    acc_args(&acc, args...);
     return acc;
   }
 
-
-  ArgAccumulator() : count_(0) {}
-
-  #define ADD(type1, type2, value_name)  \
-  void Add(const type1 x) {              \
-    args_[count_].type = ArgType::type2; \
-    args_[count_].value.value_name = x;  \
-    count_++;                            \
+  template<typename... Args>
+  static ArgAccumulator Parse(Args... args) {
+    ArgAccumulator acc;
+    ArgAccumulator::Accumulate(&acc, args...);
+    return acc;
   }
-  ADD(char, CHAR, c)
-  ADD(char*, CSTR, cstr)
-  ADD(int32, INT32, i32)
-  #undef ADD
 
   Arg Get(int idx) {
     return args_[idx];
@@ -48,30 +44,41 @@ public:
   }
 
 private:
+  explicit ArgAccumulator() : count_(0) {}
+
+  #define ADD(type1, type2, value_name)  \
+  void Add(const type1 x) {              \
+    args_[count_].type = ArgType::type2; \
+    args_[count_].value.value_name = x;  \
+    count_++;                            \
+  }
+  ADD(char, CHAR, c)
+  ADD(char*, CSTR, cstr)
+  ADD(int32, INT32, i32)
+  ADD(uint32, UINT32, ui32)
+  #undef ADD
+
+  static void Accumulate(ArgAccumulator* accumulator) {
+    SUPPRESS_UNUSED_WARNING(accumulator)
+  }
+
+  template<typename T, typename... Args>
+  static void Accumulate(ArgAccumulator* accumulator, T value, Args... args) {
+    accumulator->Add(value);
+    ArgAccumulator::Accumulate(accumulator, args...);
+  }
+
   int count_;
   Arg args_[10];
 };
 
-void acc_args(ArgAccumulator* accumulator) {
-  // Base case.
-  (void) accumulator;  // Supress warning.
-}
-
-template<typename T, typename... Args>
-void acc_args(ArgAccumulator* accumulator, T value, Args... args) {
-  accumulator->Add(value);
-  acc_args(accumulator, args...);
-}
-
 TEST(ArgAccumulator, NoArgs) {
-  ArgAccumulator acc;
-  acc_args(&acc);
+  ArgAccumulator acc = ArgAccumulator::Parse();
   EXPECT_EQ(acc.Count(), 0);
 }
 
 TEST(ArgAccumulator, Char) {
-  ArgAccumulator acc;
-  acc_args(&acc, 'c');
+  ArgAccumulator acc = ArgAccumulator::Parse('c');
   EXPECT_EQ(acc.Count(), 1);
 
   Arg arg = acc.Get(0);
@@ -80,8 +87,7 @@ TEST(ArgAccumulator, Char) {
 }
 
 TEST(ArgAccumulator, CStr) {
-  ArgAccumulator acc;
-  acc_args(&acc, "foo");
+  ArgAccumulator acc = ArgAccumulator::Parse("foo");
   EXPECT_EQ(acc.Count(), 1);
 
   Arg arg = acc.Get(0);
@@ -90,13 +96,22 @@ TEST(ArgAccumulator, CStr) {
 }
 
 TEST(ArgAccumulator, Int32) {
-  ArgAccumulator acc;
-  acc_args(&acc, 0xffff);
+  ArgAccumulator acc = ArgAccumulator::Parse(0xffff);
   EXPECT_EQ(acc.Count(), 1);
 
   Arg arg = acc.Get(0);
   EXPECT_EQ(arg.type, ArgType::INT32);
   EXPECT_EQ(arg.value.i32, 0xffff);
+}
+
+TEST(ArgAccumulator, UInt32) {
+  uint32 ui = 0xffff;
+  ArgAccumulator acc = ArgAccumulator::Parse(ui);
+  EXPECT_EQ(acc.Count(), 1);
+
+  Arg arg = acc.Get(0);
+  EXPECT_EQ(arg.type, ArgType::UINT32);
+  EXPECT_EQ(arg.value.ui32, 0xffff);
 }
 
 class TestPrinter {
@@ -185,8 +200,7 @@ TEST(BasePrintf, String) {
 
 template<typename... Args>
 void newer_printf(const char *s, TestPrinter* printer, Args... args) {
-  ArgAccumulator acc;
-  acc_args(&acc, args...);
+  ArgAccumulator acc = ArgAccumulator::Parse(args...);
   printer->Print(acc.Count());
   (void)s;
 }
