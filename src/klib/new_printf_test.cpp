@@ -192,6 +192,21 @@ class TypePrinter {
     case ArgType::UINT64:
       PrintCStr("TODO-support-uint64");
       break;      
+    default:
+      PrintCStr("[ERROR: unknown type]");
+    }
+  }
+
+  void PrintHex(Arg arg) {
+    switch (arg.type) {
+    case ArgType::INT32:
+      PrintHex(arg.value.i32, 0);
+      break;
+    case ArgType::UINT32:
+      PrintHex(arg.value.ui32, 0);
+      break;
+    default:
+      PrintCStr("[ERROR: invalid type for hex]");
     }
   }
 
@@ -234,6 +249,34 @@ class TypePrinter {
     out_->Print('0' + digit);
   }
 
+  void PrintHex(int32 x, int digits_so_far) {
+    if (digits_so_far == 0) {
+      out_->Print('0');
+      out_->Print('x');
+    }
+    if (digits_so_far >= 8) {
+      return;
+    }
+    const char kHexDigits[] = "0123456789ABCDEF";
+    int digit_idx = x % 16;
+    PrintHex(x / 16, digits_so_far + 1);
+    out_->Print(kHexDigits[digit_idx]);
+  }
+
+  void PrintHex(uint32 x, int digits_so_far) {
+    if (digits_so_far == 0) {
+      out_->Print('0');
+      out_->Print('x');
+    }
+    if (digits_so_far >= 8) {
+      return;
+    }
+    const char kHexDigits[] = "0123456789ABCDEF";
+    int digit_idx = x % 16;
+    PrintHex(x / 16, digits_so_far + 1);
+    out_->Print(kHexDigits[digit_idx]);
+  }
+
   IOutputFn* out_;  // We do not own.
 };
 
@@ -255,7 +298,9 @@ class TestPrinter : public IOutputFn {
   std::string msg_;
 };
 
-
+// TODO(chris): Use a test framework, so TestPrinter and TypePrinter are avail.
+// TODO(chris): Print error case: invalid type.
+// TODO(chris): PrintHex error case: invalid type.
 TEST(TypePrinter, Basic) {
   TestPrinter p;
   TypePrinter tp(&p);
@@ -302,40 +347,32 @@ TEST(TypePrinter, MaxUInt32s) {
   EXPECT_STREQ(p.Get(), "max:4294967295 min:0");
 }
 
-// TODO(chris): Tests for new printf and friends.
-/*
-void new_printf(const char* msg, TestPrinter* printer) {
-  // TODO(chris): Account for existing % modifiers.
-  while (*msg) {
-    printer->Print(*msg);
-    msg++;
-  }
-}
-
-template<typename T, typename... Args>
-void new_printf(const char *s, TestPrinter* printer, T value, Args... args) {
-  while (*s) {
-    if (*s == '%') {
-      if (*(s + 1) == '%') {
-	++s;
-      } else {
-	printer->Print(value);
-	s += 2;
-	new_printf(s, printer, args...);
-	return;
-      }
-    }
-    printer->Print(*s);
-    s++;
-  }    
-}
-
-TEST(Printf, Basic) {
+TEST(TypePrinter, HexInt32s) {
   TestPrinter p;
-  new_printf("this is a test", &p);
-  EXPECT_STREQ(p.Get(), "this is a test");
+  TypePrinter tp(&p);
+
+  tp.PrintHex(Arg::Of(MAX_INT32));
+  tp.Print(Arg::Of(' '));
+  tp.PrintHex(Arg::Of(MAX_UINT32));
+  tp.Print(Arg::Of(' '));
+  tp.PrintHex(Arg::Of(0));
+  EXPECT_STREQ(p.Get(), "0x7FFFFFFF 0xFFFFFFFF 0x00000000");
 }
-*/
+
+TEST(TypePrinter, HexError) {
+  TestPrinter p;
+  TypePrinter tp(&p);
+
+  tp.PrintHex(Arg::Of("a cstr"));
+  EXPECT_STREQ(p.Get(), "[ERROR: invalid type for hex]");
+}
+
+// TODO(chris): Tests for new printf and friends.
+// - Test underflow
+// - Test overflow
+// - Test no args
+// - Test many args
+
 int main (int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
