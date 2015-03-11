@@ -1,6 +1,82 @@
 #include <string>
 #include "gtest/gtest.h"
 
+enum class ArgType { CHAR, CSTR };
+
+union ArgValue {
+  char c;
+  const char* cstr;
+};
+
+struct Arg {
+  ArgType type;
+  ArgValue value;
+};
+
+class ArgAccumulator {
+public:
+  ArgAccumulator() : count_(0) {}
+
+  #define ADD(type1, type2, value_name)  \
+  void Add(const type1 x) {              \
+    args_[count_].type = ArgType::type2; \
+    args_[count_].value.value_name = x;  \
+    count_++;                            \
+  }
+  ADD(char, CHAR, c)
+  ADD(char*, CSTR, cstr)
+  #undef ADD
+
+  Arg Get(int idx) {
+    return args_[idx];
+  }
+
+  int Count() {
+    return count_;
+  }
+
+private:
+  int count_;
+  Arg args_[10];
+};
+
+void acc_args(ArgAccumulator* accumulator) {
+  // Base case.
+  (void) accumulator;  // Supress warning.
+}
+
+template<typename T, typename... Args>
+void acc_args(ArgAccumulator* accumulator, T value, Args... args) {
+  accumulator->Add(value);
+  acc_args(accumulator, args...);
+}
+
+TEST(ArgAccumulator, NoArgs) {
+  ArgAccumulator acc;
+  acc_args(&acc);
+  EXPECT_EQ(acc.Count(), 0);
+}
+
+TEST(ArgAccumulator, Char) {
+  ArgAccumulator acc;
+  acc_args(&acc, 'c');
+  EXPECT_EQ(acc.Count(), 1);
+
+  Arg arg = acc.Get(0);
+  EXPECT_EQ(arg.type, ArgType::CHAR);
+  EXPECT_EQ(arg.value.c, 'c');
+}
+
+TEST(ArgAccumulator, CharPtr) {
+  ArgAccumulator acc;
+  acc_args(&acc, "foo");
+  EXPECT_EQ(acc.Count(), 1);
+
+  Arg arg = acc.Get(0);
+  EXPECT_EQ(arg.type, ArgType::CSTR);
+  EXPECT_STREQ(arg.value.cstr, "foo");
+}
+
 class TestPrinter {
  public:
   TestPrinter() : msg_("") {}
