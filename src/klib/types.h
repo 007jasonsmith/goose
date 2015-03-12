@@ -29,7 +29,10 @@ typedef unsigned long long int uint64;
 #define MIN_UINT32 uint32(0)
 
 #define MAX_INT64 int64(9223372036854775807LL)
-#define MIN_INT64 int64(-9223372036854775808LL)
+// You cannot define a -MIN_INT64 literal because it negates
+// the constant, but the constant (...808) is too large for
+// a max int.
+#define MIN_INT64 int64(-9223372036854775807LL - 1LL)
 #define MAX_UINT64 uint64(0xFFFFFFFFFFFFFFFFULL)
 #define MIN_UINT64 uint64(0ULL)
 
