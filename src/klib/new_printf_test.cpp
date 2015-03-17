@@ -2,10 +2,9 @@
 #include "gtest/gtest.h"
 
 #include "klib/types.h"
+#include "klib/macros.h"
 
-// Suppress compiler warning for an unused variable.
-#define SUPPRESS_UNUSED_WARNING(x) \
-  (void) (x);
+namespace klib {
 
 enum class ArgType { CHAR, CSTR, INT32, UINT32, INT64, UINT64 };
 
@@ -232,8 +231,8 @@ class TypePrinter {
   }
 
   void PrintDec(int32 x) {
-    // LOL, -1*MIN_INT32 == BOOM.
-    if (x == MIN_INT32) {
+    // LOL, -1*kMinInt32 == BOOM.
+    if (x == kMinInt32) {
       const char* digits = "-2147483648";
       while (*digits) {
 	out_->Print(*digits);
@@ -372,9 +371,9 @@ TEST(TypePrinter, MaxInt32s) {
   TypePrinter tp(&p);
 
   tp.Print(Arg::Of("max:"));
-  tp.Print(Arg::Of(MAX_INT32));
+  tp.Print(Arg::Of(kMaxInt32));
   tp.Print(Arg::Of(" min:"));
-  tp.Print(Arg::Of(MIN_INT32));
+  tp.Print(Arg::Of(kMinInt32));
   EXPECT_STREQ(p.Get(), "max:2147483647 min:-2147483648");
 }
 
@@ -383,9 +382,9 @@ TEST(TypePrinter, MaxUInt32s) {
   TypePrinter tp(&p);
 
   tp.Print(Arg::Of("max:"));
-  tp.Print(Arg::Of(MAX_UINT32));
+  tp.Print(Arg::Of(kMaxUInt32));
   tp.Print(Arg::Of(" min:"));
-  tp.Print(Arg::Of(MIN_UINT32));
+  tp.Print(Arg::Of(kMinUInt32));
   EXPECT_STREQ(p.Get(), "max:4294967295 min:0");
 }
 
@@ -393,9 +392,9 @@ TEST(TypePrinter, HexInt32s) {
   TestPrinter p;
   TypePrinter tp(&p);
 
-  tp.PrintHex(Arg::Of(MAX_INT32));
+  tp.PrintHex(Arg::Of(kMaxInt32));
   tp.Print(Arg::Of(' '));
-  tp.PrintHex(Arg::Of(MAX_UINT32));
+  tp.PrintHex(Arg::Of(kMaxUInt32));
   tp.Print(Arg::Of(' '));
   tp.PrintHex(Arg::Of(0));
   EXPECT_STREQ(p.Get(), "0x7FFFFFFF 0xFFFFFFFF 0x00000000");
@@ -405,11 +404,11 @@ TEST(TypePrinter, HexInt64s) {
   TestPrinter p;
   TypePrinter tp(&p);
 
-  tp.PrintHex(Arg::Of(MAX_INT64));
+  tp.PrintHex(Arg::Of(kMaxInt64));
   tp.Print(Arg::Of(' '));
-  tp.PrintHex(Arg::Of(MIN_INT64));
+  tp.PrintHex(Arg::Of(kMinInt64));
   tp.Print(Arg::Of(' '));
-  tp.PrintHex(Arg::Of(MAX_UINT64));
+  tp.PrintHex(Arg::Of(kMaxUInt64));
   EXPECT_STREQ(
       p.Get(), "0x7FFFFFFFFFFFFFFF 0x8000000000000000 0xFFFFFFFFFFFFFFFF");
 }
@@ -489,6 +488,8 @@ TEST(Printf, ErrorOverspecified) {
   printf("no args", &p, 1, 2, 3);
   EXPECT_STREQ(p.Get(), "no args Extra: 1 Extra: 2 Extra: 3");
 }
+
+}  // namespace klib
 
 int main (int argc, char** argv) {
   ::testing::InitGoogleTest(&argc, argv);
