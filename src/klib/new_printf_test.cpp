@@ -460,12 +460,6 @@ void printf(const char* format, IOutputFn* out, Args... func_args) {
   }
 }
 
-// TODO(chris): Tests for new printf and friends.
-// - Test underflow
-// - Test overflow
-// - Test no args
-// - Test many args
-
 TEST(Printf, Basic) {
   TestPrinter p;
   printf("hello, world!", &p);
@@ -488,6 +482,12 @@ TEST(Printf, ErrorUnderspecified) {
   TestPrinter p;
   printf("%d %d %d", &p, 1, 2);
   EXPECT_STREQ(p.Get(), "1 2 [Error: args underspecified]");
+}
+
+TEST(Printf, ErrorOverspecified) {
+  TestPrinter p;
+  printf("no args", &p, 1, 2, 3);
+  EXPECT_STREQ(p.Get(), "no args Extra: 1 Extra: 2 Extra: 3");
 }
 
 int main (int argc, char** argv) {
