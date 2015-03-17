@@ -18,9 +18,6 @@ union ArgValue {
 };
 
 struct Arg {
-  ArgType type;
-  ArgValue value;
-
   #define OF(type1, type2, value_name) \
   static Arg Of(const type1 x) {       \
     Arg arg;                           \
@@ -35,6 +32,9 @@ struct Arg {
   OF(int64, INT64, i64)
   OF(uint64, UINT64, ui64)
   #undef OF
+
+  ArgType type;
+  ArgValue value;
 };
 
 class ArgAccumulator {
@@ -55,7 +55,7 @@ public:
     return args_[idx];
   }
 
-  int Count() {
+  size Count() {
     return count_;
   }
 
@@ -87,7 +87,7 @@ private:
   }
 
   // TODO(chris): Error if there are more than X args.
-  int count_;
+  size count_;
   Arg args_[10];
 };
 
