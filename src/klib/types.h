@@ -52,6 +52,4 @@ typedef int size;
 // it will work even if the raw pointer size changes.
 typedef size* raw_ptr;
 
-#define null ((void*) 0)
-
 #endif  // KLIB_TYPES_H_
