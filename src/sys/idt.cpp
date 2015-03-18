@@ -53,7 +53,7 @@ void InstallInterruptDescriptorTable() {
 
   // Clear out the IDT. Later isr_install will register custom handlers.
   for (size i = 0; i < 256; i++) {
-    idt_set_gate(i, 0, 0, 0);
+    InterruptDescriptorTableSetGate(i, 0, 0, 0);
   }
   
   idt_load();

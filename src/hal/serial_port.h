@@ -15,12 +15,12 @@ class SerialPort {
   SerialPort();
 
  public:
-  static void WriteByte(byte b);
-
- private:
   static bool IsInitialized();
   static void Initialize();
 
+  static void WriteByte(byte b);
+
+ private:
   static bool IsTransmitEmpty();
 
   static bool initialized_;

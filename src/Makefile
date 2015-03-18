@@ -4,12 +4,12 @@
 # TODO(chris): Automatically generate C_FILES, S_FILES, etc.
 OBJECTS = kmain.o kmain_asm.o \
           klib/argaccumulator.o klib/strings.o klib/type_printer.o \
-	  klib/console.o klib/debug.o \
+	  klib/debug.o \
 	  sys/io.o sys/kernel_asm.o \
 	  sys/gdt.o sys/gdt_asm.o \
 	  sys/idt.o sys/idt_asm.o \
 	  sys/isr.o sys/isr_asm.o \
-          hal/keyboard.o hal/serial_port.o
+          hal/keyboard.o hal/serial_port.o hal/text_ui.o
 
 CC = gcc
 CCFLAGS = -m32 -nostdlib -nostdinc -fno-builtin -fno-stack-protector \

@@ -1,4 +1,3 @@
-#include "klib/console.h"
 #include "klib/debug.h"
 #include "klib/strings.h"
 #include "sys/gdt.h"
@@ -6,6 +5,7 @@
 #include "sys/isr.h"
 #include "klib/macros.h"
 #include "hal/serial_port.h"
+#include "hal/text_ui.h"
 #include "kernel/memory.h"
 
 using klib::Debug;
@@ -15,6 +15,10 @@ extern "C" {
 const char version[] = "v0.1a";
 void kmain(kernel::grub::multiboot_info_t* mbt) {
   SUPPRESS_UNUSED_WARNING(mbt);
+
+  // Initialize device drivers.
+  hal::SerialPort::Initialize();
+  hal::TextUI::Initialize();
 
   // Register the debug log. Debug messages are written to COM1, which
   // the CPU emulator will kindly pipe to a file.
@@ -28,7 +32,11 @@ void kmain(kernel::grub::multiboot_info_t* mbt) {
   sys::InstallInterruptDescriptorTable();
   sys::InstallInterruptServiceRoutines();
 
-  con_initialize();
+  hal::TextUI::SetChar(0, 0, 'G');
+  hal::TextUI::SetChar(1, 0, 'o');
+  hal::TextUI::SetChar(2, 0, 'o');
+  hal::TextUI::SetChar(3, 0, 's');
+  hal::TextUI::SetChar(4, 0, 'e');
 
   #if false
   con_write(HEADER_WIN, "Goose %s", version);
