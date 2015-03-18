@@ -5,6 +5,9 @@
 #include "sys/idt.h"
 #include "sys/isr.h"
 #include "klib/macros.h"
+#include "hal/serial_port.h"
+
+using klib::Debug;
 
 // EXPERIMENTAL
 // Parse memory that is laid out from GRUB.
@@ -55,7 +58,10 @@ void kmain(multiboot_info_t* mbt, uint32 magic) {
   SUPPRESS_UNUSED_WARNING(mbt);
   SUPPRESS_UNUSED_WARNING(magic);
 
-  debug_log("Kernel started.");
+  hal::SerialPortOutputFn serial_port_writer;
+  Debug::RegisterOutputFn(&serial_port_writer);
+
+  Debug::Log("Kernel started.");
 
   // Initialize core CPU-based systems.
   gdt_install();  // Global descriptor table.
@@ -102,7 +108,7 @@ void kmain(multiboot_info_t* mbt, uint32 magic) {
     }
   }
   #endif
-  debug_log("Kernel halted.");
+  Debug::Log("Kernel halted.");
 }
 
 }

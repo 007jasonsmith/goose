@@ -4,6 +4,7 @@
 #define HAL_SERIAL_PORT_H_
 
 #include "klib/types.h"
+#include "klib/typeprinter.h"
 
 namespace hal {
 
@@ -23,6 +24,12 @@ class SerialPort {
   static bool IsTransmitEmpty();
 
   static bool initialized_;
+};
+
+// IOutputFn that writes to the serial port.
+class SerialPortOutputFn : public klib::IOutputFn {
+ public:
+  virtual void Print(char c);
 };
 
 }  // namespace hal

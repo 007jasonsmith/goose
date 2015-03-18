@@ -39,10 +39,16 @@ void SerialPort::Initialize() {
   outb(kCOM1 + 3, 0x03);  // 8 bits, no parity, one stop bit
   outb(kCOM1 + 2, 0xC7);  // Enable FIFO, clear them, with 14-byte threshold
   outb(kCOM1 + 4, 0x0B);  // IRQs enabled, RTS/DSR set
+
+  initialized_ = true;
 }
 
 bool SerialPort::IsTransmitEmpty() {
   return ((inb(kCOM1 + 5) & 0x20) != 0);
+}
+
+void SerialPortOutputFn::Print(char c) {
+  SerialPort::WriteByte(byte(c));
 }
 
 }  // namespace hal

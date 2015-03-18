@@ -1,12 +1,29 @@
-// Routines to aid in the debugging of Goose. Nothing here should be taken as
-// a dependency, nor relied upon to not change.
+// Routines to aid in the debugging of Goose. Writing to the debug log is not
+// guaranteed to be in-order, regularly flushed, or anything that would make
+// it especially useful. All it does is marshal text to the registered
+// IOOutputFn.
 
 #ifndef KLIB_DEBUG_H_
 #define KLIB_DEBUG_H_
 
-// Write a message to the "system log", which is currently COM1, which is
-// written to disk by bochs.
-// void debug_log(const char* msg, ...);
-void debug_log(const char* msg);
+#include "klib/typeprinter.h"
+
+namespace klib {
+
+class Debug {
+ private:
+  // Do not use. Static utility class.
+  Debug() {}
+
+ public:
+  static void RegisterOutputFn(IOutputFn* fn);
+  static void Log(const char* msg);
+
+ private:
+  // We do not own.
+  static IOutputFn* fn_;
+};
+
+}  // namespace klib
 
 #endif  // KLIB_DEBUG_H_

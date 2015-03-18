@@ -241,7 +241,7 @@ void interrupt_handler(regs* r) {
 // TODO(chris): Put this elsewhere.
 void handle_timer(regs* r) {
   if (r->int_no != 32) {
-    debug_log("Error: Interrupt doesn't match expected.");
+    klib::Debug::Log("Error: Interrupt doesn't match expected.");
   }
   // TODO(chris): Thread scheduling or something?
 }
