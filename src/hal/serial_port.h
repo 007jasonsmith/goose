@@ -4,7 +4,7 @@
 #define HAL_SERIAL_PORT_H_
 
 #include "klib/types.h"
-#include "klib/typeprinter.h"
+#include "klib/type_printer.h"
 
 namespace hal {
 

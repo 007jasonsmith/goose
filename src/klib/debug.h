@@ -6,7 +6,7 @@
 #ifndef KLIB_DEBUG_H_
 #define KLIB_DEBUG_H_
 
-#include "klib/typeprinter.h"
+#include "klib/type_printer.h"
 
 namespace klib {
 

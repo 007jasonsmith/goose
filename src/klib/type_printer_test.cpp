@@ -1,7 +1,7 @@
 #include "gtest/gtest.h"
 
 #include "klib/argaccumulator.h"
-#include "klib/typeprinter.h"
+#include "klib/type_printer.h"
 #include "klib/types.h"
 
 namespace klib {

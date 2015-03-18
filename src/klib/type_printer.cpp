@@ -1,4 +1,4 @@
-#include "klib/typeprinter.h"
+#include "klib/type_printer.h"
 
 #include "klib/argaccumulator.h"
 #include "klib/types.h"

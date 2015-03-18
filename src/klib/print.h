@@ -4,7 +4,7 @@
 #define KLIB_PRINT_H_
 
 #include "klib/argaccumulator.h"
-#include "klib/typeprinter.h"
+#include "klib/type_printer.h"
 
 namespace klib {
 
