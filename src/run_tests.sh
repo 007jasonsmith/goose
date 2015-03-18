@@ -13,6 +13,8 @@ g++ \
     ./klib/base.cpp \
     ./klib/argaccumulator.cpp \
     ./klib/argaccumulator_test.cpp \
+    ./klib/typeprinter.cpp \
+    ./klib/typeprinter_test.cpp \
     ./klib/new_printf_test.cpp \
     ./klib/tests_main.cpp \
     ../libgtest.a \
