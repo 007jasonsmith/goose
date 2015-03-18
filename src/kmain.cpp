@@ -18,15 +18,17 @@ const char version[] = "v0.1a";
 void kmain(kernel::grub::multiboot_info_t* mbt) {
   SUPPRESS_UNUSED_WARNING(mbt);
 
+  // Register the debug log. Debug messages are written to COM1, which
+  // the CPU emulator will kindly pipe to a file.
   hal::SerialPortOutputFn serial_port_writer;
   Debug::RegisterOutputFn(&serial_port_writer);
 
   Debug::Log("Kernel started.");
 
   // Initialize core CPU-based systems.
-  gdt_install();  // Global descriptor table.
-  idt_install();  // Interrupt descriptor table.
-  isr_install();  // Interrupt servicer routines.
+  sys::InstallGlobalDescriptorTable();
+  sys::InstallInterruptDescriptorTable();
+  sys::InstallInterruptServiceRoutines();
 
   con_initialize();
 

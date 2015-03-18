@@ -3,10 +3,16 @@
 
 #include "klib/types.h"
 
+namespace sys {
+
 // Install the system's interrupt descriptor table.
-void idt_install();
+void InstallInterruptDescriptorTable();
 
 // Update the IDT to register a new interrupt service routine.
-void idt_set_gate(uint8 index, uint32 base, uint16 sel, uint8 flags);
+// i.e. register a new interrupt.
+void InterruptDescriptorTableSetGate(
+    uint8 index, uint32 base, uint16 sel, uint8 flags);
+
+}
 
 #endif  // SYS_IDT_H_

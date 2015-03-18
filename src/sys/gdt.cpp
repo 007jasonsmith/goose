@@ -51,7 +51,9 @@ void gdt_set_gate(GdtEntry* entry,
   entry->access = access;
 }
 
-void gdt_install() {
+namespace sys {
+
+void InstallGlobalDescriptorTable() {
   global_descriptor_table_ptr.limit = sizeof(global_descriptor_table) - 1;
   global_descriptor_table_ptr.base = (uint32) &global_descriptor_table;
 
@@ -66,3 +68,5 @@ void gdt_install() {
 
   gdt_flush();
 }
+
+}  // namespace sys

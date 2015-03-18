@@ -31,10 +31,12 @@ IdtEntry interrupt_descriptor_table[256];
 // Defined in idt_asm.s, used to load the IDT.
 extern "C" {
 extern void idt_load();
-}
+}  // extern "C"
+
+namespace sys {
 
 // Setup a descriptor table entry.
-void idt_set_gate(uint8 index, uint32 base, uint16 sel, uint8 flags) {
+void InterruptDescriptorTableSetGate(uint8 index, uint32 base, uint16 sel, uint8 flags) {
   IdtEntry* entry = &interrupt_descriptor_table[index];
 
   entry->base_lo = (base & 0xFFFF);
@@ -45,7 +47,7 @@ void idt_set_gate(uint8 index, uint32 base, uint16 sel, uint8 flags) {
   entry->flags = flags;
 }
 
-void idt_install() {
+void InstallInterruptDescriptorTable() {
   interrupt_descriptor_table_ptr.limit = sizeof(interrupt_descriptor_table) - 1;
   interrupt_descriptor_table_ptr.base = (uint32) &interrupt_descriptor_table;
 
@@ -56,3 +58,5 @@ void idt_install() {
   
   idt_load();
 }
+
+}  // namespace sys

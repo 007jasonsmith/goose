@@ -139,7 +139,9 @@ const char *kInterruptDescriptions[] = {
     "Reserved (31)",
 };
 
-void isr_install() {
+namespace sys {
+
+void InstallInterruptServiceRoutines() {
   // By default IRQs are mapped to IDT entries 8-15, but in protected mode
   // those indexes take on a different meaning. Remap IRQ handlers.
   outb(0x20, 0x11);
@@ -154,55 +156,55 @@ void isr_install() {
   outb(0xA1, 0x0);
 
   // Register all known ISRs. The first 32 are CPU-defined.
-  idt_set_gate(0, (uint32) interrupt_handler_0, 0x08, 0x8E);
-  idt_set_gate(1, (uint32) interrupt_handler_1, 0x08, 0x8E);
-  idt_set_gate(2, (uint32) interrupt_handler_2, 0x08, 0x8E);
-  idt_set_gate(3, (uint32) interrupt_handler_3, 0x08, 0x8E);
-  idt_set_gate(4, (uint32) interrupt_handler_4, 0x08, 0x8E);
-  idt_set_gate(5, (uint32) interrupt_handler_5, 0x08, 0x8E);
-  idt_set_gate(6, (uint32) interrupt_handler_6, 0x08, 0x8E);
-  idt_set_gate(7, (uint32) interrupt_handler_7, 0x08, 0x8E);
-  idt_set_gate(8, (uint32) interrupt_handler_8, 0x08, 0x8E);
-  idt_set_gate(9, (uint32) interrupt_handler_9, 0x08, 0x8E);
-  idt_set_gate(10, (uint32) interrupt_handler_10, 0x08, 0x8E);
-  idt_set_gate(11, (uint32) interrupt_handler_11, 0x08, 0x8E);
-  idt_set_gate(12, (uint32) interrupt_handler_12, 0x08, 0x8E);
-  idt_set_gate(13, (uint32) interrupt_handler_13, 0x08, 0x8E);
-  idt_set_gate(14, (uint32) interrupt_handler_14, 0x08, 0x8E);
-  idt_set_gate(15, (uint32) interrupt_handler_15, 0x08, 0x8E);
-  idt_set_gate(16, (uint32) interrupt_handler_16, 0x08, 0x8E);
-  idt_set_gate(17, (uint32) interrupt_handler_17, 0x08, 0x8E);
-  idt_set_gate(18, (uint32) interrupt_handler_18, 0x08, 0x8E);
-  idt_set_gate(19, (uint32) interrupt_handler_19, 0x08, 0x8E);
-  idt_set_gate(20, (uint32) interrupt_handler_20, 0x08, 0x8E);
-  idt_set_gate(21, (uint32) interrupt_handler_21, 0x08, 0x8E);
-  idt_set_gate(22, (uint32) interrupt_handler_22, 0x08, 0x8E);
-  idt_set_gate(23, (uint32) interrupt_handler_23, 0x08, 0x8E);
-  idt_set_gate(24, (uint32) interrupt_handler_24, 0x08, 0x8E);
-  idt_set_gate(25, (uint32) interrupt_handler_25, 0x08, 0x8E);
-  idt_set_gate(26, (uint32) interrupt_handler_26, 0x08, 0x8E);
-  idt_set_gate(27, (uint32) interrupt_handler_27, 0x08, 0x8E);
-  idt_set_gate(28, (uint32) interrupt_handler_28, 0x08, 0x8E);
-  idt_set_gate(29, (uint32) interrupt_handler_29, 0x08, 0x8E);
-  idt_set_gate(30, (uint32) interrupt_handler_30, 0x08, 0x8E);
-  idt_set_gate(31, (uint32) interrupt_handler_31, 0x08, 0x8E);
+  InterruptDescriptorTableSetGate(0, (uint32) interrupt_handler_0, 0x08, 0x8E);
+  InterruptDescriptorTableSetGate(1, (uint32) interrupt_handler_1, 0x08, 0x8E);
+  InterruptDescriptorTableSetGate(2, (uint32) interrupt_handler_2, 0x08, 0x8E);
+  InterruptDescriptorTableSetGate(3, (uint32) interrupt_handler_3, 0x08, 0x8E);
+  InterruptDescriptorTableSetGate(4, (uint32) interrupt_handler_4, 0x08, 0x8E);
+  InterruptDescriptorTableSetGate(5, (uint32) interrupt_handler_5, 0x08, 0x8E);
+  InterruptDescriptorTableSetGate(6, (uint32) interrupt_handler_6, 0x08, 0x8E);
+  InterruptDescriptorTableSetGate(7, (uint32) interrupt_handler_7, 0x08, 0x8E);
+  InterruptDescriptorTableSetGate(8, (uint32) interrupt_handler_8, 0x08, 0x8E);
+  InterruptDescriptorTableSetGate(9, (uint32) interrupt_handler_9, 0x08, 0x8E);
+  InterruptDescriptorTableSetGate(10, (uint32) interrupt_handler_10, 0x08, 0x8E);
+  InterruptDescriptorTableSetGate(11, (uint32) interrupt_handler_11, 0x08, 0x8E);
+  InterruptDescriptorTableSetGate(12, (uint32) interrupt_handler_12, 0x08, 0x8E);
+  InterruptDescriptorTableSetGate(13, (uint32) interrupt_handler_13, 0x08, 0x8E);
+  InterruptDescriptorTableSetGate(14, (uint32) interrupt_handler_14, 0x08, 0x8E);
+  InterruptDescriptorTableSetGate(15, (uint32) interrupt_handler_15, 0x08, 0x8E);
+  InterruptDescriptorTableSetGate(16, (uint32) interrupt_handler_16, 0x08, 0x8E);
+  InterruptDescriptorTableSetGate(17, (uint32) interrupt_handler_17, 0x08, 0x8E);
+  InterruptDescriptorTableSetGate(18, (uint32) interrupt_handler_18, 0x08, 0x8E);
+  InterruptDescriptorTableSetGate(19, (uint32) interrupt_handler_19, 0x08, 0x8E);
+  InterruptDescriptorTableSetGate(20, (uint32) interrupt_handler_20, 0x08, 0x8E);
+  InterruptDescriptorTableSetGate(21, (uint32) interrupt_handler_21, 0x08, 0x8E);
+  InterruptDescriptorTableSetGate(22, (uint32) interrupt_handler_22, 0x08, 0x8E);
+  InterruptDescriptorTableSetGate(23, (uint32) interrupt_handler_23, 0x08, 0x8E);
+  InterruptDescriptorTableSetGate(24, (uint32) interrupt_handler_24, 0x08, 0x8E);
+  InterruptDescriptorTableSetGate(25, (uint32) interrupt_handler_25, 0x08, 0x8E);
+  InterruptDescriptorTableSetGate(26, (uint32) interrupt_handler_26, 0x08, 0x8E);
+  InterruptDescriptorTableSetGate(27, (uint32) interrupt_handler_27, 0x08, 0x8E);
+  InterruptDescriptorTableSetGate(28, (uint32) interrupt_handler_28, 0x08, 0x8E);
+  InterruptDescriptorTableSetGate(29, (uint32) interrupt_handler_29, 0x08, 0x8E);
+  InterruptDescriptorTableSetGate(30, (uint32) interrupt_handler_30, 0x08, 0x8E);
+  InterruptDescriptorTableSetGate(31, (uint32) interrupt_handler_31, 0x08, 0x8E);
   // The next 16 are used for handling IRQs
-  idt_set_gate(32, (uint32) irq_handler_32, 0x08, 0x8E);
-  idt_set_gate(33, (uint32) irq_handler_33, 0x08, 0x8E);
-  idt_set_gate(34, (uint32) irq_handler_34, 0x08, 0x8E);
-  idt_set_gate(35, (uint32) irq_handler_35, 0x08, 0x8E);
-  idt_set_gate(36, (uint32) irq_handler_36, 0x08, 0x8E);
-  idt_set_gate(37, (uint32) irq_handler_37, 0x08, 0x8E);
-  idt_set_gate(38, (uint32) irq_handler_38, 0x08, 0x8E);
-  idt_set_gate(39, (uint32) irq_handler_39, 0x08, 0x8E);
-  idt_set_gate(30, (uint32) irq_handler_40, 0x08, 0x8E);
-  idt_set_gate(41, (uint32) irq_handler_41, 0x08, 0x8E);
-  idt_set_gate(42, (uint32) irq_handler_42, 0x08, 0x8E);
-  idt_set_gate(43, (uint32) irq_handler_43, 0x08, 0x8E);
-  idt_set_gate(44, (uint32) irq_handler_44, 0x08, 0x8E);
-  idt_set_gate(45, (uint32) irq_handler_45, 0x08, 0x8E);
-  idt_set_gate(46, (uint32) irq_handler_46, 0x08, 0x8E);
-  idt_set_gate(47, (uint32) irq_handler_47, 0x08, 0x8E);
+  InterruptDescriptorTableSetGate(32, (uint32) irq_handler_32, 0x08, 0x8E);
+  InterruptDescriptorTableSetGate(33, (uint32) irq_handler_33, 0x08, 0x8E);
+  InterruptDescriptorTableSetGate(34, (uint32) irq_handler_34, 0x08, 0x8E);
+  InterruptDescriptorTableSetGate(35, (uint32) irq_handler_35, 0x08, 0x8E);
+  InterruptDescriptorTableSetGate(36, (uint32) irq_handler_36, 0x08, 0x8E);
+  InterruptDescriptorTableSetGate(37, (uint32) irq_handler_37, 0x08, 0x8E);
+  InterruptDescriptorTableSetGate(38, (uint32) irq_handler_38, 0x08, 0x8E);
+  InterruptDescriptorTableSetGate(39, (uint32) irq_handler_39, 0x08, 0x8E);
+  InterruptDescriptorTableSetGate(30, (uint32) irq_handler_40, 0x08, 0x8E);
+  InterruptDescriptorTableSetGate(41, (uint32) irq_handler_41, 0x08, 0x8E);
+  InterruptDescriptorTableSetGate(42, (uint32) irq_handler_42, 0x08, 0x8E);
+  InterruptDescriptorTableSetGate(43, (uint32) irq_handler_43, 0x08, 0x8E);
+  InterruptDescriptorTableSetGate(44, (uint32) irq_handler_44, 0x08, 0x8E);
+  InterruptDescriptorTableSetGate(45, (uint32) irq_handler_45, 0x08, 0x8E);
+  InterruptDescriptorTableSetGate(46, (uint32) irq_handler_46, 0x08, 0x8E);
+  InterruptDescriptorTableSetGate(47, (uint32) irq_handler_47, 0x08, 0x8E);
 
   // Set up timer cycle.
   // TODO(chris): Research modes, etc.
@@ -217,6 +219,8 @@ void isr_install() {
   // Safe to handle interrupts.
   __asm__ __volatile__ ("sti");
 }
+
+}  // namespace sys
 
 // All interrupts trigger this method. Note that all interrupts are disabled
 // for the duration of this method. So when we start doing "real work" in
@@ -276,4 +280,5 @@ void irq_handler(regs* r) {
   // Send "End of Interrupt"
   outb(0x20, 0x20);
 }
-}
+
+}  // extern "C"
