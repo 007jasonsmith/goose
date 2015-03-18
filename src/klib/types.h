@@ -8,6 +8,8 @@
 #ifndef KLIB_TYPES_H_
 #define KLIB_TYPES_H_
 
+typedef unsigned char byte;
+
 typedef char int8;
 typedef short int16;
 typedef int int32;
@@ -21,6 +23,8 @@ typedef unsigned long long int uint64;
 #define TEST_SIZE(type, size)                   \
   static_assert(sizeof(type) == size,           \
                 "sizeof(" #type ") != " #size);
+TEST_SIZE(byte,  1)
+
 TEST_SIZE(int8,  1)
 TEST_SIZE(int16, 2)
 TEST_SIZE(int32, 4)
