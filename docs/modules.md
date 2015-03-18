@@ -16,15 +16,23 @@ Not invented here, bro.
 
 ## sys ##
 
-sys is the actual kernel source code. Things like interrupt handlers go here.
+sys is the piece of the kernel that is bound to the CPU. Interrupts, IO, etc.
+
+- Depends on hal (specific IRQ handlers)
 
 ## hal ##
 
 hal is the hardware abstraction layer. Device drivers go here.
+
+- Depends on sys (IO)
+
+## kernel ##
+
+The kernel is where actual kernel-level features. Paging, processes, etc.
 
 ## shell ##
 
 The shell is the command-line interface to Goose. It will provide all of the
 diagnostic services and interactions to the user.
 
-- Requires klib, sys, hal
+- Requires klib, sys, hal, kernel

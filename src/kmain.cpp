@@ -10,8 +10,6 @@
 
 using klib::Debug;
 
-// EXPERIMENTAL
-
 extern "C" {
 
 const char version[] = "v0.1a";
@@ -70,7 +68,8 @@ void kmain(kernel::grub::multiboot_info_t* mbt) {
     }
   }
   #endif
+
   Debug::Log("Kernel halted.");
 }
 
-}
+}  // extern "C"
