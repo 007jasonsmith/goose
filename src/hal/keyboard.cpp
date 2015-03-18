@@ -26,7 +26,7 @@ void keyboard_process(uint32 scancode) {
 
   if (scancode >= keyboard_keymap_size) {
     if (key_pressed) {
-      debug_log("Unknown key scancode[%d]", scancode);
+      // debug_log("Unknown key scancode[%d]", scancode);
     }
     return;
   }

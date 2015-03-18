@@ -3,8 +3,8 @@
 
 # TODO(chris): Automatically generate C_FILES, S_FILES, etc.
 OBJECTS = kmain.o kmain_asm.o \
-          klib/base.o klib/console.o klib/debug.o \
-	  klib/strings.o \
+          klib/argaccumulator.o klib/strings.o klib/typeprinter.o \
+	  klib/console.o klib/debug.o \
 	  sys/io.o sys/kernel_asm.o \
 	  sys/gdt.o sys/gdt_asm.o \
 	  sys/idt.o sys/idt_asm.o \

@@ -1,6 +1,5 @@
 #include "klib/debug.h"
 
-#include "klib/base.h"
 #include "klib/console.h"
 #include "sys/io.h"
 #include "klib/types.h"
@@ -15,6 +14,15 @@ void debug_com_intialize();
 bool debug_com_is_transmit_empty();
 void debug_com_write_char(char c);
 
+void debug_log(const char* msg) {
+  while (*msg) {
+    debug_com_write_char(*msg);
+    msg++;
+  }
+  debug_com_write_char('\n');
+}
+
+#if false
 void debug_log(const char* msg, ...) {
   // Print it to our debug log.
   va_list args;
@@ -31,6 +39,7 @@ void debug_log(const char* msg, ...) {
   con_writeline_va(DEBUG_WIN, msg, args2);
   va_end(args2);
 }
+#endif
 
 void debug_com_initialize() {
   outb(COM1 + 1, 0x00);  // Disable all interrupts

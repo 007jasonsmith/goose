@@ -6,6 +6,7 @@
 #include "sys/io.h"
 #include "sys/idt.h"
 #include "sys/kernel.h"
+#include "klib/macros.h"
 
 // Registers when the ISR was triggered. Used for (hopefully) diagnosing bugs.
 typedef struct {
@@ -223,15 +224,16 @@ void isr_install() {
 // long-running work async, and letting other interrupts file as normal.
 extern "C" {
 void interrupt_handler(regs* r) {
+  SUPPRESS_UNUSED_WARNING(r);
   // Processor interrupts.
-  const char* description = "Unknown Interrupt";
-  if (r->int_no < 32) {
-    description = kInterruptDescriptions[r->int_no];
-  }
+  // const char* description = "Unknown Interrupt";
+  // if (r->int_no < 32) {
+  //   description = kInterruptDescriptions[r->int_no];
+  // }
 
   // TODO(chris): Make a kick-ass BSOD.
-  debug_log("Received interrupt %s[%d] with code %d",
-	    description, r->int_no, r->err_code);
+  // debug_log("Received interrupt %s[%d] with code %d",
+  //	    description, r->int_no, r->err_code);
 
   kernel_exit();
 }
@@ -267,7 +269,8 @@ void irq_handler(regs* r) {
     keyboard_process(scancode);
     break;
   default:
-    debug_log("Unknown IRQ[%d]", irq_no);
+    // debug_log("Unknown IRQ[%d]", irq_no);
+    {}
   }
 
   // Send "End of Interrupt"

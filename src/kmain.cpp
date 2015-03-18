@@ -4,6 +4,7 @@
 #include "sys/gdt.h"
 #include "sys/idt.h"
 #include "sys/isr.h"
+#include "klib/macros.h"
 
 // EXPERIMENTAL
 // Parse memory that is laid out from GRUB.
@@ -51,9 +52,10 @@ extern "C" {
 
 const char version[] = "v0.1a";
 void kmain(multiboot_info_t* mbt, uint32 magic) {
+  SUPPRESS_UNUSED_WARNING(mbt);
+  SUPPRESS_UNUSED_WARNING(magic);
+
   debug_log("Kernel started.");
-  debug_log("sizeof(uint32) = %d", sizeof(uint32));
-  debug_log("sizeof(uint32) = %d", sizeof(uint32));
 
   // Initialize core CPU-based systems.
   gdt_install();  // Global descriptor table.
@@ -61,6 +63,8 @@ void kmain(multiboot_info_t* mbt, uint32 magic) {
   isr_install();  // Interrupt servicer routines.
 
   con_initialize();
+
+  #if false
   con_write(HEADER_WIN, "Goose %s", version);
 
   // EXPERIMENTAL
@@ -97,7 +101,7 @@ void kmain(multiboot_info_t* mbt, uint32 magic) {
       break;
     }
   }
-
+  #endif
   debug_log("Kernel halted.");
 }
 
