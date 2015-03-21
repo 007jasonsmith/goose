@@ -49,33 +49,26 @@ void InitializeChrome() {
 }
 
 void ShowMemoryMap(shell::ShellStream* shell) {
-  shell->WriteLine("Memory Map #%d", 1);
-  shell->WriteLine("Memory Map #%d", 2);
-  shell->WriteLine("Memory Map #%d", 3);
-  shell->WriteLine("Memory Map #%d" ,4);
-  shell->WriteLine("Memory Map #%d", 5);
-  shell->WriteLine("Memory Map #%d", 6);
-  shell->WriteLine("Memory Map #%d", 7);
-  /*
-  const kernel::grub::multiboot_info_t* multiboot_info =
+  const kernel::grub::multiboot_info_t* mbt =
     kernel::GetMultibootInfo();
   kernel::grub::multiboot_memory_map_t* mmap =
-    dynamic_cast<kernel::grub::multiboot_memory_map*>(
-      multiboot_info->mmap_addr);
+    (kernel::grub::multiboot_memory_map*) mbt->mmap_addr;
 
   size map_idx = 0;
   while (((uint32) mmap) < mbt->mmap_addr + mbt->mmap_length) {
-    shell->Write("Memory Map [%d][%p] : size %d, type %d", map_idx, (uint32) mmap,
-		 mmap->size, mmap->type);
-    shell->Write("  address %d / %d",
-		 mmap->base_addr_low, mmap->base_addr_high);
-    shell->Write("  length  %d / %d", mmap->length_low, mmap->length_high);
+    shell->WriteLine(
+        "Memory Map [%d][%p] : size %d, type %d", map_idx, (uint32) mmap,
+	mmap->size, mmap->type);
+    shell->WriteLine(
+        "  address %d / %d", mmap->base_addr_low, mmap->base_addr_high);
+    shell->WriteLine(
+        "  length  %d / %d", mmap->length_low, mmap->length_high);
 
-    mmap = dynamic_cast<multiboot_memory_map_t*>(
-        (uint32) mmap + mmap->size + sizeof(uint32));
+    mmap =
+        (kernel::grub::multiboot_memory_map_t*)(
+            (uint32) mmap + mmap->size + sizeof(uint32));
     map_idx++;
   }
-  */
 }
 
 const ShellCommand* GetShellCommand(const char* command) {
