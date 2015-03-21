@@ -92,7 +92,7 @@ void Run() {
 
     // Process the command.
     current_command_line++;
-    TextUI::Print(current_command, 0, current_command_line);
+    TextUI::Print("Executing '%s'", 0, current_command_line, current_command);
     current_command_line++;
   }
 }

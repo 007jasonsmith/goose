@@ -3,6 +3,7 @@
 #ifndef HAL_TEXT_UI_H_
 #define HAL_TEXT_UI_H_
 
+#include "klib/print.h"
 #include "klib/types.h"
 #include "klib/type_printer.h"
 
@@ -29,6 +30,20 @@ enum class Color {
   White        = 15
 };
 
+class TextUIOutputFn : public klib::IOutputFn {
+ public:
+  TextUIOutputFn(uint8 x, uint8 y);
+
+  virtual void Print(char c);
+
+  uint8 OffsetX() const;
+  uint8 OffsetY() const;
+
+ private:
+  uint8 offset_x_;
+  uint8 offset_y_;
+};
+
 class TextUI {
  private:
   // Do not call. Static utility class.
@@ -42,25 +57,15 @@ class TextUI {
   static void SetChar(uint8 x, uint8 y, char c);
   static void SetColor(uint8 x, uint8 y, Color foreground, Color background);
   
-  static void Print(const char* msg, uint8 x, uint8 y);
+  template<typename... Args>
+  static void Print(const char* msg, uint8 x, uint8 y, Args... args) {
+    TextUIOutputFn fn(x, y);
+    klib::print(msg, &fn, args...);
+  }
 
  private:
   static bool initialized_;
 };
-
-class TextUIOutputFn : public klib::IOutputFn {
- public:
-  TextUIOutputFn(uint8 x, uint8 y);
-
-  virtual void Print(char c);
-
-  uint8 OffsetX() const;
-  uint8 OffsetY() const;
-
- private:
-  uint8 offset_x_;
-  uint8 offset_y_;
- };
 
 }  // namespace hal
 

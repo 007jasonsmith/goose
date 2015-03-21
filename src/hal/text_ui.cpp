@@ -71,27 +71,18 @@ void TextUI::SetColor(uint8 x, uint8 y, Color foreground, Color background) {
   screen_buffer[index + 1] = ((background8 & 0x0F) << 4) | (foreground8 & 0x0F);
 }
 
-void TextUI::Print(const char* msg, uint8 x, uint8 y) {
-  TextUIOutputFn output_fn(x, y);
-  (static_cast<klib::IOutputFn*>(&output_fn))->Print(msg);
-}
-
 TextUIOutputFn::TextUIOutputFn(uint8 x, uint8 y) :
   offset_x_(x), offset_y_(y) {
   // TODO(chris): CHECK valid.
 }
 
 void TextUIOutputFn::Print(char c) {
+  // Don't scroll.
+  if (offset_x_ >= 80) {
+    return;
+  }
   TextUI::SetChar(OffsetX(), OffsetY(), c);
   offset_x_++;
-  if (offset_x_ >= 80) {
-    offset_x_ = 0;
-    offset_y_++;
-  }
-  if (offset_y_ >= 25) {
-    // WARNING: Overwriting last line. No scrolling.
-    offset_y_ = 24;
-  }
 }
 
 uint8 TextUIOutputFn::OffsetX() const { return offset_x_; }
