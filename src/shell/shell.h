@@ -14,9 +14,16 @@ namespace shell {
 // scrolling should happen seamlessly.
 class ShellStream : public klib::IOutputFn {
  public:
-  ShellStream(const hal::Region region);
+  ShellStream(const hal::Region region, hal::Offset offset);
 
   virtual void Print(char c);
+  hal::Offset Offset();
+
+  template<typename... Args>
+  void WriteLine(const char* msg, Args... args) {
+    klib::print(msg, this, args...);
+    klib::print("\n", this);
+  }
 
   template<typename... Args>
   void Write(const char* msg, Args... args) {
@@ -25,6 +32,7 @@ class ShellStream : public klib::IOutputFn {
 
  private:
   const hal::Region region_;
+  hal::Offset offset_;
 };
 
 // Starts running the shell.

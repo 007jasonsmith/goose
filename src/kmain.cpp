@@ -23,6 +23,9 @@ void __cxa_pure_virtual();
 // Kernel panic function handler.
 void PanicHandler(const char* message); 
 
+// Friendly system shutdown screen.
+void FriendlyShutdown(const char* message);
+
 const char version[] = "v0.1a";
 void kmain(const kernel::grub::multiboot_info_t* mbt) {
   SUPPRESS_UNUSED_WARNING(mbt);
@@ -50,6 +53,7 @@ void kmain(const kernel::grub::multiboot_info_t* mbt) {
   shell::Run();
 
   Debug::Log("Kernel halted.");
+  FriendlyShutdown("Kernel Halted");
 }
 
 void __cxa_pure_virtual() {
@@ -66,6 +70,29 @@ void PanicHandler(const char* message) {
   for (int y = 0; y < 25; y++) {
     for (int x = 0; x < 80; x++) {
       TextUI::SetColor(x, y, Color::White, Color::Red);
+      TextUI::SetChar(x, y, ' ');
+    }
+  }
+  int pos = 40 - klib::length(message) / 2;
+  if (pos < 0) {
+    pos = 0;
+  }
+  TextUI::Print(message, pos, 12);
+  TextUI::ShowCursor(false);
+
+  system_halt();
+}
+
+void FriendlyShutdown(const char* message) {
+  Debug::Log("*****************");
+  Debug::Log("FRIENDLY SHUTDOWN");
+  Debug::Log("*****************");
+  Debug::Log(message);
+
+  // Print a BSO.. fun?
+  for (int y = 0; y < 25; y++) {
+    for (int x = 0; x < 80; x++) {
+      TextUI::SetColor(x, y, Color::White, Color::Blue);
       TextUI::SetChar(x, y, ' ');
     }
   }

@@ -23,6 +23,10 @@ bool TextUI::initialized_ = false;
 bool TextUI::show_cursor_ = true;
 Offset TextUI::cursor_;
 
+Offset::Offset() : x(0), y(0) {}
+
+Offset::Offset(uint8 x, uint8 y) : x(x), y(y) {}
+
 Region::Region(uint8 x, uint8 y, uint8 width, uint8 height) {
   this->offset.x = x;
   this->offset.y = y;

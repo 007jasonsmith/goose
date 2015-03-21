@@ -37,11 +37,13 @@ void InitializeChrome() {
 }
 
 void ShowMemoryMap(shell::ShellStream* shell) {
-  shell->Write("Memory Map #%d", 1);
-  shell->Write("Memory Map #%d", 2);
-  shell->Write("Memory Map #%d", 3);
-  shell->Write("Memory Map #%d" ,4);
-  shell->Write("Memory Map #%d", 5);
+  shell->WriteLine("Memory Map #%d", 1);
+  shell->WriteLine("Memory Map #%d", 2);
+  shell->WriteLine("Memory Map #%d", 3);
+  shell->WriteLine("Memory Map #%d" ,4);
+  shell->WriteLine("Memory Map #%d", 5);
+  shell->WriteLine("Memory Map #%d", 6);
+  shell->WriteLine("Memory Map #%d", 7);
   /*
   const kernel::grub::multiboot_info_t* multiboot_info =
     kernel::GetMultibootInfo();
@@ -68,13 +70,37 @@ void ShowMemoryMap(shell::ShellStream* shell) {
 
 namespace shell {
 
-ShellStream::ShellStream(const hal::Region region) : region_(region) {}
+ShellStream::ShellStream(const hal::Region region, hal::Offset offset) :
+  region_(region), offset_(offset) {}
 
 void ShellStream::Print(char c) {
-  // Write the character.
-  // Honor wrap around.
-  // Scroll the region as needed.
-  if (c > '3') return;
+  if (c != '\n') {
+    TextUI::SetChar(offset_.x, offset_.y, c);
+
+  // Deal with scrolling.
+    offset_.x++;
+    if (offset_.x >= region_.offset.x + region_.width) {
+      offset_.x = region_.offset.x;
+      offset_.y++;
+    }
+    if (offset_.y >= region_.offset.y + region_.height) {
+      TextUI::Scroll(region_);
+      offset_.y--;
+    }
+  }
+
+  if (c == '\n') {
+    offset_.x = region_.offset.x;
+    offset_.y++;
+    if (offset_.y >= region_.offset.y + region_.height) {
+      TextUI::Scroll(region_);
+      offset_.y--;
+    }    
+  }
+}
+
+hal::Offset ShellStream::Offset() {
+  return offset_;
 }
 
 void Run() {
@@ -137,15 +163,26 @@ void Run() {
       // TODO(chrsmith): Delete, and arrow.
     }
 
+    if (klib::equal(current_command, "exit")) {
+      return;
+    }
+
     // Process the command.
     current_command_line++;
     while (current_command_line >= 25) {
       TextUI::Scroll(shell_region);
       current_command_line--;
     }
-    TextUI::Print("Executing '%s'", 0, current_command_line, current_command);
 
-    current_command_line++;  // So we start on the next line.
+    TextUI::ShowCursor(false);
+    hal::Offset shell_offset(0, current_command_line);
+    ShellStream stream(shell_region, shell_offset);
+    ShowMemoryMap(&stream);
+    TextUI::ShowCursor(true);
+
+    // Move the cursor, etc. to where the shell stream finished off.
+    hal::Offset offset = stream.Offset();
+    current_command_line = offset.y + 1;
   }
 }
 

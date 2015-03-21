@@ -11,6 +11,8 @@ namespace hal {
 
 // A offset into the screen.
 struct Offset {
+  Offset();
+  Offset(uint8 x, uint8 y);
   uint8 x;
   uint8 y;
 };
