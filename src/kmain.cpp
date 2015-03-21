@@ -1,6 +1,8 @@
 #include "klib/debug.h"
+#include "klib/panic.h"
 #include "klib/strings.h"
 #include "sys/gdt.h"
+#include "sys/halt.h"
 #include "sys/idt.h"
 #include "sys/isr.h"
 #include "klib/macros.h"
@@ -10,13 +12,16 @@
 #include "shell/shell.h"
 
 using klib::Debug;
+using hal::Color;
+using hal::TextUI;
 
 extern "C" {
 
-void __cxa_pure_virtual() {
-  // TODO(chris): Panic
-  Debug::Log("__cxa_pure_virtual()");
-}
+// Handler for a C++ pure-virtual call. Panics.
+void __cxa_pure_virtual();
+
+// Kernel panic function handler.
+void PanicHandler(const char* message); 
 
 const char version[] = "v0.1a";
 void kmain(const kernel::grub::multiboot_info_t* mbt) {
@@ -33,6 +38,9 @@ void kmain(const kernel::grub::multiboot_info_t* mbt) {
 
   Debug::Log("Kernel started.");
 
+  klib::SetPanicFn(&PanicHandler);
+  klib::SetPanicFn(&PanicHandler);
+
   // Initialize core CPU-based systems.
   sys::InstallGlobalDescriptorTable();
   sys::InstallInterruptDescriptorTable();
@@ -43,6 +51,33 @@ void kmain(const kernel::grub::multiboot_info_t* mbt) {
   shell::Run();
 
   Debug::Log("Kernel halted.");
+}
+
+void __cxa_pure_virtual() {
+  klib::Panic("Pure virtual function call.");
+}
+
+void PanicHandler(const char* message) {
+  Debug::Log("************");
+  Debug::Log("KERNEL PANIC");
+  Debug::Log("************");
+  Debug::Log(message);
+
+  // Print a RSOD
+  for (int y = 0; y < 25; y++) {
+    for (int x = 0; x < 80; x++) {
+      TextUI::SetColor(x, y, Color::White, Color::Red);
+      TextUI::SetChar(x, y, ' ');
+    }
+  }
+  int pos = 40 - klib::length(message) / 2;
+  if (pos < 0) {
+    pos = 0;
+  }
+  TextUI::Print(message, pos, 12);
+  TextUI::SetCursor(81, 26);
+
+  system_halt();
 }
 
 }  // extern "C"
