@@ -12,3 +12,14 @@ state of the system while it is running. Nothing more.
 
 The longer-term plan for the Goose user interface is to have the kernel host
 a web server, and allow users to interact through HTTP.
+
+## Overview ##
+
+The Goose shell works by intercepting keystrokes and processing them. The
+majority of keystokes to go the current window, typing out the next command.
+However, some keys switch between different windows. This is how it is possible
+to switch between the outputs of two different programs. And possibly monitor
+their memory usage, in a third window.
+
+The shell is some chrome over a series of "windows". Each window is a text
+buffer.

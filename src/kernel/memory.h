@@ -3,6 +3,8 @@
 #ifndef KERNEL_MEMORY_H_
 #define KERNEL_MEMORY_H_
 
+#include "klib/types.h"
+
 namespace kernel {
 
 namespace grub {
@@ -49,6 +51,10 @@ typedef struct multiboot_memory_map {
 } multiboot_memory_map_t;
 
 }  // namespace grub
+
+// Register the multiboot header information from the boot loader.
+void SetMultibootInfo(const grub::multiboot_info_t* boot_info);
+const grub::multiboot_info_t* GetMultibootInfo();
 
 }  // namespace kernel
 

@@ -3,7 +3,11 @@
 
 #include "klib/types.h"
 
-size str_length(const char* buf);
-bool str_compare(const char* lhs, const char* rhs);
+namespace klib {
+
+size length(const char* buf);
+bool equal(const char* lhs, const char* rhs);
+
+}  // namespace klib
 
 #endif  // KLIB_STRINGS_H_

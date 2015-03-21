@@ -6,6 +6,8 @@ namespace klib {
 
 IOutputFn* Debug::fn_ = nullptr;
 
+Debug::Debug() {}
+
 void Debug::RegisterOutputFn(IOutputFn* fn) {
   // TODO(chrsmith): CHECK_NOTNULL(fn);
   // TODO(chrsmith): CHECK_NULL(fn_);

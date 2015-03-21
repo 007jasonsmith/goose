@@ -30,6 +30,8 @@ hal is the hardware abstraction layer. Device drivers go here.
 
 The kernel is where actual kernel-level features. Paging, processes, etc.
 
+- Depends on sys
+
 ## shell ##
 
 The shell is the command-line interface to Goose. It will provide all of the

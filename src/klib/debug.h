@@ -6,18 +6,24 @@
 #ifndef KLIB_DEBUG_H_
 #define KLIB_DEBUG_H_
 
-#include "klib/type_printer.h"
+#include "klib/print.h"
 
 namespace klib {
 
 class Debug {
  private:
   // Do not use. Static utility class.
-  Debug() {}
+  Debug();
 
  public:
   static void RegisterOutputFn(IOutputFn* fn);
   static void Log(const char* msg);
+
+  template<typename... Args>
+  static void Log(const char* msg, Args... args) {
+    // TODO(chris): CHECK fn_ not null.
+    klib::print(msg, fn_, args...);
+  }
 
  private:
   // We do not own.

@@ -8,6 +8,8 @@
 #include "sys/kernel.h"
 #include "klib/macros.h"
 
+using klib::Debug;
+
 // Registers when the ISR was triggered. Used for (hopefully) diagnosing bugs.
 typedef struct {
   // Pushed the segments last.
@@ -230,22 +232,21 @@ extern "C" {
 void interrupt_handler(regs* r) {
   SUPPRESS_UNUSED_WARNING(r);
   // Processor interrupts.
-  // const char* description = "Unknown Interrupt";
-  // if (r->int_no < 32) {
-  //   description = kInterruptDescriptions[r->int_no];
-  // }
+  const char* description = "Unknown Interrupt";
+  if (r->int_no < 32) {
+    description = kInterruptDescriptions[r->int_no];
+  }
 
   // TODO(chris): Make a kick-ass BSOD.
-  // debug_log("Received interrupt %s[%d] with code %d",
-  //	    description, r->int_no, r->err_code);
-
+  Debug::Log("Received interrupt %s[%d] with code %d",
+	     description, r->int_no, r->err_code);
   kernel_exit();
 }
 
 // TODO(chris): Put this elsewhere.
 void handle_timer(regs* r) {
   if (r->int_no != 32) {
-    klib::Debug::Log("Error: Interrupt doesn't match expected.");
+    Debug::Log("Error: Interrupt doesn't match expected.");
   }
   // TODO(chris): Thread scheduling or something?
 }
@@ -270,11 +271,10 @@ void irq_handler(regs* r) {
   case 1:
     // Keyboard
     scancode = inb(0x60);
-    keyboard_process(scancode);
+    hal::Keyboard::SendScancode(scancode);
     break;
   default:
-    // debug_log("Unknown IRQ[%d]", irq_no);
-    {}
+    Debug::Log("Unknown IRQ[%d]", irq_no);
   }
 
   // Send "End of Interrupt"

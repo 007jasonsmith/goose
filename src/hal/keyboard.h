@@ -5,8 +5,13 @@
 
 #include "klib/types.h"
 
+// TODO(chris): Move to a namespace. Refactor.
 // TODO(chris): Support capslock.
 // TODO(chris): Support shift+x for capitals, etc.
+
+namespace hal {
+
+namespace Keyboard {
 
 struct KeyboardKey {
   uint32 scancode;
@@ -27,12 +32,16 @@ struct KeyPress {
 
 // Handle the keyboard interrupt taking the scancode and moving into
 // internal buffers.
-void keyboard_process(uint32 scancode);
+void SendScancode(uint32 scancode);
 
 // Wait until a printable character is pressed.
-void keyboard_get_char(char* c);
+void GetCharacterKeypress(char* c);
 
 // Wait until the next key is pressed.
-KeyPress keyboard_get_keypress();
+KeyPress GetKeypress();
+
+}  // namespace Keyboard
+
+}  // namespace hal
 
 #endif  // HAL_KEYBOARD_H_

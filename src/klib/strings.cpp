@@ -2,7 +2,9 @@
 
 #include "klib/types.h"
 
-size str_length(const char* buf) {
+namespace klib {
+
+size length(const char* buf) {
   size i = 0;
   while(buf[i]) {
     i++;
@@ -10,7 +12,7 @@ size str_length(const char* buf) {
   return i;
 }
 
-bool str_compare(const char* lhs, const char* rhs) {
+bool equal(const char* lhs, const char* rhs) {
   while (true) {
     if (*lhs != *rhs) {
       return false;
@@ -22,3 +24,5 @@ bool str_compare(const char* lhs, const char* rhs) {
     rhs++;
   }
 }
+
+}  // namespace klib
