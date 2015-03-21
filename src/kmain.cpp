@@ -75,7 +75,7 @@ void PanicHandler(const char* message) {
     pos = 0;
   }
   TextUI::Print(message, pos, 12);
-  TextUI::SetCursor(81, 26);
+  TextUI::ShowCursor(false);
 
   system_halt();
 }

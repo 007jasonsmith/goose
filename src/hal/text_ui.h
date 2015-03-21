@@ -56,7 +56,9 @@ class TextUI {
   static void SetCursor(uint8 x, uint8 y);
   static void SetChar(uint8 x, uint8 y, char c);
   static void SetColor(uint8 x, uint8 y, Color foreground, Color background);
-  
+
+  static void ShowCursor(bool show);
+
   template<typename... Args>
   static void Print(const char* msg, uint8 x, uint8 y, Args... args) {
     TextUIOutputFn fn(x, y);
@@ -65,6 +67,9 @@ class TextUI {
 
  private:
   static bool initialized_;
+  static bool show_cursor_;
+  static uint8 cursor_x_;
+  static uint8 cursor_y_;
 };
 
 }  // namespace hal

@@ -20,6 +20,9 @@ size PosToIndex(uint8 x, uint8 y) {
 namespace hal {
 
 bool TextUI::initialized_ = false;
+bool TextUI::show_cursor_ = true;
+uint8 TextUI::cursor_x_ = 0;
+uint8 TextUI::cursor_y_ = 0;
 
 TextUI::TextUI() {}
 
@@ -46,6 +49,12 @@ void TextUI::Initialize() {
 }
 
 void TextUI::SetCursor(uint8 x, uint8 y) {
+  cursor_x_ = x;
+  cursor_y_ = y;
+  if (!show_cursor_) {
+    return;
+  }
+
   size index = PosToIndex(x, y);
   uint16 pos = uint16(index / 2);
   const uint16 kCommandPort = 0x3D4;
@@ -69,6 +78,15 @@ void TextUI::SetColor(uint8 x, uint8 y, Color foreground, Color background) {
   uint8 foreground8 = uint8(foreground);
   uint8 background8 = uint8(background);
   screen_buffer[index + 1] = ((background8 & 0x0F) << 4) | (foreground8 & 0x0F);
+}
+
+void TextUI::ShowCursor(bool show) {
+  if (show) {
+    SetCursor(cursor_x_, cursor_y_);
+  } else {
+    SetCursor(81, 26);  // Off the screen.
+  }
+  show_cursor_ = show;
 }
 
 TextUIOutputFn::TextUIOutputFn(uint8 x, uint8 y) :
