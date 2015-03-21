@@ -6,7 +6,7 @@ CHECKSUM     equ -MAGIC_NUMBER  ; Calculate the checksum
 KERNEL_STACK_SIZE equ 4096      ; Stack size in bytes
 
 extern kmain                    ; Defined in kmain.c
-extern kernel_exit		; Defined in sys/kernel.h
+extern system_halt		; Defined in sys/halt.h
 	
 section .mbHeader		; IMPORTANT: The multi-boot header needs
                            	; to be in the first 8K, otherwise Grub won't
@@ -24,7 +24,7 @@ loader:                         ; the loader label (entry point from linker.ldt)
 	; TODO(chris): Stop using this and rely on a different boot loader.
 	push ebx                ; Push EBX, where GRUB stores the Memory Map info.
 	call kmain
-	call kernel_exit	; If the kernel does return. Shut it down.
+	call system_halt	; If the kernel does return. Shut it down.
 
 section .bss
 align 4                         ; align at 4 bytes

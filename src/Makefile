@@ -5,7 +5,7 @@
 OBJECTS = kmain.o kmain_asm.o \
           klib/argaccumulator.o klib/strings.o klib/type_printer.o \
 	  klib/debug.o \
-	  sys/io.o sys/kernel_asm.o \
+	  sys/io.o sys/halt.o \
 	  sys/gdt.o sys/gdt_asm.o \
 	  sys/idt.o sys/idt_asm.o \
 	  sys/isr.o sys/isr_asm.o \

@@ -5,7 +5,6 @@
 #include "klib/types.h"
 #include "sys/io.h"
 #include "sys/idt.h"
-#include "sys/kernel.h"
 #include "klib/macros.h"
 
 using klib::Debug;
@@ -240,7 +239,7 @@ void interrupt_handler(regs* r) {
   // TODO(chris): Make a kick-ass BSOD.
   Debug::Log("Received interrupt %s[%d] with code %d",
 	     description, r->int_no, r->err_code);
-  kernel_exit();
+  // TODO(chrsmith): Panic.
 }
 
 // TODO(chris): Put this elsewhere.
