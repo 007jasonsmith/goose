@@ -61,6 +61,17 @@ void Run() {
 	break;
       }
 
+      if (klib::equal(key_press.key.name, "Backspace")) {
+	if (current_command_idx <= 0) {
+	  continue;
+	}
+	current_command_idx--;
+	current_command[current_command_idx] = ' ';
+	TextUI::SetChar(current_command_idx + 2, current_command_line, ' ');
+	TextUI::SetCursor(current_command_idx + 2, current_command_line);
+	continue;
+      }
+
       if (key_press.key.c) {
 	TextUI::SetChar(current_command_idx + 2, current_command_line,
 			key_press.key.c);
@@ -73,9 +84,10 @@ void Run() {
 	}
 
 	TextUI::SetCursor(current_command_idx + 2, current_command_line);
-      }
 
-      // TODO(chrsmith): Backspace, Delete, and arrow.
+	continue;
+      }
+      // TODO(chrsmith): Delete, and arrow.
     }
 
     // Process the command.
