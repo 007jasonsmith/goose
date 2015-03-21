@@ -39,7 +39,6 @@ void kmain(const kernel::grub::multiboot_info_t* mbt) {
   Debug::Log("Kernel started.");
 
   klib::SetPanicFn(&PanicHandler);
-  klib::SetPanicFn(&PanicHandler);
 
   // Initialize core CPU-based systems.
   sys::InstallGlobalDescriptorTable();

@@ -9,6 +9,20 @@
 
 namespace hal {
 
+// A offset into the screen.
+struct Offset {
+  uint8 x;
+  uint8 y;
+};
+
+// A region on the screen.
+struct Region {
+  Region(uint8 x, uint8 y, uint8 width, uint8 height);
+  Offset offset;
+  uint8 width;
+  uint8 height;
+};
+
 enum class Color {
   Black   = 0,
   Blue    = 1,
@@ -36,12 +50,8 @@ class TextUIOutputFn : public klib::IOutputFn {
 
   virtual void Print(char c);
 
-  uint8 OffsetX() const;
-  uint8 OffsetY() const;
-
  private:
-  uint8 offset_x_;
-  uint8 offset_y_;
+  Offset offset_;
 };
 
 class TextUI {
@@ -59,6 +69,8 @@ class TextUI {
 
   static void ShowCursor(bool show);
 
+  static void Scroll(const Region& region);
+
   template<typename... Args>
   static void Print(const char* msg, uint8 x, uint8 y, Args... args) {
     TextUIOutputFn fn(x, y);
@@ -68,8 +80,7 @@ class TextUI {
  private:
   static bool initialized_;
   static bool show_cursor_;
-  static uint8 cursor_x_;
-  static uint8 cursor_y_;
+  static Offset cursor_;
 };
 
 }  // namespace hal

@@ -2,7 +2,7 @@
 
 #include "klib/types.h"
 #include "sys/io.h"
-
+#include "klib/panic.h"
 // See: http://wiki.osdev.org/Text_UI
 
 namespace {
@@ -21,8 +21,14 @@ namespace hal {
 
 bool TextUI::initialized_ = false;
 bool TextUI::show_cursor_ = true;
-uint8 TextUI::cursor_x_ = 0;
-uint8 TextUI::cursor_y_ = 0;
+Offset TextUI::cursor_;
+
+Region::Region(uint8 x, uint8 y, uint8 width, uint8 height) {
+  this->offset.x = x;
+  this->offset.y = y;
+  this->width = width;
+  this->height = height;
+}
 
 TextUI::TextUI() {}
 
@@ -49,8 +55,10 @@ void TextUI::Initialize() {
 }
 
 void TextUI::SetCursor(uint8 x, uint8 y) {
-  cursor_x_ = x;
-  cursor_y_ = y;
+  // TODO(chris): This is an ugly hack. Disable the cursor by simply
+  // setting the display cursor flag in the VGA settings register.
+  cursor_.x = x;
+  cursor_.y = y;
   if (!show_cursor_) {
     return;
   }
@@ -82,28 +90,46 @@ void TextUI::SetColor(uint8 x, uint8 y, Color foreground, Color background) {
 
 void TextUI::ShowCursor(bool show) {
   if (show) {
-    SetCursor(cursor_x_, cursor_y_);
+    SetCursor(cursor_.x, cursor_.y);
   } else {
     SetCursor(81, 26);  // Off the screen.
   }
   show_cursor_ = show;
 }
 
-TextUIOutputFn::TextUIOutputFn(uint8 x, uint8 y) :
-  offset_x_(x), offset_y_(y) {
+void TextUI::Scroll(const Region& region) {
+  if (region.height < 2) {
+    klib::Panic("region.height < 2?");
+    return;
+  }
+  for (int y = region.offset.y; y < region.offset.y + region.height - 1; y++) {
+    for (int x = region.offset.x; x < region.offset.x + region.width; x++) {
+      size index = PosToIndex(x, y);
+      screen_buffer[index] = screen_buffer[index + 80*2];
+      screen_buffer[index + 1] = screen_buffer[index + 80*2 + 1];
+    }
+  }
+
+  int y = region.offset.y + region.height - 1;
+  for (int x = region.offset.x; x < region.offset.x + region.width; x++) {
+      size index = PosToIndex(x, y);
+      screen_buffer[index] = ' ';
+  }
+}
+
+TextUIOutputFn::TextUIOutputFn(uint8 x, uint8 y) {
   // TODO(chris): CHECK valid.
+  offset_.x = x;
+  offset_.y = y;
 }
 
 void TextUIOutputFn::Print(char c) {
   // Don't scroll.
-  if (offset_x_ >= 80) {
+  if (offset_.x >= 80) {
     return;
   }
-  TextUI::SetChar(OffsetX(), OffsetY(), c);
-  offset_x_++;
+  TextUI::SetChar(offset_.x, offset_.y, c);
+  offset_.x++;
 }
-
-uint8 TextUIOutputFn::OffsetX() const { return offset_x_; }
-uint8 TextUIOutputFn::OffsetY() const { return offset_y_; }
 
 }  // namespace hal

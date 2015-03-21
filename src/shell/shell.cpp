@@ -2,6 +2,7 @@
 
 #include "hal/keyboard.h"
 #include "hal/text_ui.h"
+#include "kernel/memory.h"
 #include "klib/types.h"
 #include "klib/strings.h"
 
@@ -13,6 +14,8 @@ namespace {
 
 // Initialize shell chrome.
 void InitializeChrome();
+// Show a map of the machine's memory.
+void ShowMemoryMap(shell::ShellStream* shell);
 
 void InitializeChrome() {
   // Title
@@ -33,12 +36,50 @@ void InitializeChrome() {
   }
 }
 
+void ShowMemoryMap(shell::ShellStream* shell) {
+  shell->Write("Memory Map #%d", 1);
+  shell->Write("Memory Map #%d", 2);
+  shell->Write("Memory Map #%d", 3);
+  shell->Write("Memory Map #%d" ,4);
+  shell->Write("Memory Map #%d", 5);
+  /*
+  const kernel::grub::multiboot_info_t* multiboot_info =
+    kernel::GetMultibootInfo();
+  kernel::grub::multiboot_memory_map_t* mmap =
+    dynamic_cast<kernel::grub::multiboot_memory_map*>(
+      multiboot_info->mmap_addr);
+
+  size map_idx = 0;
+  while (((uint32) mmap) < mbt->mmap_addr + mbt->mmap_length) {
+    shell->Write("Memory Map [%d][%p] : size %d, type %d", map_idx, (uint32) mmap,
+		 mmap->size, mmap->type);
+    shell->Write("  address %d / %d",
+		 mmap->base_addr_low, mmap->base_addr_high);
+    shell->Write("  length  %d / %d", mmap->length_low, mmap->length_high);
+
+    mmap = dynamic_cast<multiboot_memory_map_t*>(
+        (uint32) mmap + mmap->size + sizeof(uint32));
+    map_idx++;
+  }
+  */
+}
+
 }  // anonymous namespace
 
 namespace shell {
 
+ShellStream::ShellStream(const hal::Region region) : region_(region) {}
+
+void ShellStream::Print(char c) {
+  // Write the character.
+  // Honor wrap around.
+  // Scroll the region as needed.
+  if (c > '3') return;
+}
+
 void Run() {
   InitializeChrome();
+  hal::Region shell_region(0, 1, 80, 24);
 
   uint8 current_command_line = 1;
   
@@ -47,6 +88,12 @@ void Run() {
   char current_command[kMaxCommandLength];
 
   while (true) {
+    // Scroll until the command is on the last line.
+    while (current_command_line >= 25) {
+      TextUI::Scroll(shell_region);
+      current_command_line--;
+    }
+
     // Start new command.
     current_command_idx = 0;
     current_command[0] = '\0';
@@ -92,41 +139,14 @@ void Run() {
 
     // Process the command.
     current_command_line++;
+    while (current_command_line >= 25) {
+      TextUI::Scroll(shell_region);
+      current_command_line--;
+    }
     TextUI::Print("Executing '%s'", 0, current_command_line, current_command);
-    current_command_line++;
+
+    current_command_line++;  // So we start on the next line.
   }
 }
 
 }  // namespace shell
-#if 0
-  multiboot_memory_map_t* mmap = (multiboot_memory_map*) mbt->mmap_addr;
-  int map_idx = 0;
-  while (((uint32) mmap) < mbt->mmap_addr + mbt->mmap_length) {
-    con_writeline(OUTPUT_WIN, "Memory Map [%d][%p] : size %d, type %d", map_idx, mmap, mmap->size, mmap->type);
-    con_writeline(OUTPUT_WIN, "  address %d / %d", mmap->base_addr_low, mmap->base_addr_high);
-    con_writeline(OUTPUT_WIN, "  length  %d / %d", mmap->length_low, mmap->length_high);
-
-    mmap = (multiboot_memory_map_t*) ( (uint32) mmap + mmap->size + sizeof(uint32) );
-    map_idx++;
-  }
-
-  con_writeline(DEBUG_WIN, "G[%c]ose", 'o');
-
-  con_writeline(OUTPUT_WIN, "Keyboard echo.");
-
-  char command[256];
-  while (true) {
-    con_write(OUTPUT_WIN, "> ");
-    con_win_readline(OUTPUT_WIN, command, 256);
-    con_writeline(OUTPUT_WIN, "Executing '%s'", command);
-
-    if (str_compare(command, "crash")) {
-      int denum = 1;
-      int result = 0 / (denum - 1);
-      con_writeline(OUTPUT_WIN, "Result was %d", result);
-    }
-    if (str_compare(command, "exit")) {
-      break;
-    }
-  }
-#endif
