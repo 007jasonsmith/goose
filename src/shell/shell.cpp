@@ -42,7 +42,7 @@ void Run() {
 
   uint8 current_command_line = 1;
   
-  const size kMaxCommandLength = 78;
+  const size kMaxCommandLength = 79;  // +1 for null.
   size current_command_idx = 0;
   char current_command[kMaxCommandLength];
 
@@ -68,7 +68,7 @@ void Run() {
 	current_command[current_command_idx] = key_press.key.c;
 	current_command_idx++;
 	current_command[current_command_idx] = '\0';
-	if (current_command_idx >= kMaxCommandLength) {
+	if (current_command_idx >= kMaxCommandLength - 1) {
 	  current_command_idx--;
 	}
 
