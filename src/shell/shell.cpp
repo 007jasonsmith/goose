@@ -12,10 +12,22 @@ using hal::Keyboard::KeyPress;
 
 namespace {
 
+struct ShellCommand {
+  const char* command;
+  void (*func)(shell::ShellStream* shell);
+};
+
 // Initialize shell chrome.
 void InitializeChrome();
 // Show a map of the machine's memory.
 void ShowMemoryMap(shell::ShellStream* shell);
+// Returns the command with the name, otherwise null.
+const ShellCommand* GetShellCommand(const char* command);
+
+const ShellCommand commands[] = {
+  { "show-memory-map", &ShowMemoryMap }
+};
+const size kNumCommands = sizeof(commands) / sizeof(ShellCommand);
 
 void InitializeChrome() {
   // Title
@@ -64,6 +76,15 @@ void ShowMemoryMap(shell::ShellStream* shell) {
     map_idx++;
   }
   */
+}
+
+const ShellCommand* GetShellCommand(const char* command) {
+  for (size i = 0; i < kNumCommands; i++) {
+    if (klib::equal(commands[i].command, command)) {
+      return &commands[i];
+    }
+  }
+  return nullptr;
 }
 
 }  // anonymous namespace
@@ -163,10 +184,6 @@ void Run() {
       // TODO(chrsmith): Delete, and arrow.
     }
 
-    if (klib::equal(current_command, "exit")) {
-      return;
-    }
-
     // Process the command.
     current_command_line++;
     while (current_command_line >= 25) {
@@ -177,7 +194,21 @@ void Run() {
     TextUI::ShowCursor(false);
     hal::Offset shell_offset(0, current_command_line);
     ShellStream stream(shell_region, shell_offset);
-    ShowMemoryMap(&stream);
+
+    const ShellCommand* command = GetShellCommand(current_command);
+    if (klib::equal(current_command, "exit")) {
+      return;
+    } else if (klib::equal(current_command, "help")) {
+      stream.WriteLine("Known Commands:");
+      for (size i = 0; i < kNumCommands; i++) {
+	stream.WriteLine("  %s", commands[i].command);
+      }
+    } else if (command == nullptr) {
+      stream.WriteLine("Error: Command not found.");
+    } else {
+      command->func(&stream);
+    }
+
     TextUI::ShowCursor(true);
 
     // Move the cursor, etc. to where the shell stream finished off.

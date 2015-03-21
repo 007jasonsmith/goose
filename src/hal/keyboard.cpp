@@ -16,7 +16,7 @@ const KeyboardKey keyboard_keymap[] = {
   { 0x00, "ERROR", NOP, NOP },
   #include "hal/en-us-keyboard.map"
 };
-const uint32 keyboard_keymap_size = sizeof(keyboard_keymap) / sizeof(KeyboardKey);
+const size keyboard_keymap_size = sizeof(keyboard_keymap) / sizeof(KeyboardKey);
 #undef NOP
 
 // TODO(chris): Make volatile
@@ -45,7 +45,7 @@ void SendScancode(uint32 scancode) {
   bool key_pressed = !(scancode & 0x80);
   scancode &= ~0x80;
 
-  if (scancode >= keyboard_keymap_size) {
+  if (size(scancode) >= keyboard_keymap_size) {
     if (key_pressed) {
       klib::Debug::Log("Unknown key scancode[%d]", scancode);
     }
