@@ -31,10 +31,6 @@ class TypePrinter {
 
   void PrintDec(int32 x);
   void PrintDec(uint32 x);
-  void PrintHex(int32 x, int digits_so_far);
-  void PrintHex(uint32 x, int digits_so_far);
-  void PrintHex(int64 x, int digits_so_far);
-  void PrintHex(uint64 x, int digits_so_far);
 
   IOutputFn* out_;  // We do not own.
 };

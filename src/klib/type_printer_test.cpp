@@ -27,7 +27,6 @@ class TestPrinter : public IOutputFn {
 
 // TODO(chris): Use a test framework, so TestPrinter and TypePrinter are avail.
 // TODO(chris): Print error case: invalid type.
-// TODO(chris): PrintHex error case: invalid type.
 TEST(TypePrinter, Basic) {
   TestPrinter p;
   TypePrinter tp(&p);
@@ -104,7 +103,7 @@ TEST(TypePrinter, HexError) {
   TypePrinter tp(&p);
 
   tp.PrintHex(Arg::Of("a cstr"));
-  EXPECT_STREQ(p.Get(), "[ERROR: invalid type for hex]");
+  EXPECT_STREQ(p.Get(), "[ERROR: Invalid type]");
 }
 
 }

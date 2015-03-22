@@ -3,6 +3,8 @@ set -e
 set -x
 clear
 
+export GTEST_DIR=../third_party/googletest/
+
 g++ \
     -I$GTEST_DIR/include \
     -I. \
@@ -12,8 +14,8 @@ g++ \
     ./klib/strings.cpp \
     ./klib/argaccumulator.cpp \
     ./klib/argaccumulator_test.cpp \
-    ./klib/typeprinter.cpp \
-    ./klib/typeprinter_test.cpp \
+    ./klib/type_printer.cpp \
+    ./klib/type_printer_test.cpp \
     ./klib/print_test.cpp \
     ./klib/tests_main.cpp \
     ../libgtest.a \

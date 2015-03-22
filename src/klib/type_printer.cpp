@@ -4,7 +4,25 @@
 #include "klib/types.h"
 
 namespace {
+
+const char kInvalidType[] = "[ERROR: Invalid type]";
+
 const char kHexDigits[] = "0123456789ABCDEF";
+
+template<typename T>
+void OutputHex(const T x, const uint8 digits_so_far, klib::IOutputFn* out) {
+  if (digits_so_far == 0) {
+    out->Print('0');
+    out->Print('x');
+  }
+  if (digits_so_far >= sizeof(T) * 2) {
+    return;
+  }
+  int digit_idx = (x & 0b1111);
+  OutputHex(x / 16, digits_so_far + 1, out);
+  out->Print(kHexDigits[digit_idx]);
+}
+
 }  // anonymous namespace
 
 namespace klib {
@@ -48,19 +66,19 @@ void TypePrinter::Print(Arg arg) {
 void TypePrinter::PrintHex(Arg arg) {
   switch (arg.type) {
   case ArgType::INT32:
-    PrintHex(arg.value.i32, 0);
+    OutputHex(arg.value.i32, 0, out_);
     break;
   case ArgType::UINT32:
-    PrintHex(arg.value.ui32, 0);
+    OutputHex(arg.value.ui32, 0, out_);
     break;
   case ArgType::INT64:
-      PrintHex(arg.value.i64, 0);
-      break;
+    OutputHex(arg.value.i64, 0, out_);
+    break;
   case ArgType::UINT64:
-    PrintHex(arg.value.ui64, 0);
+    OutputHex(arg.value.ui64, 0, out_);
     break;
   default:
-    PrintCStr("[ERROR: invalid type for hex]");
+    out_->Print(kInvalidType);
   }
 }
 
@@ -100,59 +118,6 @@ void TypePrinter::PrintDec(uint32 x) {
     PrintDec(x / 10);
   }
   out_->Print('0' + digit);
-}
-  
-void TypePrinter::PrintHex(int32 x, int digits_so_far) {
-  if (digits_so_far == 0) {
-    out_->Print('0');
-    out_->Print('x');
-  }
-  if (digits_so_far >= 8) {
-    return;
-  }
-  int digit_idx = x % 16;
-  PrintHex(x / 16, digits_so_far + 1);
-  out_->Print(kHexDigits[digit_idx]);
-}
-
-void TypePrinter::PrintHex(uint32 x, int digits_so_far) {
-  if (digits_so_far == 0) {
-    out_->Print('0');
-    out_->Print('x');
-  }
-  if (digits_so_far >= 8) {
-    return;
-  }
-  int digit_idx = x % 16;
-  PrintHex(x / 16, digits_so_far + 1);
-  out_->Print(kHexDigits[digit_idx]);
-}
-
-void TypePrinter::PrintHex(int64 x, int digits_so_far) {
-  if (digits_so_far == 0) {
-    out_->Print('0');
-    out_->Print('x');
-  }
-  if (digits_so_far >= 16) {
-    return;
-  }
-  // int digit_idx = x % 16;
-  int digit_idx = (x & 0b1111);
-  PrintHex(x / 16, digits_so_far + 1);
-    out_->Print(kHexDigits[digit_idx]);
-}
-  
-void TypePrinter::PrintHex(uint64 x, int digits_so_far) {
-  if (digits_so_far == 0) {
-    out_->Print('0');
-    out_->Print('x');
-  }
-  if (digits_so_far >= 16) {
-    return;
-  }
-  int digit_idx = x % 16;
-  PrintHex(x / 16, digits_so_far + 1);
-    out_->Print(kHexDigits[digit_idx]);
 }
 
 }  // namespace klib
