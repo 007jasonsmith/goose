@@ -3,7 +3,9 @@
 #include "hal/keyboard.h"
 #include "hal/text_ui.h"
 #include "kernel/memory.h"
+#include "klib/limits.h"
 #include "klib/types.h"
+#include "klib/panic.h"
 #include "klib/strings.h"
 
 using hal::Color;
@@ -49,25 +51,29 @@ void InitializeChrome() {
 }
 
 void ShowMemoryMap(shell::ShellStream* shell) {
-  const kernel::grub::multiboot_info_t* mbt =
-    kernel::GetMultibootInfo();
-  kernel::grub::multiboot_memory_map_t* mmap =
+  const kernel::grub::multiboot_info* mbt = kernel::GetMultibootInfo();
+  
+  kernel::grub::multiboot_memory_map* mmap =
     (kernel::grub::multiboot_memory_map*) mbt->mmap_addr;
 
-  size map_idx = 0;
-  while (((uint32) mmap) < mbt->mmap_addr + mbt->mmap_length) {
-    shell->WriteLine(
-        "Memory Map [%d][%p] : size %d, type %d", map_idx, (uint32) mmap,
-	mmap->size, mmap->type);
-    shell->WriteLine(
-        "  address %d / %d", mmap->base_addr_low, mmap->base_addr_high);
-    shell->WriteLine(
-        "  length  %d / %d", mmap->length_low, mmap->length_high);
+  // Sanity check 32-bits for the time being.
+  shell->WriteLine("System memory:");
+  // Lower means < 1MiB?
+  shell->WriteLine("  Lower %dKiB / %dMiB", mbt->mem_lower, mbt->mem_lower / 1024);
+  shell->WriteLine("  Upper %dKiB / %dMiB", mbt->mem_upper, mbt->mem_upper / 1024);
 
-    mmap =
-        (kernel::grub::multiboot_memory_map_t*)(
-            (uint32) mmap + mmap->size + sizeof(uint32));
-    map_idx++;
+  shell->WriteLine("%d Memory map regions:", mbt->mmap_length);  // Bytes?
+  while((uint32) mmap < (uint32) mbt->mmap_addr + mbt->mmap_length) {
+    // Sanity check 32-bits for the time being.
+    if (mmap->base_addr_high) { klib::Panic("Non-zero base_addr_high"); }
+    if (mmap->length_high) { klib::Panic("Non-zero length_high"); }
+
+    const uint32 region_end = mmap->base_addr_low + mmap->length_low - 1;
+    shell->WriteLine("%h - %h type %d",
+		     mmap->base_addr_low, region_end, mmap->type);
+
+    mmap = (kernel::grub::multiboot_memory_map*) (
+        (uint32) mmap + mmap->size + sizeof(uint32));
   }
 }
 

@@ -3,18 +3,18 @@
 namespace {
 
 // System boot info.
-const kernel::grub::multiboot_info_t* boot_info_ = nullptr;
+const kernel::grub::multiboot_info* boot_info_ = nullptr;
 
 }  // anonymous namespace
 
 namespace kernel {
 
-void SetMultibootInfo(const grub::multiboot_info_t* boot_info) {
+void SetMultibootInfo(const grub::multiboot_info* boot_info) {
   // CHECK_NOTNULL, CHECK_NULL, etc.
   boot_info_ = boot_info;
 }
 
-const grub::multiboot_info_t*  GetMultibootInfo() {
+const grub::multiboot_info*  GetMultibootInfo() {
   return boot_info_;
 }
 

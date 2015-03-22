@@ -27,7 +27,7 @@ void PanicHandler(const char* message);
 void FriendlyShutdown(const char* message);
 
 const char version[] = "v0.1a";
-void kmain(const kernel::grub::multiboot_info_t* mbt) {
+void kmain(const kernel::grub::multiboot_info* mbt) {
   SUPPRESS_UNUSED_WARNING(mbt);
 
   // Initialize device drivers.
