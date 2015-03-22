@@ -1,6 +1,7 @@
 #include "gtest/gtest.h"
 
 #include "klib/argaccumulator.h"
+#include "klib/limits.h"
 #include "klib/type_printer.h"
 #include "klib/types.h"
 

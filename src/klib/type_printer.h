@@ -27,11 +27,6 @@ class TypePrinter {
   void PrintHex(Arg arg);
 
  private:
-  void PrintCStr(const char* msg);
-
-  void PrintDec(int32 x);
-  void PrintDec(uint32 x);
-
   IOutputFn* out_;  // We do not own.
 };
 

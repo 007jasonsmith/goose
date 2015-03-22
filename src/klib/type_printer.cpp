@@ -1,11 +1,53 @@
 #include "klib/type_printer.h"
 
 #include "klib/argaccumulator.h"
+#include "klib/limits.h"
+#include "klib/macros.h"
 #include "klib/types.h"
 
 namespace {
-
 const char kInvalidType[] = "[ERROR: Invalid type]";
+
+// Hack to work around compiler warning. When we check if "x < 0" inside of
+// PrintDec, we get a warning that for unsigned types the expression will
+// always evaluate to false.
+template <typename T, bool is_signed>
+struct IsNegative{ 
+  bool operator()(const T& x) {
+    return x < 0;
+  }
+}; 
+
+template <typename T>
+struct IsNegative<T, false /* unsigned */>{ 
+  bool operator()(const T x) {
+    SUPPRESS_UNUSED_WARNING(x)
+    return false;
+  }
+}; 
+
+template<typename T>
+void OutputDec(T x, klib::IOutputFn* out) {
+  if (IsNegative<T, Limits<T>::IsSigned>()(x)) {
+    out->Print('-');
+
+    // We need to do extra shenanigans here, since -1 * MinInt overflows.
+    if (x == Limits<T>::Min) {
+      int digit = x % 10;
+      OutputDec(x / -10, out);
+      out->Print('0' + -digit);
+      return;
+    } else {
+      x *= -1;
+    }
+  }
+  
+  int digit = x % 10;
+  if (x >= 10) {
+    OutputDec(x / 10, out);
+  }
+  out->Print('0' + digit);
+}
 
 const char kHexDigits[] = "0123456789ABCDEF";
 
@@ -44,22 +86,20 @@ void TypePrinter::Print(Arg arg) {
     out_->Print(arg.value.c);
     break;
   case ArgType::CSTR:
-    PrintCStr(arg.value.cstr);
-      break;
+    out_->Print(arg.value.cstr);
+    break;
   case ArgType::INT32:
-    PrintDec(arg.value.i32);
+    OutputDec(arg.value.i32, out_);
     break;
   case ArgType::UINT32:
-    PrintDec(arg.value.ui32);
+    OutputDec(arg.value.ui32, out_);
     break;
-  case ArgType::INT64:
-    PrintCStr("TODO(chris): support-int64");
-    break;
-  case ArgType::UINT64:
-    PrintCStr("TODO(chris): support-uint64");
-    break;      
+  // case ArgType::INT64:
+  // case ArgType::UINT64:
+  // 64-bit decimal printing requires __moddi3 and __divdi3 to be defined,
+  // which are currently NYI in klib.
   default:
-    PrintCStr("[ERROR: unknown type]");
+    out_->Print(kInvalidType);
   }
 }
 
@@ -80,44 +120,6 @@ void TypePrinter::PrintHex(Arg arg) {
   default:
     out_->Print(kInvalidType);
   }
-}
-
-void TypePrinter::PrintCStr(const char* msg) {
-  while (*msg) {
-    out_->Print(*msg);
-    msg++;
-  }
-}
-
-void TypePrinter::PrintDec(int32 x) {
-  // LOL, -1*kMinInt32 == BOOM.
-  if (x == kMinInt32) {
-    const char* digits = "-2147483648";
-    while (*digits) {
-      out_->Print(*digits);
-      digits++;
-    }
-    return;
-  }
-  
-  if (x < 0) {
-    out_->Print('-');
-    x *= -1;
-  }
-  
-  int digit = x % 10;
-  if (x >= 10) {
-    PrintDec(x / 10);
-  }
-  out_->Print('0' + digit);
-}
-  
-void TypePrinter::PrintDec(uint32 x) {
-  int digit = x % 10;
-  if (x >= 10) {
-    PrintDec(x / 10);
-  }
-  out_->Print('0' + digit);
 }
 
 }  // namespace klib
