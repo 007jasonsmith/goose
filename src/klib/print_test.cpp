@@ -29,34 +29,41 @@ namespace klib {
 
 // TODO(chris): Use a test framework to avoid all the instances of TestPrinter.
 
-TEST(Printf, Basic) {
+TEST(Print, Basic) {
   TestPrinter p;
-  print("hello, world!", &p);
+  Print("hello, world!", &p);
   EXPECT_STREQ(p.Get(), "hello, world!");
 }
 
 TEST(Print, Basic2) {
   TestPrinter p;
-  print("[%n] [%c] [%s]", &p, -11, '@', "hello, world");
+  Print("[%d] [%c] [%s]", &p, -11, '@', "hello, world");
   EXPECT_STREQ(p.Get(), "[-11] [@] [hello, world]");
 }
 
 TEST(Print, Extra) {
   TestPrinter p;
-  print("%d", &p, 1, 2, 3);
+  Print("%d", &p, 1, 2, 3);
   EXPECT_STREQ(p.Get(), "1 Extra: 2 Extra: 3");
 }
 
 TEST(Print, ErrorUnderspecified) {
   TestPrinter p;
-  print("%d %d %d", &p, 1, 2);
+  Print("%d %d %d", &p, 1, 2);
   EXPECT_STREQ(p.Get(), "1 2 [Error: args underspecified]");
 }
 
 TEST(Print, ErrorOverspecified) {
   TestPrinter p;
-  print("no args", &p, 1, 2, 3);
+  Print("no args", &p, 1, 2, 3);
   EXPECT_STREQ(p.Get(), "no args Extra: 1 Extra: 2 Extra: 3");
 }
+
+TEST(Print, ErrorUnknownSpecifier) {
+  TestPrinter p;
+  Print("%j", &p, 1);
+  EXPECT_STREQ(p.Get(), "[Error: Unknown format specifier]");
+}
+
 
 }  // namespace klib

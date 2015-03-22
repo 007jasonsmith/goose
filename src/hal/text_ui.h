@@ -76,7 +76,7 @@ class TextUI {
   template<typename... Args>
   static void Print(const char* msg, uint8 x, uint8 y, Args... args) {
     TextUIOutputFn fn(x, y);
-    klib::print(msg, &fn, args...);
+    klib::Print(msg, &fn, args...);
   }
 
  private:

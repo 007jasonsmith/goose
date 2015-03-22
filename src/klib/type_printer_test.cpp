@@ -28,26 +28,27 @@ class TestPrinter : public IOutputFn {
 
 // TODO(chris): Use a test framework, so TestPrinter and TypePrinter are avail.
 // TODO(chris): Print error case: invalid type.
-TEST(TypePrinter, Basic) {
+TEST(TypePrinter, Default) {
   TestPrinter p;
   TypePrinter tp(&p);
 
-  tp.Print(Arg::Of(uint32(42)));
-  tp.Print(Arg::Of('|'));
-  tp.Print(Arg::Of(-42));
-  EXPECT_STREQ(p.Get(), "42|-42");
+  tp.PrintDefault(Arg::Of(uint32(42)));
+  tp.PrintDefault(Arg::Of('x'));
+  tp.PrintDefault(Arg::Of("str"));
+  tp.PrintDefault(Arg::Of(uint64(1024)));
+  EXPECT_STREQ(p.Get(), "42xstr0x0000000000000400");
 }
 
-TEST(TypePrinter, Chars) {
+TEST(TypePrinter, Char) {
   TestPrinter p;
   TypePrinter tp(&p);
 
-  tp.Print(Arg::Of('['));
-  tp.Print(Arg::Of('\n'));
-  tp.Print(Arg::Of('\t'));
-  tp.Print(Arg::Of(' '));
-  tp.Print(Arg::Of('@'));
-  tp.Print(Arg::Of(']'));
+  tp.PrintChar(Arg::Of('['));
+  tp.PrintChar(Arg::Of('\n'));
+  tp.PrintChar(Arg::Of('\t'));
+  tp.PrintChar(Arg::Of(' '));
+  tp.PrintChar(Arg::Of('@'));
+  tp.PrintChar(Arg::Of(']'));
   EXPECT_STREQ(p.Get(), "[\n\t @]");
 }
 
@@ -56,10 +57,10 @@ TEST(TypePrinter, MaxInt32s) {
   TestPrinter p;
   TypePrinter tp(&p);
 
-  tp.Print(Arg::Of("max:"));
-  tp.Print(Arg::Of(kMaxInt32));
-  tp.Print(Arg::Of(" min:"));
-  tp.Print(Arg::Of(kMinInt32));
+  tp.PrintString(Arg::Of("max:"));
+  tp.PrintDec(Arg::Of(kMaxInt32));
+  tp.PrintString(Arg::Of(" min:"));
+  tp.PrintDec(Arg::Of(kMinInt32));
   EXPECT_STREQ(p.Get(), "max:2147483647 min:-2147483648");
 }
 
@@ -67,10 +68,10 @@ TEST(TypePrinter, MaxUInt32s) {
   TestPrinter p;
   TypePrinter tp(&p);
 
-  tp.Print(Arg::Of("max:"));
-  tp.Print(Arg::Of(kMaxUInt32));
-  tp.Print(Arg::Of(" min:"));
-  tp.Print(Arg::Of(kMinUInt32));
+  tp.PrintString(Arg::Of("max:"));
+  tp.PrintDec(Arg::Of(kMaxUInt32));
+  tp.PrintString(Arg::Of(" min:"));
+  tp.PrintDec(Arg::Of(kMinUInt32));
   EXPECT_STREQ(p.Get(), "max:4294967295 min:0");
 }
 
@@ -79,9 +80,9 @@ TEST(TypePrinter, HexInt32s) {
   TypePrinter tp(&p);
 
   tp.PrintHex(Arg::Of(kMaxInt32));
-  tp.Print(Arg::Of(' '));
+  tp.PrintChar(Arg::Of(' '));
   tp.PrintHex(Arg::Of(kMaxUInt32));
-  tp.Print(Arg::Of(' '));
+  tp.PrintChar(Arg::Of(' '));
   tp.PrintHex(Arg::Of(0));
   EXPECT_STREQ(p.Get(), "0x7FFFFFFF 0xFFFFFFFF 0x00000000");
 }
@@ -91,12 +92,20 @@ TEST(TypePrinter, HexInt64s) {
   TypePrinter tp(&p);
 
   tp.PrintHex(Arg::Of(kMaxInt64));
-  tp.Print(Arg::Of(' '));
+  tp.PrintChar(Arg::Of(' '));
   tp.PrintHex(Arg::Of(kMinInt64));
-  tp.Print(Arg::Of(' '));
+  tp.PrintChar(Arg::Of(' '));
   tp.PrintHex(Arg::Of(kMaxUInt64));
   EXPECT_STREQ(
       p.Get(), "0x7FFFFFFFFFFFFFFF 0x8000000000000000 0xFFFFFFFFFFFFFFFF");
+}
+
+TEST(TypePrinter, String) {
+  TestPrinter p;
+  TypePrinter tp(&p);
+
+  tp.PrintString(Arg::Of("alpha beta gamma"));
+  EXPECT_STREQ(p.Get(), "alpha beta gamma");
 }
 
 TEST(TypePrinter, HexError) {

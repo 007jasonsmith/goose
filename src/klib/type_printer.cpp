@@ -80,14 +80,43 @@ TypePrinter::TypePrinter(IOutputFn* out) : out_(out) {
   // TODO(chris): CHECK_NOTNULL(out_);
 }
 
-void TypePrinter::Print(Arg arg) {
+void TypePrinter::PrintDefault(Arg arg) {
   switch (arg.type) {
   case ArgType::CHAR:
     out_->Print(arg.value.c);
     break;
+  case ArgType::INT32:
+    OutputDec(arg.value.i32, out_);
+    break;
+  case ArgType::UINT32:
+    OutputDec(arg.value.ui32, out_);
+    break;
+  case ArgType::INT64:
+    OutputHex(arg.value.i64, 0, out_);
+    break;
+  case ArgType::UINT64:
+    OutputHex(arg.value.ui64, 0, out_);
+    break;
   case ArgType::CSTR:
     out_->Print(arg.value.cstr);
     break;
+  default:
+    out_->Print(kInvalidType);
+  }
+}
+
+void TypePrinter::PrintChar(Arg arg) {
+  switch (arg.type) {
+  case ArgType::CHAR:
+    out_->Print(arg.value.c);
+    break;
+  default:
+    out_->Print(kInvalidType);
+  }
+}
+
+void TypePrinter::PrintDec(Arg arg) {
+  switch (arg.type) {
   case ArgType::INT32:
     OutputDec(arg.value.i32, out_);
     break;
@@ -116,6 +145,16 @@ void TypePrinter::PrintHex(Arg arg) {
     break;
   case ArgType::UINT64:
     OutputHex(arg.value.ui64, 0, out_);
+    break;
+  default:
+    out_->Print(kInvalidType);
+  }
+}
+
+void TypePrinter::PrintString(Arg arg) {
+  switch (arg.type) {
+  case ArgType::CSTR:
+    out_->Print(arg.value.cstr);
     break;
   default:
     out_->Print(kInvalidType);

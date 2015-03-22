@@ -9,7 +9,7 @@
 namespace klib {
 
 template<typename... Args>
-void print(const char* format, IOutputFn* out, Args... func_args) {
+void Print(const char* format, IOutputFn* out, Args... func_args) {
   ArgAccumulator args = ArgAccumulator::Parse(func_args...);
   TypePrinter tp(out);
 
@@ -27,11 +27,26 @@ void print(const char* format, IOutputFn* out, Args... func_args) {
 
       char next = format[i + 1];
       if (next == 0) {
-	out->Print("[ERROR: missing format specifier]");
+	out->Print("[Error: missing format specifier]");
 	return;
       }
 
-      tp.Print(args.Get(arg_index));
+      switch (next) {
+      case 'c':
+	tp.PrintChar(args.Get(arg_index));
+	break;
+      case 'd':
+	tp.PrintDec(args.Get(arg_index));
+	break;
+      case 'h':
+	tp.PrintHex(args.Get(arg_index));
+	break;
+      case 's':
+	tp.PrintString(args.Get(arg_index));
+	break;
+      default:
+	out->Print("[Error: Unknown format specifier]");
+      }
 
       arg_index++;
       i++;  // Skip over next
@@ -41,7 +56,7 @@ void print(const char* format, IOutputFn* out, Args... func_args) {
 
   while (arg_index < args.Count()) {
     out->Print(" Extra: ");
-    tp.Print(args.Get(arg_index));
+    tp.PrintDefault(args.Get(arg_index));
     arg_index++;
   }
 }

@@ -54,10 +54,12 @@ run: os.iso
 	$(AS) $(ASFLAGS) $< -o $@
 
 clean:
-	rm -rf *.o        \
-               ./klib/*.o \
-               ./sys/*.o  \
-               ./hal/*.o  \
-               kernel.elf \
-               os.iso     \
+	rm -rf *.o          \
+               ./hal/*.o    \
+               ./sys/*.o    \
+               ./klib/*.o   \
+               ./shell/*.o  \
+               ./kernel/*.o \
+               kernel.elf   \
+               os.iso       \
                iso/boot/kernel.elf

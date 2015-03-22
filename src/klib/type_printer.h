@@ -23,8 +23,11 @@ class TypePrinter {
  public:
   explicit TypePrinter(IOutputFn* out);
 
-  void Print(Arg arg);
+  void PrintDefault(Arg arg);
+  void PrintChar(Arg arg);
+  void PrintDec(Arg arg);
   void PrintHex(Arg arg);
+  void PrintString(Arg arg);
 
  private:
   IOutputFn* out_;  // We do not own.

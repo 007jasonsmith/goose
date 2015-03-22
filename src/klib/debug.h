@@ -23,7 +23,7 @@ class Debug {
   template<typename... Args>
   static void Log(const char* msg, Args... args) {
     // TODO(chris): CHECK fn_ not null.
-    klib::print(msg, fn_, args...);
+    klib::Print(msg, fn_, args...);
   }
 
  private:

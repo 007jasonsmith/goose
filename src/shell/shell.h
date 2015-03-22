@@ -21,13 +21,13 @@ class ShellStream : public klib::IOutputFn {
 
   template<typename... Args>
   void WriteLine(const char* msg, Args... args) {
-    klib::print(msg, this, args...);
-    klib::print("\n", this);
+    klib::Print(msg, this, args...);
+    klib::Print("\n", this);
   }
 
   template<typename... Args>
   void Write(const char* msg, Args... args) {
-    klib::print(msg, this, args...);
+    klib::Print(msg, this, args...);
   }
 
  private:
