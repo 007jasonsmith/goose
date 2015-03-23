@@ -25,12 +25,15 @@ void InitializeChrome();
 void ShowMemoryMap(shell::ShellStream* shell);
 // Print some pointers for kernel code. (Figure out where it exists.)
 void ShowKernelPointers(shell::ShellStream* shell);
+// Print all known information about the Kernel's ELF binary.
+void ShowElfInfo(shell::ShellStream* shell);
 // Returns the command with the name, otherwise null.
 const ShellCommand* GetShellCommand(const char* command);
 
 const ShellCommand commands[] = {
   { "show-memory-map", &ShowMemoryMap },
-  { "show-kernel-pointers", &ShowKernelPointers }
+  { "show-kernel-pointers", &ShowKernelPointers },
+  { "show-elf-info", &ShowElfInfo }
 };
 const size kNumCommands = sizeof(commands) / sizeof(ShellCommand);
 
@@ -147,6 +150,20 @@ void ShowKernelPointers(shell::ShellStream* shell) {
   shell->WriteLine("Function pointer : %h", uint32(&klib::Panic));
   shell->WriteLine("Const data       : %h", uint32(&commands));
   shell->WriteLine("Const data (.bss): %h", uint32(&testing));
+}
+
+// See: https://www.gnu.org/software/grub/manual/multiboot/multiboot.html
+void ShowElfInfo(shell::ShellStream* shell) {
+  const kernel::grub::multiboot_info* mbt = kernel::GetMultibootInfo();
+  if ((mbt->flags & 0b100000) == 0) {
+    klib::Panic("Multiboot flags bit 5 not set.");
+  }
+  const kernel::grub::elf_section_header_table* elf_sec =
+    &(mbt->u.elf_sec);
+     
+  shell->WriteLine("Multiboot ELF section:");
+  shell->WriteLine("  num = %d, size = %d", elf_sec->num, elf_sec->size);
+  shell->WriteLine("  addr = %h / shndx = %h", elf_sec->addr, elf_sec->shndx);
 }
 
 const ShellCommand* GetShellCommand(const char* command) {
