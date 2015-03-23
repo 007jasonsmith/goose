@@ -23,11 +23,14 @@ struct ShellCommand {
 void InitializeChrome();
 // Show a map of the machine's memory.
 void ShowMemoryMap(shell::ShellStream* shell);
+// Print some pointers for kernel code. (Figure out where it exists.)
+void ShowKernelPointers(shell::ShellStream* shell);
 // Returns the command with the name, otherwise null.
 const ShellCommand* GetShellCommand(const char* command);
 
 const ShellCommand commands[] = {
-  { "show-memory-map", &ShowMemoryMap }
+  { "show-memory-map", &ShowMemoryMap },
+  { "show-kernel-pointers", &ShowKernelPointers }
 };
 const size kNumCommands = sizeof(commands) / sizeof(ShellCommand);
 
@@ -137,6 +140,13 @@ void ShowMemoryMap(shell::ShellStream* shell) {
 		     mmap->base_addr_low, mmap->base_addr_low + mmap->length_low -1,
 		     mmap->length_low / 1024, mmap->length_low / 1024 / 1024);
   }
+}
+
+const double* testing;  // Only referenced by ShowKernelPointers.
+void ShowKernelPointers(shell::ShellStream* shell) {
+  shell->WriteLine("Function pointer : %h", uint32(&klib::Panic));
+  shell->WriteLine("Const data       : %h", uint32(&commands));
+  shell->WriteLine("Const data (.bss): %h", uint32(&testing));
 }
 
 const ShellCommand* GetShellCommand(const char* command) {
