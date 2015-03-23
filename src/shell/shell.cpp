@@ -57,7 +57,10 @@ void ShowMemoryMap(shell::ShellStream* shell) {
     "Reserved",
     "ACPI reclaimable",
     "ACPI NVS memory",
-    "Bad memory"
+    "Bad memory",
+    // Not an official value. Used here to mark regions not
+    // specified in the memory map.
+    "Reserved (Unspecified)"
   };
 
   const kernel::grub::multiboot_info* mbt = kernel::GetMultibootInfo();
@@ -74,23 +77,45 @@ void ShowMemoryMap(shell::ShellStream* shell) {
 		   mbt->mem_lower + mbt->mem_upper,
 		   (mbt->mem_lower + mbt->mem_upper) / 1024);
 
-  shell->WriteLine("%d Memory regions:", mbt->mmap_length);  // Bytes?
+  // Print memory regions. We do additional book keeping to print unspecified
+  // regions (assumed reserved). We assume regions are sorted, but that isn't
+  // guaranteed by the BIOS.
+  uint32 last_region_end = 0x00000000;
+  shell->WriteLine("Memory regions:");
   while((uint32) mmap < (uint32) mbt->mmap_addr + mbt->mmap_length) {
-    // Sanity check 32-bits for the time being.
+    // Sanity check the memory map region.
+    // - Check 32-bit ranges
+    // - Check it doesn't contain ACPI 3.0 Extended attributes
+    // - Check type value is correct
     if (mmap->base_addr_high) { klib::Panic("Non-zero base_addr_high"); }
     if (mmap->length_high) { klib::Panic("Non-zero length_high"); }
-    // We don't support the ACPI 3.0 Extended Attributes bitfield.
     if (mmap->size != 20) { klib::Panic("Memory Map region != 20 bytes"); }
     if (mmap->type == 0 || mmap->type > 5) {
       klib::Panic("Memory map region type is unknown.");
     }
 
-    const uint32 region_end = mmap->base_addr_low + mmap->length_low - 1;
+    const uint32 region_start = mmap->base_addr_low;
+    const uint32 region_end = mmap->base_addr_low + mmap->length_low;
+
+    if (region_start < last_region_end) {
+      klib::Panic("Memory map regions not sorted.");
+    }
+    // Insert a reserved region as applicable.
+    if (region_start != last_region_end) {
+      shell->WriteLine("%h - %h %s",
+		       last_region_end, region_start - 1, kRegionNames[6]);
+    }
     shell->WriteLine("%h - %h %s",
-		     mmap->base_addr_low, region_end, kRegionNames[mmap->type]);
+		     mmap->base_addr_low, region_end - 1, kRegionNames[mmap->type]);
+    last_region_end = region_end;
 
     mmap = (kernel::grub::multiboot_memory_map*) (
         (uint32) mmap + mmap->size + sizeof(uint32));
+  }
+  // Insert a reserved region as applicable. The region ends at the value +1, so
+  // the last value should be 0xFFFFFFFF + 1, which is 0.
+  if (last_region_end != 0) {
+    shell->WriteLine("%h - 0xFFFFFFFF %s", last_region_end, kRegionNames[6]);
   }
 }
 
