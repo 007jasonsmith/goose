@@ -51,26 +51,43 @@ void InitializeChrome() {
 }
 
 void ShowMemoryMap(shell::ShellStream* shell) {
+  const char* kRegionNames[] = {
+    "Unknown",
+    "Usable",
+    "Reserved",
+    "ACPI reclaimable",
+    "ACPI NVS memory",
+    "Bad memory"
+  };
+
   const kernel::grub::multiboot_info* mbt = kernel::GetMultibootInfo();
   
   kernel::grub::multiboot_memory_map* mmap =
     (kernel::grub::multiboot_memory_map*) mbt->mmap_addr;
 
-  // Sanity check 32-bits for the time being.
+  // TODO(chris): Sanity check 32-bits for the time being.
   shell->WriteLine("System memory:");
   // Lower means < 1MiB?
   shell->WriteLine("  Lower %dKiB / %dMiB", mbt->mem_lower, mbt->mem_lower / 1024);
   shell->WriteLine("  Upper %dKiB / %dMiB", mbt->mem_upper, mbt->mem_upper / 1024);
+  shell->WriteLine("  Total %dKiB / %dMiB",
+		   mbt->mem_lower + mbt->mem_upper,
+		   (mbt->mem_lower + mbt->mem_upper) / 1024);
 
-  shell->WriteLine("%d Memory map regions:", mbt->mmap_length);  // Bytes?
+  shell->WriteLine("%d Memory regions:", mbt->mmap_length);  // Bytes?
   while((uint32) mmap < (uint32) mbt->mmap_addr + mbt->mmap_length) {
     // Sanity check 32-bits for the time being.
     if (mmap->base_addr_high) { klib::Panic("Non-zero base_addr_high"); }
     if (mmap->length_high) { klib::Panic("Non-zero length_high"); }
+    // We don't support the ACPI 3.0 Extended Attributes bitfield.
+    if (mmap->size != 20) { klib::Panic("Memory Map region != 20 bytes"); }
+    if (mmap->type == 0 || mmap->type > 5) {
+      klib::Panic("Memory map region type is unknown.");
+    }
 
     const uint32 region_end = mmap->base_addr_low + mmap->length_low - 1;
-    shell->WriteLine("%h - %h type %d",
-		     mmap->base_addr_low, region_end, mmap->type);
+    shell->WriteLine("%h - %h %s",
+		     mmap->base_addr_low, region_end, kRegionNames[mmap->type]);
 
     mmap = (kernel::grub::multiboot_memory_map*) (
         (uint32) mmap + mmap->size + sizeof(uint32));
