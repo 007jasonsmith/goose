@@ -63,6 +63,10 @@ void ShowMemoryMap(shell::ShellStream* shell) {
     "Reserved (Unspecified)"
   };
 
+  // Keep track of regions which are usable / reclaimable.
+  size usable_regions_count = 0;
+  kernel::grub::multiboot_memory_map* usable_regions[10];
+
   const kernel::grub::multiboot_info* mbt = kernel::GetMultibootInfo();
   
   kernel::grub::multiboot_memory_map* mmap =
@@ -71,9 +75,9 @@ void ShowMemoryMap(shell::ShellStream* shell) {
   // TODO(chris): Sanity check 32-bits for the time being.
   shell->WriteLine("System memory:");
   // Lower means < 1MiB?
-  shell->WriteLine("  Lower %dKiB / %dMiB", mbt->mem_lower, mbt->mem_lower / 1024);
-  shell->WriteLine("  Upper %dKiB / %dMiB", mbt->mem_upper, mbt->mem_upper / 1024);
-  shell->WriteLine("  Total %dKiB / %dMiB",
+  shell->WriteLine("  lower %dKiB / %dMiB", mbt->mem_lower, mbt->mem_lower / 1024);
+  shell->WriteLine("  upper %dKiB / %dMiB", mbt->mem_upper, mbt->mem_upper / 1024);
+  shell->WriteLine("  total %dKiB / %dMiB",
 		   mbt->mem_lower + mbt->mem_upper,
 		   (mbt->mem_lower + mbt->mem_upper) / 1024);
 
@@ -102,12 +106,18 @@ void ShowMemoryMap(shell::ShellStream* shell) {
     }
     // Insert a reserved region as applicable.
     if (region_start != last_region_end) {
-      shell->WriteLine("%h - %h %s",
+      shell->WriteLine("  %h - %h %s",
 		       last_region_end, region_start - 1, kRegionNames[6]);
     }
-    shell->WriteLine("%h - %h %s",
+    shell->WriteLine("  %h - %h %s",
 		     mmap->base_addr_low, region_end - 1, kRegionNames[mmap->type]);
     last_region_end = region_end;
+
+    // Save the usable memory for elsewhere.
+    if (mmap->type == 1 || mmap->type == 3) {
+      usable_regions[usable_regions_count] = mmap;
+      usable_regions_count++;
+    }
 
     mmap = (kernel::grub::multiboot_memory_map*) (
         (uint32) mmap + mmap->size + sizeof(uint32));
@@ -115,7 +125,17 @@ void ShowMemoryMap(shell::ShellStream* shell) {
   // Insert a reserved region as applicable. The region ends at the value +1, so
   // the last value should be 0xFFFFFFFF + 1, which is 0.
   if (last_region_end != 0) {
-    shell->WriteLine("%h - 0xFFFFFFFF %s", last_region_end, kRegionNames[6]);
+    shell->WriteLine("  %h - 0xFFFFFFFF %s", last_region_end, kRegionNames[6]);
+  }
+
+  // Print usable memory.
+  shell->WriteLine("Usable regions:");
+  for (size i = 0; i < usable_regions_count; i++) {
+    mmap = usable_regions[i];
+
+    shell->WriteLine("  %h - %h %dKiB %dMiB",
+		     mmap->base_addr_low, mmap->base_addr_low + mmap->length_low -1,
+		     mmap->length_low / 1024, mmap->length_low / 1024 / 1024);
   }
 }
 
