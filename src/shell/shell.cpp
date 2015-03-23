@@ -152,7 +152,11 @@ void ShowKernelPointers(shell::ShellStream* shell) {
   shell->WriteLine("Const data (.bss): %h", uint32(&testing));
 }
 
-// See: https://www.gnu.org/software/grub/manual/multiboot/multiboot.html
+// See:
+// https://www.gnu.org/software/grub/manual/multiboot/multiboot.html
+// http://geezer.osdevbrasil.net/osd/exec/elf.txt
+// https://sourceware.org/binutils/docs/binutils/readelf.html
+// http://stackoverflow.com/questions/10863510/getting-the-sh-name-member-in-a-section-header-elf-file
 void ShowElfInfo(shell::ShellStream* shell) {
   const kernel::grub::multiboot_info* mbt = kernel::GetMultibootInfo();
   if ((mbt->flags & 0b100000) == 0) {
@@ -161,8 +165,8 @@ void ShowElfInfo(shell::ShellStream* shell) {
   const kernel::grub::elf_section_header_table* elf_sec =
     &(mbt->u.elf_sec);
      
-  shell->WriteLine("Multiboot ELF section:");
-  shell->WriteLine("  num = %d, size = %d", elf_sec->num, elf_sec->size);
+  shell->WriteLine("ELF header info:");
+  shell->WriteLine("  Sections = %d, size = %d", elf_sec->num, elf_sec->size);
   shell->WriteLine("  addr = %h / shndx = %h", elf_sec->addr, elf_sec->shndx);
 }
 
