@@ -17,6 +17,8 @@ using hal::TextUI;
 
 extern "C" {
 
+const uint32 kMultibootMagicNumber = 0x2BADB002;
+
 // Handler for a C++ pure-virtual call. Panics.
 void __cxa_pure_virtual();
 
@@ -27,7 +29,7 @@ void PanicHandler(const char* message);
 void FriendlyShutdown(const char* message);
 
 const char version[] = "v0.1a";
-void kmain(const kernel::grub::multiboot_info* mbt) {
+void kmain(uint32 multiboot_magic, const kernel::grub::multiboot_info* mbt) {
   SUPPRESS_UNUSED_WARNING(mbt);
 
   // Initialize device drivers.
@@ -42,6 +44,9 @@ void kmain(const kernel::grub::multiboot_info* mbt) {
   Debug::Log("Kernel started.");
 
   klib::SetPanicFn(&PanicHandler);
+  if (multiboot_magic != kMultibootMagicNumber) {
+    klib::Panic("Not booted by GRUB. Not sure what happened.");
+  }
 
   // Initialize core CPU-based systems.
   sys::InstallGlobalDescriptorTable();
