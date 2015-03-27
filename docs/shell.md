@@ -3,48 +3,80 @@
 The Goose shell is the user interface into the operating system. However it is
 important to know the scope of the shell.
 
-The Goose shell will NOT be a complete, fully featured shell you are used to.
-It will never have a scripting language, sophsticated command-line syntax, or
-even allow you to interactively run programs.
+The Goose shell will *never* be the complete, fully-featured shell you are used
+to. It will never have a scripting language, sophsticated command-line syntax,
+or even allow you to do things like keep track of your command history.
 
 Instead, the Goose shell is simply a way for a kernel developer to inspect the
 state of the system while it is running. Nothing more.
 
-The longer-term plan for the Goose user interface is to have the kernel host
-a web server, and allow users to interact through HTTP. A rich shell is a
-stop-gap solution until this can become a reality.
+The longer-term plan for the Goose user interface is to have a system process
+host a web server, and allow users to control a machine through HTTP. A rich
+shell is a stop-gap solution until this can become a reality.
 
 ## Overview ##
 
-The Goose shell works similar to Emacs, in that it is a collection of "buffers".
+The Goose shell works similar to Emacs in that it is a collection of *buffers*.
+Multiple buffers can be displayed at a time, but only one buffer can be active.
 
-The Shell provides a mechanism to switch between these buffers, to quickly
-switch between different diagnostic outputs, visualizing system state, etc.
+The active buffer can receive input from the user, perhaps to read a command an
+later show its results. However, any buffer can be updated at any time --
+perhaps from an asynchronous operation.
 
-Buffers are managed by a window manager. The window manager is responcible
-for actually displaying the contents of a buffer on the screen, and managing
-any virtualized scrolling.
+The Shell provides a mechanism to switch between these buffers, change which
+buffer is currently active, and even reorganize their display on the screen.
 
-Finally, the Shell executor actually operates the shell. It's primary role
+A *window manager* abstraction is used to control how buffers actually get
+displayed on the screen. It is responcible for rendering buffer content,
+regardless of the designated window region it is being rendered onto. The
+window manager also manages virtualized "scrolling" of each buffer.
+Buffers are man by a window manager. The window manager is also responcible
+for how scrolling behaves.
+
+Finally, the an *executor* actually operates the shell. It's primary role
 is to handle keyboard input, and send it to the Window manager or active
 buffer as necessary.
 
-Note that buffers do not accept keyboard input directly. Only the shell
-executor deals with that. It may appear that a buffer is directly responding
-to keyboard commands, but in actuality an adapter between the executor
-and the buffer is what is processing that.
+Note that buffers do not accept keyboard input directly. The executor takes
+input and passes it to the active buffer's *adapter*. It is the buffer's
+adapter that actually controls what data gets put into the buffer, and how it
+will respond to input. Without an adapter, the buffer is simply an empty block
+of memory.
+
+### Additional Considerations ###
+
+The Goose shell is subject to a few limitations, which are underpinning its
+design:
+
+- The shell beings its execution **before** paging has been enabled. So dynamic
+  memory allocation may not be used.
+- The shell does not run as a separate process from the kernel. It **is** the
+  kernel. If the shell starts a blocking operation, the shell cannot do
+  anything until that operation completes. The exception to this is that
+  interrupt handlers may execute, and, of course, the kernel may panic.
 
 ## Window Manager ##
 
 The window manager controls which buffers are actively being displayed. The
 window manager determines how the screen real-estate gets doled out between
-buffers.
+buffers. (Assume that "screen real-estate" is referring to a fixed 80x25
+text mode UI, with an optional blinking cursor.)
 
-The window manager may choose to display multiple buffers at a time, e.g. a
-two, three, or four-way display.
+The window manager may choose to display multiple buffers at a time, though
+arbitrary window positioning is not supported. Multiple-buffer displays are
+limited to:
 
-It is assumed that the window manager has complete control over the display.
-It is also responcibile for printing data to the screen.
+- Single buffer display
+- Two-buffer display (verticaly or horizontally)
+- Four buffer display.
+
+### Chrome ###
+
+The window manager will display some limited chrome around buffers. For
+example, each buffer will contain a title bar containing the buffer's name.
+
+The buffer may optionally specify a command prompt, which will be rendered
+at the very bottom of the screen. (Similar to entering a command into Emacs.)
 
 ### Active window ###
 
@@ -133,3 +165,31 @@ show the coments of memory.
 
 The buffer supports different modes (settable by specific keys) for displaying
 data in hex, decimal, etc.
+
+# Implementation #
+
+Buffer buffers[kMaxBuffers];
+size owned_buffers;
+
+WindowManager
+  ShowBufferFull(
+
+  Buffer* active_win_
+
+LineIndex
+  char* line_start
+  int   line_length
+
+Buffer : IOutputFn
+  Buffer(WindowManager* parent)
+  int GetLineCount()
+  const LineIndex* GetLineIndex(size index)
+
+  RegisterAdapter(Adapter* adapter)
+
+Adapter
+  OnKey(Keypress)
+  -> notify window if dirty
+
+Executor
+  -> Start
