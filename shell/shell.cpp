@@ -2,6 +2,7 @@
 
 #include "hal/keyboard.h"
 #include "hal/text_ui.h"
+#include "kernel/elf.h"
 #include "kernel/memory.h"
 #include "klib/limits.h"
 #include "klib/types.h"
@@ -27,13 +28,16 @@ void ShowMemoryMap(shell::ShellStream* shell);
 void ShowKernelPointers(shell::ShellStream* shell);
 // Print all known information about the Kernel's ELF binary.
 void ShowElfInfo(shell::ShellStream* shell);
+// Experimental code.
+void Experiment(shell::ShellStream* shell);
 // Returns the command with the name, otherwise null.
 const ShellCommand* GetShellCommand(const char* command);
 
 const ShellCommand commands[] = {
   { "show-memory-map", &ShowMemoryMap },
   { "show-kernel-pointers", &ShowKernelPointers },
-  { "show-elf-info", &ShowElfInfo }
+  { "show-elf-info", &ShowElfInfo },
+  { "experiment", &Experiment }
 };
 const size kNumCommands = sizeof(commands) / sizeof(ShellCommand);
 
@@ -152,25 +156,6 @@ void ShowKernelPointers(shell::ShellStream* shell) {
   shell->WriteLine("Const data (.bss): %h", uint32(&testing));
 }
 
-// Section header.
-struct Elf32SectionHeader {
-  uint32 name;       // Section name (index into string table)
-  uint32 type;       // Section type (SHT_*)
-  uint32 flags;      // Section flags (SHF_*)
-  uint32 addr;       // Address where section is to be loaded
-  uint32 offset;     // File offset of section data, in bytes
-  uint32 size;        // Size of section, in bytes
-  uint32 link;       // Section type-specific header table index link
-  uint32 info;       // Section type-specific extra information
-  uint32 addralign;  // Section address alignment
-  uint32 entsize;    // Size of records contained within the section
-};
-
-// See:
-// https://www.gnu.org/software/grub/manual/multiboot/multiboot.html
-// http://geezer.osdevbrasil.net/osd/exec/elf.txt
-// https://sourceware.org/binutils/docs/binutils/readelf.html
-// http://stackoverflow.com/questions/10863510/getting-the-sh-name-member-in-a-section-header-elf-file
 void ShowElfInfo(shell::ShellStream* shell) {
   const kernel::grub::multiboot_info* mbt = kernel::GetMultibootInfo();
   if ((mbt->flags & 0b100000) == 0) {
@@ -184,13 +169,51 @@ void ShowElfInfo(shell::ShellStream* shell) {
   shell->WriteLine("  addr = %h / shndx = %h", elf_sec->addr, elf_sec->shndx);
 
   for (size i = 0; i < size(elf_sec->num); i++) {
-    Elf32SectionHeader* header = (Elf32SectionHeader*) (elf_sec->addr + sizeof(Elf32SectionHeader) * i);
+    const kernel::elf::Elf32SectionHeader* header =
+        (kernel::elf::Elf32SectionHeader*) (elf_sec->addr + sizeof(kernel::elf::Elf32SectionHeader) * i);
     shell->WriteLine("ELF section header %d", i);
     shell->WriteLine("  name:   %d    entsize:    %d", header->name, header->entsize);
     shell->WriteLine("  type:   %d    addralign:  %d", header->type, header->addralign);
     shell->WriteLine("  flags: %d     info:       %d", header->flags, header->info);
-    shell->WriteLine("  addr: %d   link:       %d", header->addr, header->link);
+    shell->WriteLine("  addr: %h   link:       %d", header->addr, header->link);
     shell->WriteLine("  offset: %d   size:   %d", header->offset, header->size);
+  }
+}
+
+void Experiment(shell::ShellStream* shell) {
+  const kernel::grub::multiboot_info* mbt = kernel::GetMultibootInfo();
+  if ((mbt->flags & 0b100000) == 0) {
+    klib::Panic("Multiboot flags bit 5 not set.");
+  }
+  const kernel::grub::elf_section_header_table* elf_sec =
+    &(mbt->u.elf_sec);
+
+  shell->WriteLine("ELF header info:");
+  shell->WriteLine("  Sections = %d, size = %d", elf_sec->num, elf_sec->size);
+  shell->WriteLine("  addr = %h / shndx = %h", elf_sec->addr, elf_sec->shndx);
+
+  for (size i = 0; i < size(elf_sec->num); i++) {
+    const kernel::elf::Elf32SectionHeader* header =
+        (kernel::elf::Elf32SectionHeader*) (elf_sec->addr + sizeof(kernel::elf::Elf32SectionHeader) * i);
+    if (header->type != uint32(kernel::elf::SectionType::STRTAB)) {
+      continue;
+    }
+
+    shell->WriteLine("ELF STRING TABLE %d", i);
+    shell->WriteLine("  name:   %d    entsize:    %d", header->name, header->entsize);
+    shell->WriteLine("  type:   %d    addralign:  %d", header->type, header->addralign);
+    shell->WriteLine("  flags: %d     info:       %d", header->flags, header->info);
+    shell->WriteLine("  addr: %h   link:       %d", header->addr, header->link);
+    shell->WriteLine("  offset: %d   size:   %d", header->offset, header->size);
+
+    shell->WriteLine("Entries:");
+    uint32 index = 0;
+    const char* entry = kernel::elf::GetStringTableEntry(header->addr, index);
+    while (entry != nullptr) {
+      shell->WriteLine("  %d: %s", index, entry);
+      index++;
+      entry = kernel::elf::GetStringTableEntry(header->addr, index);
+    }
   }
 }
 
