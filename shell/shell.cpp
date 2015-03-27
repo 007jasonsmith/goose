@@ -74,7 +74,7 @@ void ShowMemoryMap(shell::ShellStream* shell) {
   kernel::grub::multiboot_memory_map* usable_regions[10];
 
   const kernel::grub::multiboot_info* mbt = kernel::GetMultibootInfo();
-  
+
   kernel::grub::multiboot_memory_map* mmap =
     (kernel::grub::multiboot_memory_map*) mbt->mmap_addr;
 
@@ -152,6 +152,20 @@ void ShowKernelPointers(shell::ShellStream* shell) {
   shell->WriteLine("Const data (.bss): %h", uint32(&testing));
 }
 
+// Section header.
+struct Elf32SectionHeader {
+  uint32 name;       // Section name (index into string table)
+  uint32 type;       // Section type (SHT_*)
+  uint32 flags;      // Section flags (SHF_*)
+  uint32 addr;       // Address where section is to be loaded
+  uint32 offset;     // File offset of section data, in bytes
+  uint32 size;        // Size of section, in bytes
+  uint32 link;       // Section type-specific header table index link
+  uint32 info;       // Section type-specific extra information
+  uint32 addralign;  // Section address alignment
+  uint32 entsize;    // Size of records contained within the section
+};
+
 // See:
 // https://www.gnu.org/software/grub/manual/multiboot/multiboot.html
 // http://geezer.osdevbrasil.net/osd/exec/elf.txt
@@ -164,10 +178,20 @@ void ShowElfInfo(shell::ShellStream* shell) {
   }
   const kernel::grub::elf_section_header_table* elf_sec =
     &(mbt->u.elf_sec);
-     
+
   shell->WriteLine("ELF header info:");
   shell->WriteLine("  Sections = %d, size = %d", elf_sec->num, elf_sec->size);
   shell->WriteLine("  addr = %h / shndx = %h", elf_sec->addr, elf_sec->shndx);
+
+  for (size i = 0; i < size(elf_sec->num); i++) {
+    Elf32SectionHeader* header = (Elf32SectionHeader*) (elf_sec->addr + sizeof(Elf32SectionHeader) * i);
+    shell->WriteLine("ELF section header %d", i);
+    shell->WriteLine("  name:   %d    entsize:    %d", header->name, header->entsize);
+    shell->WriteLine("  type:   %d    addralign:  %d", header->type, header->addralign);
+    shell->WriteLine("  flags: %d     info:       %d", header->flags, header->info);
+    shell->WriteLine("  addr: %d   link:       %d", header->addr, header->link);
+    shell->WriteLine("  offset: %d   size:   %d", header->offset, header->size);
+  }
 }
 
 const ShellCommand* GetShellCommand(const char* command) {
