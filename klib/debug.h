@@ -24,6 +24,7 @@ class Debug {
   static void Log(const char* msg, Args... args) {
     // TODO(chris): CHECK fn_ not null.
     klib::Print(msg, fn_, args...);
+    klib::Print("\n", fn_);
   }
 
  private:

@@ -208,11 +208,11 @@ void Experiment(shell::ShellStream* shell) {
 
     shell->WriteLine("Entries:");
     uint32 index = 0;
-    const char* entry = kernel::elf::GetStringTableEntry(header->addr, index);
+    const char* entry = kernel::elf::GetStringTableEntry(header->addr, header->size, index);
     while (entry != nullptr) {
       shell->WriteLine("  %d: %s", index, entry);
       index++;
-      entry = kernel::elf::GetStringTableEntry(header->addr, index);
+      entry = kernel::elf::GetStringTableEntry(header->addr, header->size, index);
     }
   }
 }

@@ -52,21 +52,24 @@ struct Elf32SectionHeader {
 };
 
 // TODO(chris): Put this into elf.cc once it actually works.
-#include "klib/panic.h"
-const char* GetStringTableEntry(uint32 strtab_address, uint32 index) {
+const char* GetStringTableEntry(uint32 strtab_address, uint32 size, uint32 index) {
   const char* p = (const char*) strtab_address;
+  const char* table_end = (const char*) (strtab_address + size);
   if (*p != 0) {
-    klib::Panic("First entry in StringTable not NULL.");
+    klib::Panic("First entry in StringTable non-null.");
+  }
+  if (*table_end != 0) {
+    klib::Panic("Last entry in StingTable non-null.");
   }
 
   const char* start = nullptr;
   uint32 current_index = 0;
-  while (index <= current_index) {
+  while (current_index <= index) {
     // Starting assuming p is on the null of the previous string.
-    // Advance to next string, if null then it is the last byte
-    // of the section. (Two nulls in a row.)
+    // (Or on the null of the first byte of the section.) Advance
+    // one byte to next string.
     p++;
-    if (p == 0) {
+    if (p >= table_end) {
       return nullptr;
     }
     start = p;
