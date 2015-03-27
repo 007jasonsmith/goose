@@ -176,7 +176,7 @@ WindowManager
 
   Buffer* active_win_
 
-LineIndex
+LineBreak
   char* line_start
   int   line_length
 
@@ -186,6 +186,10 @@ Buffer : IOutputFn
   const LineIndex* GetLineIndex(size index)
 
   RegisterAdapter(Adapter* adapter)
+
+  LineBreak line_breaks_[kMaxLineBreaks]
+  line_break_count_
+  char buffer_
 
 Adapter
   OnKey(Keypress)
