@@ -4,6 +4,7 @@
 #include "hal/text_ui.h"
 #include "kernel/elf.h"
 #include "kernel/memory.h"
+#include "klib/debug.h"
 #include "klib/limits.h"
 #include "klib/types.h"
 #include "klib/panic.h"
@@ -156,27 +157,44 @@ void ShowKernelPointers(shell::ShellStream* shell) {
   shell->WriteLine("Const data (.bss): %h", uint32(&testing));
 }
 
+// TODO(chris): Make this better match up with `readelf`.
 void ShowElfInfo(shell::ShellStream* shell) {
   const kernel::grub::multiboot_info* mbt = kernel::GetMultibootInfo();
   if ((mbt->flags & 0b100000) == 0) {
     klib::Panic("Multiboot flags bit 5 not set.");
   }
-  const kernel::grub::elf_section_header_table* elf_sec =
-    &(mbt->u.elf_sec);
 
-  shell->WriteLine("ELF header info:");
-  shell->WriteLine("  Sections = %d, size = %d", elf_sec->num, elf_sec->size);
-  shell->WriteLine("  addr = %h / shndx = %h", elf_sec->addr, elf_sec->shndx);
+  const kernel::elf::ElfSectionHeaderTable* elf_sec =
+    &(mbt->u.elf_sec);
+  if (sizeof(kernel::elf::Elf32SectionHeader) != elf_sec->size) {
+    klib::Panic("ELF section header doesn't match expected size.");
+  }
+
+
+  shell->WriteLine("ELF sections:");
+  shell->WriteLine("  There are %d %d-byte section headers. Starting at %h.",
+		   elf_sec->num, elf_sec->size, elf_sec->addr);
+
+  const kernel::elf::Elf32SectionHeader* string_table_header =
+    kernel::elf::GetSectionHeader(elf_sec->addr, elf_sec->shndx);
+  if (string_table_header->type != uint32(kernel::elf::SectionType::STRTAB)) {
+    klib::Panic("Section header string table is not actually a string table.");
+  }
 
   for (size i = 0; i < size(elf_sec->num); i++) {
     const kernel::elf::Elf32SectionHeader* header =
-        (kernel::elf::Elf32SectionHeader*) (elf_sec->addr + sizeof(kernel::elf::Elf32SectionHeader) * i);
-    shell->WriteLine("ELF section header %d", i);
-    shell->WriteLine("  name:   %d    entsize:    %d", header->name, header->entsize);
-    shell->WriteLine("  type:   %d    addralign:  %d", header->type, header->addralign);
-    shell->WriteLine("  flags: %d     info:       %d", header->flags, header->info);
-    shell->WriteLine("  addr: %h   link:       %d", header->addr, header->link);
-    shell->WriteLine("  offset: %d   size:   %d", header->offset, header->size);
+        kernel::elf::GetSectionHeader(elf_sec->addr, i);
+    const char* section_name = kernel::elf::GetStringTableEntry(
+        string_table_header->addr, string_table_header->size, uint32(i));
+    const char* section_type = kernel::elf::ToString(
+	(kernel::elf::SectionType) header->type);
+
+    shell->WriteLine("[%d] %s %s %h %h %h %c%c%c",
+		     i, section_name, section_type,
+		     header->addr, header->offset, header->size,
+		     (header->flags & 0x1 ? 'W' : ' '),
+		     (header->flags & 0x2 ? 'A' : ' '),
+		     (header->flags & 0x4 ? 'X' : ' '));
   }
 }
 
@@ -185,8 +203,7 @@ void Experiment(shell::ShellStream* shell) {
   if ((mbt->flags & 0b100000) == 0) {
     klib::Panic("Multiboot flags bit 5 not set.");
   }
-  const kernel::grub::elf_section_header_table* elf_sec =
-    &(mbt->u.elf_sec);
+  const kernel::elf::ElfSectionHeaderTable* elf_sec = &(mbt->u.elf_sec);
 
   shell->WriteLine("ELF header info:");
   shell->WriteLine("  Sections = %d, size = %d", elf_sec->num, elf_sec->size);
@@ -234,6 +251,9 @@ ShellStream::ShellStream(const hal::Region region, hal::Offset offset) :
   region_(region), offset_(offset) {}
 
 void ShellStream::Print(char c) {
+  // HAX for debugging
+  klib::Debug::Log("%c", c);
+
   if (c != '\n') {
     TextUI::SetChar(offset_.x, offset_.y, c);
 

@@ -12,31 +12,38 @@ namespace elf {
 
 // All values below assume a 32-bit ELF header.
 
+// Some sections of the ELF header are reserved, and will never
+// have a Section associated with them. These are the indicies of
+// the reserved indicies.
+// TODO(chris): Define the enum, wire it into parsing code, etc.
+
+struct ElfSectionHeaderTable {
+  uint32 num;
+  uint32 size;
+  uint32 addr;
+  uint32 shndx;
+};
+
 enum class SectionType : uint32 {
-  // Marks the section header as inactive.
-  NULL =  0,
-  // Information defined by the program.
+  NULL     = 0,
   PROGBITS = 1,
-    // Symbol table.
   SYMTAB   = 2,
-    // String table.
   STRTAB   = 3,
-    // Relocation entries with explicit addends.
   RELA     = 4,
-    // Symbol table hash.
   HASH     = 5,
   DYNAMIC  = 6,
   NOTE     = 7,
   NOBITS   = 8,
   REL      = 9,
   SHLIB    = 10,
-    // Symbol table
   DYNSYM   = 11,
-  LOPROC   = 0x80000000,
+  LOPROC   = 0x70000000,
   HIPROC   = 0x7FFFFFFF,
   LOUSER   = 0x80000000,
   HIUSER   = 0xFFFFFFFF
 };
+
+const char* ToString(SectionType type);
 
 struct Elf32SectionHeader {
   uint32 name;       // Section name (index into string table)
@@ -51,36 +58,11 @@ struct Elf32SectionHeader {
   uint32 entsize;    // Size of records contained within the section
 };
 
-// TODO(chris): Put this into elf.cc once it actually works.
-const char* GetStringTableEntry(uint32 strtab_address, uint32 size, uint32 index) {
-  const char* p = (const char*) strtab_address;
-  const char* table_end = (const char*) (strtab_address + size);
-  if (*p != 0) {
-    klib::Panic("First entry in StringTable non-null.");
-  }
-  if (*table_end != 0) {
-    klib::Panic("Last entry in StingTable non-null.");
-  }
+const Elf32SectionHeader* GetSectionHeader(uint32 base_address, uint32 index);
 
-  const char* start = nullptr;
-  uint32 current_index = 0;
-  while (current_index <= index) {
-    // Starting assuming p is on the null of the previous string.
-    // (Or on the null of the first byte of the section.) Advance
-    // one byte to next string.
-    p++;
-    if (p >= table_end) {
-      return nullptr;
-    }
-    start = p;
-    while (*p) {
-      p++;
-    }
-    current_index++;
-  }
-
-  return start;
-}
+// Return the given index from the string table entry. Panics if the index
+// is beyond the number of strings in the table.
+const char* GetStringTableEntry(uint32 strtab_address, uint32 size, uint32 index);
 
 }  // namespace elf
 }  // namespace kernel

@@ -3,6 +3,7 @@
 #ifndef KERNEL_MEMORY_H_
 #define KERNEL_MEMORY_H_
 
+#include "kernel/elf.h"
 #include "klib/types.h"
 
 namespace kernel {
@@ -18,13 +19,6 @@ struct aout_symbol_table {
   uint32 reserved;
 };
 
-struct elf_section_header_table {
-  uint32 num;
-  uint32 size;
-  uint32 addr;
-  uint32 shndx;
-};
-
 struct multiboot_info {
   uint32 flags;
   uint32 mem_lower;
@@ -35,7 +29,7 @@ struct multiboot_info {
   uint32 mods_addr;
   union {
     aout_symbol_table aout_sym;
-    elf_section_header_table elf_sec;
+    kernel::elf::ElfSectionHeaderTable elf_sec;
   } u;
   uint32 mmap_length;
   uint32 mmap_addr;
