@@ -1,4 +1,5 @@
-rm unit-test
+rm ./bin/unit-test
+
 set -e
 set -x
 clear

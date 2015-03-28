@@ -21,7 +21,9 @@ class StringPrinter : public IOutputFn {
   StringPrinter();
 
   virtual void Print(char c);
+
   const char* Get();
+  void Reset();
 
  private:
   const static size kBufferSize = 80;

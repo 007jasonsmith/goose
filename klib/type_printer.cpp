@@ -77,12 +77,7 @@ void IOutputFn::Print(const char* msg) {
 }
 
 StringPrinter::StringPrinter() : index_(0) {
-  for (size i = 0; i < kBufferSize; i++) {
-    buffer_[i] = 0;
-  }
-  // Buffer holds one more char for a null, so
-  // strings can be up to kBufferSize.
-  buffer_[kBufferSize] = 0;
+  Reset();
 }
 
 void StringPrinter::Print(char c) {
@@ -95,6 +90,16 @@ void StringPrinter::Print(char c) {
 
 const char* StringPrinter::Get() {
   return buffer_;
+}
+
+void StringPrinter::Reset() {
+  index_ = 0;
+  for (size i = 0; i < kBufferSize; i++) {
+    buffer_[i] = 0;
+  }
+  // Buffer holds one more char for a null, so
+  // strings can be up to kBufferSize.
+  buffer_[kBufferSize] = 0;
 }
 
 TypePrinter::TypePrinter(IOutputFn* out) : out_(out) {
