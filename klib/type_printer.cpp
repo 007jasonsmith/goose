@@ -76,6 +76,27 @@ void IOutputFn::Print(const char* msg) {
   }
 }
 
+StringPrinter::StringPrinter() : index_(0) {
+  for (size i = 0; i < kBufferSize; i++) {
+    buffer_[i] = 0;
+  }
+  // Buffer holds one more char for a null, so
+  // strings can be up to kBufferSize.
+  buffer_[kBufferSize] = 0;
+}
+
+void StringPrinter::Print(char c) {
+  if (index_ >= kBufferSize) {
+    return;
+  }
+  buffer_[index_] = c;
+  index_++;
+}
+
+const char* StringPrinter::Get() {
+  return buffer_;
+}
+
 TypePrinter::TypePrinter(IOutputFn* out) : out_(out) {
   // TODO(chris): CHECK_NOTNULL(out_);
 }

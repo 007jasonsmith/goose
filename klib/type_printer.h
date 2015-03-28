@@ -14,6 +14,21 @@ class IOutputFn {
   void Print(const char* msg);
 };
 
+// Implementation of IOutputFn that prints to a fixed-width C-string.
+// Output beyond the buffer size will be ignored.
+class StringPrinter : public IOutputFn {
+ public:
+  StringPrinter();
+
+  virtual void Print(char c);
+  const char* Get();
+
+ private:
+  const static size kBufferSize = 80;
+  size index_;
+  char buffer_[kBufferSize + 1];  // +1 for null.
+};
+
 // Wrap a function for pinting characters. Used to provide
 // higher-level primitives, such as printing values in hex,
 // binary, etc.

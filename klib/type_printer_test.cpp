@@ -7,29 +7,21 @@
 
 namespace klib {
 
-// Test class wrapping an OutputFn.
-// TODO(chris): Prevent duplication with new_printf_test.cpp
-class TestPrinter : public IOutputFn {
- public:
-  virtual void Print(char c) {
-    msg_ += c;
-  }
+// TODO(chris): Test that strings longer than kBufferSize get truncated.
+TEST(StringPrinter, Default) {
+  StringPrinter p;
+  IOutputFn* p_as_outputfn = &p;
 
-  const char* Get() {
-    return msg_.c_str();
-  }
+  EXPECT_STREQ("", p.Get());
+  p.Print('1');
+  p.Print('2');
+  EXPECT_STREQ("12", p.Get());
+  p_as_outputfn->Print("345");
+  EXPECT_STREQ("12345", p.Get());
+}
 
-  void Reset() {
-    msg_ = "";
-  }
- private:
-  std::string msg_;
-};
-
-// TODO(chris): Use a test framework, so TestPrinter and TypePrinter are avail.
-// TODO(chris): Print error case: invalid type.
 TEST(TypePrinter, Default) {
-  TestPrinter p;
+  StringPrinter p;
   TypePrinter tp(&p);
 
   tp.PrintDefault(Arg::Of(uint32(42)));
@@ -40,7 +32,7 @@ TEST(TypePrinter, Default) {
 }
 
 TEST(TypePrinter, Char) {
-  TestPrinter p;
+  StringPrinter p;
   TypePrinter tp(&p);
 
   tp.PrintChar(Arg::Of('['));
@@ -54,7 +46,7 @@ TEST(TypePrinter, Char) {
 
 
 TEST(TypePrinter, MaxInt32s) {
-  TestPrinter p;
+  StringPrinter p;
   TypePrinter tp(&p);
 
   tp.PrintString(Arg::Of("max:"));
@@ -65,7 +57,7 @@ TEST(TypePrinter, MaxInt32s) {
 }
 
 TEST(TypePrinter, MaxUInt32s) {
-  TestPrinter p;
+  StringPrinter p;
   TypePrinter tp(&p);
 
   tp.PrintString(Arg::Of("max:"));
@@ -76,7 +68,7 @@ TEST(TypePrinter, MaxUInt32s) {
 }
 
 TEST(TypePrinter, HexInt32s) {
-  TestPrinter p;
+  StringPrinter p;
   TypePrinter tp(&p);
 
   tp.PrintHex(Arg::Of(kMaxInt32));
@@ -88,7 +80,7 @@ TEST(TypePrinter, HexInt32s) {
 }
 
 TEST(TypePrinter, HexInt64s) {
-  TestPrinter p;
+  StringPrinter p;
   TypePrinter tp(&p);
 
   tp.PrintHex(Arg::Of(kMaxInt64));
@@ -101,7 +93,7 @@ TEST(TypePrinter, HexInt64s) {
 }
 
 TEST(TypePrinter, String) {
-  TestPrinter p;
+  StringPrinter p;
   TypePrinter tp(&p);
 
   tp.PrintString(Arg::Of("alpha beta gamma"));
@@ -109,7 +101,7 @@ TEST(TypePrinter, String) {
 }
 
 TEST(TypePrinter, HexError) {
-  TestPrinter p;
+  StringPrinter p;
   TypePrinter tp(&p);
 
   tp.PrintHex(Arg::Of("a cstr"));
