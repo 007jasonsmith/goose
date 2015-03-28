@@ -60,6 +60,7 @@ clean:
                ./klib/*.o   \
                ./shell/*.o  \
                ./kernel/*.o \
+               ./bin/*      \
                kernel.elf   \
                os.iso       \
                iso/boot/kernel.elf
