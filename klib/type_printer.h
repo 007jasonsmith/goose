@@ -23,11 +23,13 @@ class StringPrinter : public IOutputFn {
   virtual void Print(char c);
 
   const char* Get();
+  void SetMaxSize(size new_size);
   void Reset();
 
  private:
   const static size kBufferSize = 80;
   size index_;
+  size max_size_;
   char buffer_[kBufferSize + 1];  // +1 for null.
 };
 

@@ -27,6 +27,9 @@ class IOutputFn;
 // %{L16}s - Print a string, left-justified padding up to 16 characters.
 // %{R3}d  - Print an integer, right-justified padding up to 3 characters.
 // %{C80}s - Print a string, center-justified in the middle of a range of 80.
+//
+// The Output may be truncated earlier, by specifing a "t" option.
+// %{L3:t}s "1234567" would yield "123".
 void Print(const char* format, const ArgAccumulator& args, IOutputFn* out);
 
 template<typename... Args>

@@ -76,12 +76,12 @@ void IOutputFn::Print(const char* msg) {
   }
 }
 
-StringPrinter::StringPrinter() : index_(0) {
+StringPrinter::StringPrinter() : index_(0), max_size_(kBufferSize) {
   Reset();
 }
 
 void StringPrinter::Print(char c) {
-  if (index_ >= kBufferSize) {
+  if (index_ >= max_size_) {
     return;
   }
   buffer_[index_] = c;
@@ -90,6 +90,12 @@ void StringPrinter::Print(char c) {
 
 const char* StringPrinter::Get() {
   return buffer_;
+}
+
+void StringPrinter::SetMaxSize(size new_size) {
+  if (new_size < kBufferSize) {
+    max_size_ = new_size;
+  }
 }
 
 void StringPrinter::Reset() {

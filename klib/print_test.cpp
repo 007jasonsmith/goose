@@ -54,8 +54,13 @@ TEST(Print, ErrorUnknownSpecifier) {
 
 TEST(PrintAlignment, Parsing) {
   StringPrinter p;
-  Print("%{C2}s", &p, "parsed-ok");
+  Print("%{C9}s", &p, "parsed-ok");
   EXPECT_STREQ(p.Get(), "parsed-ok");
+
+  p.Reset();
+  Print("%{C9:t}s", &p, "parsed-ok");
+  EXPECT_STREQ(p.Get(), "parsed-ok");
+
 }
 
 TEST(PrintAlignment, NotParsing) {
@@ -83,6 +88,10 @@ TEST(PrintAlignment, ParseError) {
   p.Reset();
   Print("%{C123Xs", &p, "???");
   EXPECT_STREQ(p.Get(), PARSE_ERROR "s");
+
+  p.Reset();
+  Print("%{C123:f}s", &p, "???");
+  EXPECT_STREQ(p.Get(), PARSE_ERROR "}s");
 }
 
 TEST(PrintAlignment, LeftAligned) {

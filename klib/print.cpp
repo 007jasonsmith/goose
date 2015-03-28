@@ -34,6 +34,7 @@ void PrintArg(klib::Arg arg, char format, klib::IOutputFn* out) {
 struct JustifiedInfo {
   char alignment;
   size range;
+  bool truncate;
   size index;  // Index where the parsing stopped.
 };
 
@@ -68,10 +69,21 @@ bool TryParseJustifiedInfo(const char* format, JustifiedInfo* info) {
   }
   info->range = range;
 
-  // Assert at end of frange format.
-  if (format[i] != '}') {
+  // Assert at end of rrange format.
+  if (format[i] != '}' && format[i] != ':') {
     info->index = i;
     return false;
+  }
+
+  if (format[i] == ':') {
+    i++;
+    if (format[i] == 't') {
+      info->truncate = true;
+    } else {
+      info->index = i;
+      return false;
+    }
+    i++;
   }
 
   info->index = i + 1;
