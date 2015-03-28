@@ -96,6 +96,13 @@ void StringPrinter::SetMaxSize(size new_size) {
   if (new_size < kBufferSize) {
     max_size_ = new_size;
   }
+  if (new_size <= index_) {
+    index_ = new_size;
+  }
+  // Nuke existing data. (Where new_size < previous size.)
+  for (size i = new_size; i < kBufferSize; i++) {
+    buffer_[i] = 0;
+  }
 }
 
 void StringPrinter::Reset() {

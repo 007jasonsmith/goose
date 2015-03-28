@@ -147,4 +147,21 @@ TEST(PrintAlignment, RightAligned) {
   }
 }
 
+TEST(PrintAlignment, Truncation) {
+  PrintStringTestCase test_cases[] = {
+    { "[%{L2:t}s]", "1234", "[12]"},
+    { "[%{C2:t}s]", "1234", "[12]"},
+    { "[%{R2:t}s]", "1234", "[12]"},
+  };
+  const size num_test_cases = sizeof(test_cases) / sizeof(PrintStringTestCase);
+
+  for (size i = 0; i < num_test_cases; i++) {
+    PrintStringTestCase test = test_cases[i];
+    
+    StringPrinter p;
+    Print(test.input, &p, test.arg);
+    EXPECT_STREQ(p.Get(), test.want);
+  }
+}
+
 }  // namespace klib

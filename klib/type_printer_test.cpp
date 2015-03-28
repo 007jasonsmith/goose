@@ -18,6 +18,31 @@ TEST(StringPrinter, Default) {
   EXPECT_STREQ("12", p.Get());
   p_as_outputfn->Print("345");
   EXPECT_STREQ("12345", p.Get());
+
+  p.Reset();
+  EXPECT_STREQ("", p.Get());
+  p_as_outputfn->Print("678");
+  EXPECT_STREQ("678", p.Get());
+}
+
+TEST(StringPrinter, MaxSize) {
+  StringPrinter p;
+  IOutputFn* p_as_outputfn = &p;
+
+  p_as_outputfn->Print("123456");
+  EXPECT_STREQ("123456", p.Get());
+
+  p.SetMaxSize(3);
+  EXPECT_STREQ("123", p.Get());
+
+  p.Print('4');  // Should get truncated.
+  p.Print('5');  // Should get truncated.
+  EXPECT_STREQ("123", p.Get());
+
+  p.SetMaxSize(10);
+  p.Print('X');
+  p.Print('Y');
+  EXPECT_STREQ("123XY", p.Get());
 }
 
 TEST(TypePrinter, Default) {

@@ -75,15 +75,16 @@ bool TryParseJustifiedInfo(const char* format, JustifiedInfo* info) {
     return false;
   }
 
+  info->truncate = false;  // default
   if (format[i] == ':') {
     i++;
     if (format[i] == 't') {
       info->truncate = true;
+      i++;
     } else {
       info->index = i;
       return false;
     }
-    i++;
   }
 
   info->index = i + 1;
@@ -106,6 +107,9 @@ int PrintJustified(const char* format, klib::Arg arg, klib::IOutputFn* out) {
   }
   
   klib::StringPrinter sp;
+  if (info.truncate) {
+    sp.SetMaxSize(info.range);
+  }
   PrintArg(arg, format[info.index], &sp);
 
   size len = klib::length(sp.Get());
