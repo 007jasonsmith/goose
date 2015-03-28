@@ -42,5 +42,10 @@ TEST(Print, ErrorUnknownSpecifier) {
   EXPECT_STREQ(p.Get(), "[Error: Unknown format specifier]");
 }
 
+TEST(PrintAlignment, Parsing) {
+  StringPrinter p;
+  Print("%{C2}s", &p, "parsed-ok");
+  EXPECT_STREQ(p.Get(), "parsed-ok");
+}
 
 }  // namespace klib

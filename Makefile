@@ -4,7 +4,7 @@
 # TODO(chris): Automatically generate C_FILES, S_FILES, etc.
 OBJECTS = kmain.o kmain_asm.o \
           klib/argaccumulator.o klib/strings.o klib/type_printer.o \
-	  klib/debug.o klib/panic.o \
+	  klib/debug.o klib/panic.o klib/print.o \
 	  sys/io.o sys/halt.o \
 	  sys/gdt.o sys/gdt_asm.o \
 	  sys/idt.o sys/idt_asm.o \

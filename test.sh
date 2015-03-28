@@ -19,6 +19,7 @@ if [ ! -f ./bin/libgtest.a ]
  ar -rv ./bin/libgtest.a gtest-all.o
 fi
 
+# TODO(chris): Move this to the Makefile.
 echo "Building unit tests."
 g++ \
     -I$GTEST_DIR/include \
@@ -33,6 +34,7 @@ g++ \
     ./klib/type_printer_test.cpp \
     ./klib/print_test.cpp \
     ./klib/tests_main.cpp \
+    ./klib/print.cpp \
     ./bin/libgtest.a \
     -o ./bin/unit-test
 
