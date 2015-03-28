@@ -10,11 +10,11 @@ ArgAccumulator ArgAccumulator::Parse() {
   return acc;
 }
 
-Arg ArgAccumulator::Get(int idx) {
+Arg ArgAccumulator::Get(int idx) const {
   return args_[idx];
 }
 
-size ArgAccumulator::Count() {
+size ArgAccumulator::Count() const {
   return count_;
 }
 

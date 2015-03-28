@@ -76,6 +76,45 @@ void IOutputFn::Print(const char* msg) {
   }
 }
 
+StringPrinter::StringPrinter() : index_(0), max_size_(kBufferSize) {
+  Reset();
+}
+
+void StringPrinter::Print(char c) {
+  if (index_ >= max_size_) {
+    return;
+  }
+  buffer_[index_] = c;
+  index_++;
+}
+
+const char* StringPrinter::Get() {
+  return buffer_;
+}
+
+void StringPrinter::SetMaxSize(size new_size) {
+  if (new_size < kBufferSize) {
+    max_size_ = new_size;
+  }
+  if (new_size <= index_) {
+    index_ = new_size;
+  }
+  // Nuke existing data. (Where new_size < previous size.)
+  for (size i = new_size; i < kBufferSize; i++) {
+    buffer_[i] = 0;
+  }
+}
+
+void StringPrinter::Reset() {
+  index_ = 0;
+  for (size i = 0; i < kBufferSize; i++) {
+    buffer_[i] = 0;
+  }
+  // Buffer holds one more char for a null, so
+  // strings can be up to kBufferSize.
+  buffer_[kBufferSize] = 0;
+}
+
 TypePrinter::TypePrinter(IOutputFn* out) : out_(out) {
   // TODO(chris): CHECK_NOTNULL(out_);
 }

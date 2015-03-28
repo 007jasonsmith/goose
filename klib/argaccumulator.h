@@ -50,8 +50,8 @@ class ArgAccumulator {
     return acc;
   }
 
-  Arg Get(int idx);
-  size Count();
+  Arg Get(int idx) const;
+  size Count() const;
 
  private:
   explicit ArgAccumulator();
