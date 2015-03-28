@@ -157,7 +157,6 @@ void ShowKernelPointers(shell::ShellStream* shell) {
   shell->WriteLine("Const data (.bss): %h", uint32(&testing));
 }
 
-// TODO(chris): Make this better match up with `readelf`.
 void ShowElfInfo(shell::ShellStream* shell) {
   const kernel::grub::multiboot_info* mbt = kernel::GetMultibootInfo();
   if ((mbt->flags & 0b100000) == 0) {
@@ -170,10 +169,9 @@ void ShowElfInfo(shell::ShellStream* shell) {
     klib::Panic("ELF section header doesn't match expected size.");
   }
 
-
   shell->WriteLine("ELF sections:");
-  shell->WriteLine("  There are %d %d-byte section headers. Starting at %h.",
-		   elf_sec->num, elf_sec->size, elf_sec->addr);
+  shell->WriteLine("  There are %d section headers, starting at %h:",
+		   elf_sec->num, elf_sec->addr);
 
   const kernel::elf::Elf32SectionHeader* string_table_header =
     kernel::elf::GetSectionHeader(elf_sec->addr, elf_sec->shndx);
@@ -181,15 +179,18 @@ void ShowElfInfo(shell::ShellStream* shell) {
     klib::Panic("Section header string table is not actually a string table.");
   }
 
+  shell->WriteLine("\nSection Headers:");
+  shell->WriteLine("  [Num] %{L16}s %{L12}s %{L10}s %{L10}s %{L10}s Flg",
+		   "Name", "Type", "Addr", "Offset", "Size");
   for (size i = 0; i < size(elf_sec->num); i++) {
     const kernel::elf::Elf32SectionHeader* header =
         kernel::elf::GetSectionHeader(elf_sec->addr, i);
     const char* section_name = kernel::elf::GetStringTableEntry(
-        string_table_header->addr, string_table_header->size, uint32(i));
+        string_table_header->addr, string_table_header->size, header->name);
     const char* section_type = kernel::elf::ToString(
 	(kernel::elf::SectionType) header->type);
 
-    shell->WriteLine("[%d] %s %s %h %h %h %c%c%c",
+    shell->WriteLine("  [%{R3}d] %{L16:t}s %{L12}s %h %h %h %c%c%c",
 		     i, section_name, section_type,
 		     header->addr, header->offset, header->size,
 		     (header->flags & 0x1 ? 'W' : ' '),

@@ -21,6 +21,8 @@ const char* ToString(SectionType type) {
   case SectionType::HIPROC:   return "HIPROC";
   case SectionType::LOUSER:   return "LOUSER";
   case SectionType::HIUSER:   return "HIUSER";
+  // TODO(chris): Bring this up to date.
+  case SectionType::INIT_ARRAY: return "INIT_ARRAY";
   }
   return "UNKNOWN";
 }
@@ -31,33 +33,18 @@ const Elf32SectionHeader* GetSectionHeader(uint32 base_address, uint32 index) {
 }
 
 const char* GetStringTableEntry(uint32 strtab_address, uint32 size, uint32 index) {
-  const char* p = (const char*) strtab_address;
-  const char* table_end = (const char*) (strtab_address + size);
-  if (*p != 0) {
+  const char* start = (const char*) strtab_address;
+  if (*start != 0) {
     klib::Panic("First entry in StringTable non-null.");
   }
-  if (*table_end != 0) {
+  const char* end = (const char*) (strtab_address + size);
+  if (*end != 0) {
     klib::Panic("Last entry in StingTable non-null.");
   }
-
-  const char* start = nullptr;
-  uint32 current_index = 0;
-  while (current_index <= index) {
-    // Starting assuming p is on the null of the previous string.
-    // (Or on the null of the first byte of the section.) Advance
-    // one byte to next string.
-    p++;
-    if (p >= table_end) {
-      return nullptr;
-    }
-    start = p;
-    while (*p) {
-      p++;
-    }
-    current_index++;
+  if (index > size) {
+    klib::Panic("Retrieving string starting beyond size of string table.");
   }
-
-  return start;
+  return (start + index);
 }
 
 }  // namespace elf

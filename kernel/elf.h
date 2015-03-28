@@ -1,6 +1,7 @@
 // Data structures for parsing ELF executables.
-// See: http://www.skyfree.org/linux/references/ELF_Format.pdf
-// Try: readelf kernel.elf --headers
+// See: http://docs.oracle.com/cd/E23824_01/html/819-0690/chapter6-94076.html
+// See: [OUTDATED] http://www.skyfree.org/linux/references/ELF_Format.pdf
+// Try: readelf kernel.elf --sections
 #ifndef KERNEL_ELF_H_
 #define KERNEL_ELF_H_
 
@@ -24,6 +25,7 @@ struct ElfSectionHeaderTable {
   uint32 shndx;
 };
 
+// BUG: This enum was generated from an older spec!
 enum class SectionType : uint32 {
   NULL     = 0,
   PROGBITS = 1,
@@ -37,6 +39,7 @@ enum class SectionType : uint32 {
   REL      = 9,
   SHLIB    = 10,
   DYNSYM   = 11,
+  INIT_ARRAY = 14,
   LOPROC   = 0x70000000,
   HIPROC   = 0x7FFFFFFF,
   LOUSER   = 0x80000000,
