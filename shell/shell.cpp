@@ -3,7 +3,7 @@
 #include "hal/keyboard.h"
 #include "hal/text_ui.h"
 #include "kernel/elf.h"
-#include "kernel/memory.h"
+#include "kernel/boot.h"
 #include "klib/debug.h"
 #include "klib/limits.h"
 #include "klib/types.h"

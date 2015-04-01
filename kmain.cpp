@@ -8,7 +8,7 @@
 #include "klib/macros.h"
 #include "hal/serial_port.h"
 #include "hal/text_ui.h"
-#include "kernel/memory.h"
+#include "kernel/boot.h"
 #include "shell/shell.h"
 
 using klib::Debug;
