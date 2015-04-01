@@ -21,7 +21,7 @@ if [ ! -f ./bin/libgtest.a ]
 fi
 
 # TODO(chris): Move this to the Makefile.
-echo "Building unit tests."
+echo "Building klib unit tests."
 g++ \
     -I$GTEST_DIR/include \
     -I. \
@@ -36,6 +36,24 @@ g++ \
     ./klib/print_test.cpp \
     ./klib/tests_main.cpp \
     ./klib/print.cpp \
+    ./bin/libgtest.a \
+    -o ./bin/unit-test
+
+echo "Running."
+./bin/unit-test
+
+rm ./bin/unit-test
+
+echo "Building kernel unit tests."
+g++ \
+    -I$GTEST_DIR/include \
+    -I. \
+    -std=c++11 \
+    -pthread \
+    -fno-stack-protector -Wall -Wextra \
+    ./kernel/memory.cpp \
+    ./kernel/memory_test.cpp \
+    ./kernel/tests_main.cpp \
     ./bin/libgtest.a \
     -o ./bin/unit-test
 
