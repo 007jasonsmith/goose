@@ -2,10 +2,12 @@
 
 #include "hal/keyboard.h"
 #include "klib/debug.h"
+#include "klib/macros.h"
+#include "klib/panic.h"
 #include "klib/types.h"
+#include "sys/control_registers.h"
 #include "sys/io.h"
 #include "sys/idt.h"
-#include "klib/macros.h"
 
 using klib::Debug;
 
@@ -229,17 +231,20 @@ void InstallInterruptServiceRoutines() {
 // long-running work async, and letting other interrupts file as normal.
 extern "C" {
 void interrupt_handler(regs* r) {
-  SUPPRESS_UNUSED_WARNING(r);
   // Processor interrupts.
   const char* description = "Unknown Interrupt";
   if (r->int_no < 32) {
     description = kInterruptDescriptions[r->int_no];
   }
 
-  // TODO(chris): Make a kick-ass BSOD.
   Debug::Log("Received interrupt %s[%d] with code %d",
 	     description, r->int_no, r->err_code);
-  // TODO(chrsmith): Panic.
+  if (r->int_no == 14) {
+    uint32 cr2 = get_cr2();
+    Debug::Log("Was interrupt handler. CR2 %h", cr2);
+  }
+
+  klib::Panic("Unhandled interrupt.");
 }
 
 // TODO(chris): Put this elsewhere.

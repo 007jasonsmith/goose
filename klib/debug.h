@@ -19,11 +19,13 @@ class Debug {
  public:
   static void RegisterOutputFn(IOutputFn* fn);
   static void Log(const char* msg);
+  static void LogChar(char c);
 
   template<typename... Args>
   static void Log(const char* msg, Args... args) {
     // TODO(chris): CHECK fn_ not null.
     klib::Print(msg, fn_, args...);
+    klib::Print("\n", fn_);
   }
 
  private:

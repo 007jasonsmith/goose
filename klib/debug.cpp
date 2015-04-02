@@ -20,4 +20,8 @@ void Debug::Log(const char* msg) {
   fn_->Print('\n');
 }
 
+void Debug::LogChar(char c) {
+  fn_->Print(c);
+}
+
 }  // namespace klib

@@ -7,7 +7,9 @@
 
 namespace {
 
-uint8* const screen_buffer = (uint8*) 0x000B8000;
+// NOTE: The actual address is 0x000B8000. However, we virtual memory to map
+// 0x00000000 to 0xC0000000.
+uint8* const screen_buffer = (uint8*) 0xC00B8000;
 
 // Returns the raw index into the screen_buffer. So screen_buffer[index] is the
 // character, and screen_buffer[index + 1] is the formatting.

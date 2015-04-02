@@ -30,8 +30,6 @@ void FriendlyShutdown(const char* message);
 
 const char version[] = "v0.1a";
 void kmain(uint32 multiboot_magic, const kernel::grub::multiboot_info* mbt) {
-  SUPPRESS_UNUSED_WARNING(mbt);
-
   // Initialize device drivers.
   hal::SerialPort::Initialize();
   hal::TextUI::Initialize();
@@ -54,7 +52,6 @@ void kmain(uint32 multiboot_magic, const kernel::grub::multiboot_info* mbt) {
   sys::InstallInterruptServiceRoutines();
 
   kernel::SetMultibootInfo(mbt);
-
   shell::Run();
 
   Debug::Log("Kernel halted.");

@@ -253,7 +253,7 @@ ShellStream::ShellStream(const hal::Region region, hal::Offset offset) :
 
 void ShellStream::Print(char c) {
   // HAX for debugging
-  klib::Debug::Log("%c", c);
+  klib::Debug::LogChar(c);
 
   if (c != '\n') {
     TextUI::SetChar(offset_.x, offset_.y, c);

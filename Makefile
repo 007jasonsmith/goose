@@ -4,11 +4,12 @@
 # TODO(chris): Automatically generate C_FILES, S_FILES, etc.
 OBJECTS = kmain.o kmain_asm.o \
           klib/argaccumulator.o klib/strings.o klib/type_printer.o \
-	  klib/debug.o klib/panic.o klib/print.o \
-	  sys/io.o sys/halt.o \
-	  sys/gdt.o sys/gdt_asm.o \
-	  sys/idt.o sys/idt_asm.o \
-	  sys/isr.o sys/isr_asm.o \
+          klib/debug.o klib/panic.o klib/print.o \
+          sys/io.o sys/halt.o \
+          sys/gdt.o sys/gdt_asm.o \
+          sys/idt.o sys/idt_asm.o \
+          sys/isr.o sys/isr_asm.o \
+          sys/control_registers.o \
           kernel/memory.o kernel/boot.o kernel/elf.o \
           shell/shell.o \
           hal/keyboard.o hal/serial_port.o hal/text_ui.o
