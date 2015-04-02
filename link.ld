@@ -1,31 +1,53 @@
 ENTRY(loader)                /* the name of the entry label */
 
 SECTIONS {
-    . = 0x00100000;          /* the code should be loaded at 1 MB */
+    /**
+     * Memory offset for where to base the code from. We start at the 1MiB
+     * mark so that we can reference hardware registers below that.
+     */
+    . = 0x00100000;
 
+    /**
+     * Special multi-boot header section. This comes first so that the
+     * magic values GRUB is looking for are present. Otherwise they may
+     * not be in the first X KiB of the ELF binary, and GRUB may not
+     * detect it is a multi-boot file.
+     */
     .mbHeader ALIGN (0x1000) :
     {
-         *(.mbHeader)        /* Special multi-boot header. */
+         *(.mbHeader)
     }
 
-    .text ALIGN (0x1000) :   /* align at 4 KB */
+    /**
+     * All .text sections from all files.
+     */
+    .text ALIGN (0x1000) :
     {
-        *(.text)             /* all text sections from all files */
+        *(.text)
     }
 
-    .rodata ALIGN (0x1000) : /* align at 4 KB */
+    /**
+     * All read-only sections from all files.
+     */
+    .rodata ALIGN (0x1000) :
     {
-        *(.rodata*)          /* all read-only data sections from all files */
+        *(.rodata*)
     }
 
-    .data ALIGN (0x1000) :   /* align at 4 KB */
+    /**
+     * All data sections from all files.
+     */
+    .data ALIGN (0x1000) :
     {
-        *(.data)             /* all data sections from all files */
+        *(.data)
     }
 
-    .bss ALIGN (0x1000) :    /* align at 4 KB */
+    /**
+     * All COMMON and zero-initialized data sections from all files.
+     */
+    .bss ALIGN (0x1000) :
     {
-        *(COMMON)            /* all COMMON sections from all files */
-        *(.bss)              /* all bss sections from all files */
+        *(COMMON)
+        *(.bss)
     }
 }
