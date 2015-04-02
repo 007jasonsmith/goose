@@ -15,10 +15,23 @@ class PageDirectoryEntry {
   uint32 GetPageTableAddress();
   void SetPageTableAddress(uint32 page_table_address);
 
+#define BIT_FLAG_PROPS(name)     \
+  bool Get##name##Bit();         \
+  void Set##name##Bit(bool bit);
+
+  BIT_FLAG_PROPS(Present)
+  BIT_FLAG_PROPS(ReadWrite)
+  BIT_FLAG_PROPS(User)
+  BIT_FLAG_PROPS(WriteThrough)
+  BIT_FLAG_PROPS(DisableCache)
+  BIT_FLAG_PROPS(Dirty)
+  BIT_FLAG_PROPS(Size)
+#undef BIT_FLAG_PROPS
+
  private:
   // Bits
   // 31 - 11: 4KiB aligned pointer to a PageTableEntry.
-  // 6: (S) Size. If set, pages are 4MiB in size. Otherwise 4KiB. 4MiB also
+  // 7: (S) Size. If set, pages are 4MiB in size. Otherwise 4KiB. 4MiB also
   //        need PSE to be enabled.
   // 5: (A) Accessed. Hold if the page has been read/written to.
   // 4: (D) If set the page will not be cached. If not, could be.

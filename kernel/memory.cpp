@@ -26,5 +26,40 @@ void PageDirectoryEntry::SetPageTableAddress(uint32 page_table_address) {
   // Put in the new address.
   data_ |= page_table_address;
 }
-      
+
+#define BIT_FLAG_GETTER(name, bit)          \
+bool PageDirectoryEntry::Get##name##Bit() { \
+  uint32 mask = 1;                          \
+  mask <<= bit;                             \
+  mask &= data_;                            \
+  return mask;                              \
+}
+
+#define BIT_FLAG_SETTER(name, bit)                \
+void PageDirectoryEntry::Set##name##Bit(bool f) { \
+  uint32 mask = 1;                                \
+  mask <<= bit;                                   \
+  data_ &= ~mask;                                 \
+  if (f) {                                        \
+    data_ |= mask;                                \
+  }                                               \
+}
+
+// Yes, macros calling macros. Deal with it.
+#define BIT_FLAG_MEMBER(name, bit) \
+  BIT_FLAG_GETTER(name, bit)       \
+  BIT_FLAG_SETTER(name, bit)
+
+BIT_FLAG_MEMBER(Present,      0)
+BIT_FLAG_MEMBER(ReadWrite,    1)
+BIT_FLAG_MEMBER(User,         2)
+BIT_FLAG_MEMBER(WriteThrough, 3)
+BIT_FLAG_MEMBER(DisableCache, 4)
+BIT_FLAG_MEMBER(Dirty,        5)
+BIT_FLAG_MEMBER(Size,         7)
+
+#undef BIT_FLAG_GETTER
+#undef BIT_FLAG_SETTER
+#undef BIT_FLAG_MEMBERS
+
 }  // namespace kernel
