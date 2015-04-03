@@ -16,6 +16,20 @@ using hal::Keyboard::KeyPress;
 
 namespace {
 
+// Virtualize a pointer, since GRUB's addresses are to physical
+// memory and virtual memory has been enabled. This only works because
+// the physical memory where GRUB put this data (0x0 - 1MiB) is mapped
+// into the kernel's virtual address space. (0xC0000000+)
+uint32 VirtualizeAddress(uint32 raw_addr) {
+  return (raw_addr + 0xC0000000);
+}
+
+template<typename T>
+T* VirtualizeAddress(T* raw_addr) {
+  uint32 addr = (uint32) raw_addr;
+  return (T*) (addr + 0xC0000000);
+}
+
 struct ShellCommand {
   const char* command;
   void (*func)(shell::ShellStream* shell);
@@ -78,10 +92,11 @@ void ShowMemoryMap(shell::ShellStream* shell) {
   size usable_regions_count = 0;
   kernel::grub::multiboot_memory_map* usable_regions[10];
 
-  const kernel::grub::multiboot_info* mbt = kernel::GetMultibootInfo();
+  const kernel::grub::multiboot_info* mbt =
+      VirtualizeAddress(kernel::GetMultibootInfo());
 
   kernel::grub::multiboot_memory_map* mmap =
-    (kernel::grub::multiboot_memory_map*) mbt->mmap_addr;
+      (kernel::grub::multiboot_memory_map*) VirtualizeAddress(mbt->mmap_addr);
 
   // TODO(chris): Sanity check 32-bits for the time being.
   shell->WriteLine("System memory:");
@@ -97,7 +112,8 @@ void ShowMemoryMap(shell::ShellStream* shell) {
   // guaranteed by the BIOS.
   uint32 last_region_end = 0x00000000;
   shell->WriteLine("Memory regions:");
-  while((uint32) mmap < (uint32) mbt->mmap_addr + mbt->mmap_length) {
+  while((uint32) mmap < (uint32) VirtualizeAddress(mbt->mmap_addr) +
+                        mbt->mmap_length) {
     // Sanity check the memory map region.
     // - Check 32-bit ranges
     // - Check it doesn't contain ACPI 3.0 Extended attributes
@@ -158,13 +174,13 @@ void ShowKernelPointers(shell::ShellStream* shell) {
 }
 
 void ShowElfInfo(shell::ShellStream* shell) {
-  const kernel::grub::multiboot_info* mbt = kernel::GetMultibootInfo();
+  const kernel::grub::multiboot_info* mbt =
+      VirtualizeAddress(kernel::GetMultibootInfo());
   if ((mbt->flags & 0b100000) == 0) {
     klib::Panic("Multiboot flags bit 5 not set.");
   }
 
-  const kernel::elf::ElfSectionHeaderTable* elf_sec =
-    &(mbt->u.elf_sec);
+  const kernel::elf::ElfSectionHeaderTable* elf_sec = &(mbt->u.elf_sec);
   if (sizeof(kernel::elf::Elf32SectionHeader) != elf_sec->size) {
     klib::Panic("ELF section header doesn't match expected size.");
   }
@@ -174,7 +190,8 @@ void ShowElfInfo(shell::ShellStream* shell) {
 		   elf_sec->num, elf_sec->addr);
 
   const kernel::elf::Elf32SectionHeader* string_table_header =
-    kernel::elf::GetSectionHeader(elf_sec->addr, elf_sec->shndx);
+      kernel::elf::GetSectionHeader(VirtualizeAddress(elf_sec->addr),
+                                    elf_sec->shndx);
   if (string_table_header->type != uint32(kernel::elf::SectionType::STRTAB)) {
     klib::Panic("Section header string table is not actually a string table.");
   }
@@ -184,15 +201,17 @@ void ShowElfInfo(shell::ShellStream* shell) {
 		   "Name", "Type", "Addr", "Offset", "Size");
   for (size i = 0; i < size(elf_sec->num); i++) {
     const kernel::elf::Elf32SectionHeader* header =
-        kernel::elf::GetSectionHeader(elf_sec->addr, i);
+        kernel::elf::GetSectionHeader(VirtualizeAddress(elf_sec->addr), i);
     const char* section_name = kernel::elf::GetStringTableEntry(
-        string_table_header->addr, string_table_header->size, header->name);
+        VirtualizeAddress(string_table_header->addr),
+        string_table_header->size, header->name);
     const char* section_type = kernel::elf::ToString(
 	(kernel::elf::SectionType) header->type);
 
     shell->WriteLine("  [%{R3}d] %{L16:t}s %{L12}s %h %h %h %c%c%c",
 		     i, section_name, section_type,
-		     header->addr, header->offset, header->size,
+		     VirtualizeAddress(header->addr),
+                     header->offset, header->size,
 		     (header->flags & 0x1 ? 'W' : ' '),
 		     (header->flags & 0x2 ? 'A' : ' '),
 		     (header->flags & 0x4 ? 'X' : ' '));
@@ -200,39 +219,8 @@ void ShowElfInfo(shell::ShellStream* shell) {
 }
 
 void Experiment(shell::ShellStream* shell) {
-  const kernel::grub::multiboot_info* mbt = kernel::GetMultibootInfo();
-  if ((mbt->flags & 0b100000) == 0) {
-    klib::Panic("Multiboot flags bit 5 not set.");
-  }
-  const kernel::elf::ElfSectionHeaderTable* elf_sec = &(mbt->u.elf_sec);
-
-  shell->WriteLine("ELF header info:");
-  shell->WriteLine("  Sections = %d, size = %d", elf_sec->num, elf_sec->size);
-  shell->WriteLine("  addr = %h / shndx = %h", elf_sec->addr, elf_sec->shndx);
-
-  for (size i = 0; i < size(elf_sec->num); i++) {
-    const kernel::elf::Elf32SectionHeader* header =
-        (kernel::elf::Elf32SectionHeader*) (elf_sec->addr + sizeof(kernel::elf::Elf32SectionHeader) * i);
-    if (header->type != uint32(kernel::elf::SectionType::STRTAB)) {
-      continue;
-    }
-
-    shell->WriteLine("ELF STRING TABLE %d", i);
-    shell->WriteLine("  name:   %d    entsize:    %d", header->name, header->entsize);
-    shell->WriteLine("  type:   %d    addralign:  %d", header->type, header->addralign);
-    shell->WriteLine("  flags: %d     info:       %d", header->flags, header->info);
-    shell->WriteLine("  addr: %h   link:       %d", header->addr, header->link);
-    shell->WriteLine("  offset: %d   size:   %d", header->offset, header->size);
-
-    shell->WriteLine("Entries:");
-    uint32 index = 0;
-    const char* entry = kernel::elf::GetStringTableEntry(header->addr, header->size, index);
-    while (entry != nullptr) {
-      shell->WriteLine("  %d: %s", index, entry);
-      index++;
-      entry = kernel::elf::GetStringTableEntry(header->addr, header->size, index);
-    }
-  }
+  // Delete and hack as necessary. If it is useful, submit the code.
+  shell->WriteLine("... just add water ...");
 }
 
 const ShellCommand* GetShellCommand(const char* command) {
