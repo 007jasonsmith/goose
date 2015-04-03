@@ -84,6 +84,7 @@ align 4                         ; align at 4 bytes
 kernel_stack:                   ; label points to the beginning of memory
         resb KERNEL_STACK_SIZE  ; reserve stack for the kernel
 
+    ; TODO(chris): Reclaim. Takes up 4KiB of memory but isn't used post-boot.
 section .data
 align 0x1000                    ; align page directory table at 4KiB
 boot_page_directory_table:	

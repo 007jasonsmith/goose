@@ -56,4 +56,8 @@ TEST(PageTableEntry, Bits) {
   // TODO(chris): Boiler plate tests for other bit flags.
 }
 
+TEST(InitializePageTables, CheckState) {
+  InitializeStartingPageTables();
+}
+
 }  // namespace kernel

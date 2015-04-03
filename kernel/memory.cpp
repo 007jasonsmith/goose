@@ -7,6 +7,9 @@ namespace {
 const uint32 kAddressMask = 0b11111111111111111111000000000000;
 const uint32 k4KiBMask    = 0b00000000000000000000111111111111;
 
+kernel::PageDirectoryEntry gPageDirectoryTable[1024];
+kernel::PageTableEntry gPageTables[1024 * 1024];
+
 }  // anonymous namespace
 
 namespace kernel {
@@ -86,5 +89,30 @@ BIT_FLAG_MEMBER(PageTableEntry, Global,       8)
 #undef BIT_FLAG_GETTER
 #undef BIT_FLAG_SETTER
 #undef BIT_FLAG_MEMBERS
+
+void InitializeStartingPageTables() {
+  // Initialize page directory tables.
+  for (size i = 0; i < 1024; i++) {
+    gPageDirectoryTable[i].SetPageTableAddress(
+        (uint32) (&gPageTables[i * 1024]));        
+    gPageDirectoryTable[i].SetPresentBit(true);  // Page table exists.
+    gPageDirectoryTable[i].SetUserBit(true);
+    gPageDirectoryTable[i].SetReadWriteBit(false);
+  }
+
+  // Initialize page tables.
+  for (size i = 0; i < 1024 * 1024; i++) {
+    gPageTables[i].SetPhysicalAddress(i * 4 * 1024);
+    gPageTables[i].SetPresentBit(false);
+    gPageTables[i].SetUserBit(true);
+  }
+
+  // Initialize the specific kernel-level pages.
+  // Map 0xC0000000-0xC0100000 to 0x00000000-0x00100000
+  //     Used for low-level DMA jazz, like TextUI.
+  // Map 0xC0100000-<ker size> to 0x00100000-<ker size>
+  //     Used for the kernel's code. GRUB's multiboot
+  //     contains the ELF info.
+}
 
 }  // namespace kernel
