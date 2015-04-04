@@ -19,6 +19,8 @@ struct aout_symbol_table {
   uint32 reserved;
 };
 
+// The structure for this header is somewhat documented at:
+// http://www.gnu.org/software/grub/manual/multiboot/html_node/Boot-information-format.html#Boot-information-format
 struct multiboot_info {
   uint32 flags;
   uint32 mem_lower;
