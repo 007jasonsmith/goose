@@ -7,11 +7,8 @@ namespace {
 const uint32 kAddressMask = 0b11111111111111111111000000000000;
 const uint32 k4KiBMask    = 0b00000000000000000000111111111111;
 
-// NOTE: If these were present, the kernel won't load anymore.
-// I suspect since it will take > 4MiB and won't fit into the
-// bootstrapped paging.
-kernel::PageDirectoryEntry gPageDirectoryTable[0/*1024*/];
-kernel::PageTableEntry gPageTables[0/*1024 * 1024*/];
+kernel::PageDirectoryEntry gPageDirectoryTable[1024] __attribute__((aligned(4096)));
+kernel::PageTableEntry gPageTables[1024 * 1024]      __attribute__((aligned(4096)));
 
 }  // anonymous namespace
 
@@ -98,9 +95,9 @@ void InitializeStartingPageTables() {
   for (size i = 0; i < 1024; i++) {
     gPageDirectoryTable[i].SetPageTableAddress(
         (uint32) (&gPageTables[i * 1024]));        
-    gPageDirectoryTable[i].SetPresentBit(true);  // Page table exists.
-    gPageDirectoryTable[i].SetUserBit(true);
-    gPageDirectoryTable[i].SetReadWriteBit(false);
+    gPageDirectoryTable[i].SetPresentBit(false);
+    gPageDirectoryTable[i].SetUserBit(false);
+    gPageDirectoryTable[i].SetReadWriteBit(true);
   }
 
   // Initialize page tables.

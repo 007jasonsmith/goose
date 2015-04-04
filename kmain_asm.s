@@ -63,7 +63,9 @@ start_in_higher_half:
     ; Now that eip is correctly fetching instructions ~0xC0100000, we no
     ; longer need to keep the identity pages for 0x00000000.
     mov dword [boot_page_directory_table], 0
+    mov dword [boot_page_directory_table], 1
     invlpg [0]
+    invlpg [1]
 
     mov esp, kernel_stack+KERNEL_STACK_SIZE           ; set up the stack
 
@@ -88,9 +90,9 @@ kernel_stack:                   ; label points to the beginning of memory
 section .data
 align 0x1000                    ; align page directory table at 4KiB
 boot_page_directory_table:	
-    ; We initialize a page directory table with only two entries. One identity
-    ; mapping the first 4MiB (where our kernel exists in physical memory), and
-    ; another page in high memory pointing to the first 4MiB of physical memory
+    ; We initialize a page directory table with only two regions. One identity
+    ; mapping the first few MiB (where our kernel exists in physical memory),
+    ; and another page in high memory pointing to the first few of physical memory
     ; (where the kernel will be virtualy referenced). We need the lower-memory
     ; identity page, otherwise things will crash as soon as paging is enabled.
     ; Because the next instruction pointer will be invalid.
@@ -99,7 +101,12 @@ boot_page_directory_table:
     ; bit 7: PS The kernel page is 4MB.
     ; bit 1: RW The kernel page is read/write.
     ; bit 0: P  The kernel page is present.
-    dd 0x00000083				; low-memory page
-    times (KERNEL_PAGE_NUMBER - 1) dd 0       	; pages before kernel space
-    dd 0x00000083				; high-memory kernel page
-    times (1024 - KERNEL_PAGE_NUMBER - 1) dd 0  ; pages after the kernel image.
+    ;
+    ; We map two pages in each region, since our kernel takes up more than
+    ; 4 MiB. Be sure to update start_in_higher_half when changing this.
+    dd 0x00000083				; low-memory page #1
+    dd 0x00400083				; low-memory page #2	
+    times (KERNEL_PAGE_NUMBER - 2) dd 0       	; pages before kernel space
+    dd 0x00000083				; high-memory kernel page #1
+    dd 0x00401083				; high-memory kernel page #2
+    times (1024 - KERNEL_PAGE_NUMBER - 2) dd 0  ; pages after the kernel image.
