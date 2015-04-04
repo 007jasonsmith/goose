@@ -29,7 +29,7 @@ const char* ToString(SectionType type) {
 
 const Elf32SectionHeader* GetSectionHeader(uint32 base_address, uint32 index) {
   return (kernel::elf::Elf32SectionHeader*) (
-     base_address + sizeof(kernel::elf::Elf32SectionHeader) * index);
+      base_address + sizeof(kernel::elf::Elf32SectionHeader) * index);
 }
 
 const char* GetStringTableEntry(uint32 strtab_address, uint32 size, uint32 index) {

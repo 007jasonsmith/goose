@@ -38,9 +38,7 @@ struct multiboot_info {
 struct multiboot_memory_map {
   uint32 size;
   uint32 base_addr_low, base_addr_high;
-  // You can also use: uint32 long int base_addr; if supported.
   uint32 length_low, length_high;
-  // You can also use: uint32 long int length; if supported.
   uint32 type;
 };
 

@@ -16,18 +16,24 @@ using hal::Keyboard::KeyPress;
 
 namespace {
 
-// Virtualize a pointer, since GRUB's addresses are to physical
-// memory and virtual memory has been enabled. This only works because
-// the physical memory where GRUB put this data (0x0 - 1MiB) is mapped
-// into the kernel's virtual address space. (0xC0000000+)
-uint32 VirtualizeAddress(uint32 raw_addr) {
-  return (raw_addr + 0xC0000000);
+// Virtualize a pointer. Since GRUB's addresses are to _physical_
+// memory address, and by the time the kernel loads virtual memory
+// has been enabled, we need to be careful about accessing it.
+uint32 VirtualizeAddress(uint32 raw_address) {
+  return (raw_address + 0xC0000000);
 }
 
 template<typename T>
 T* VirtualizeAddress(T* raw_addr) {
   uint32 addr = (uint32) raw_addr;
   return (T*) (addr + 0xC0000000);
+}
+
+void AssertAddressNotVirtualized(uint32 address) {
+  if (address >= 0xC0000000) {
+    klib::Debug::Log("Virtualized address: %h", address);
+    klib::Panic("Encountered virtualized address.");
+  }
 }
 
 struct ShellCommand {
@@ -189,11 +195,17 @@ void ShowElfInfo(shell::ShellStream* shell) {
   shell->WriteLine("  There are %d section headers, starting at %h:",
 		   elf_sec->num, elf_sec->addr);
 
+  // We assume the string table ELF section will not have its "allocate" flag
+  // set, so GRUB thankfully still loads it, but in low memory. See check below.
+  AssertAddressNotVirtualized(elf_sec->addr);
   const kernel::elf::Elf32SectionHeader* string_table_header =
       kernel::elf::GetSectionHeader(VirtualizeAddress(elf_sec->addr),
                                     elf_sec->shndx);
   if (string_table_header->type != uint32(kernel::elf::SectionType::STRTAB)) {
     klib::Panic("Section header string table is not actually a string table.");
+  }
+  if (string_table_header->flags & 0x2) {
+    klib::Panic("String table header's allocate flag is set?");
   }
 
   shell->WriteLine("\nSection Headers:");
@@ -208,9 +220,11 @@ void ShowElfInfo(shell::ShellStream* shell) {
     const char* section_type = kernel::elf::ToString(
 	(kernel::elf::SectionType) header->type);
 
+    // The address of each section is correct. Allocated sections should be
+    // placed in kernel space, non-allocated parts should be in low-memory.
     shell->WriteLine("  [%{R3}d] %{L16:t}s %{L12}s %h %h %h %c%c%c",
 		     i, section_name, section_type,
-		     VirtualizeAddress(header->addr),
+		     header->addr,
                      header->offset, header->size,
 		     (header->flags & 0x1 ? 'W' : ' '),
 		     (header->flags & 0x2 ? 'A' : ' '),
