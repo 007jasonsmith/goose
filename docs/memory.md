@@ -54,3 +54,29 @@ Note however that this does mean that in order to access any data returned from
 GRUB, you need to "virtualize" the memory address. In other words, add 0xC0000000
 too it. Since GRUB loads data starting at the 1MiB mark (which is where our
 linker script asks it to be put.)
+
+#Physical Memory vs. Virtual Memory#
+
+The computer's limited physical memory needs to be tracked. While a process
+can address up to 3GiB (with 1GiB reserved for kernel code), some virtual
+addresses can be swaped to disk.
+
+Book keeping for which pages are "present" or not is handled by the page table,
+but the kernel needs to know how to respond to the page fault. i.e. where to
+load that memory from disk. Or, how to update the page table of another process
+whose page got evicted.
+
+##Setting up Heapspace##
+
+- Initialize PDT
+- Initialize PT
+- Replace PDT
+- InitPhysicalMemoryManager
+- - Count physical pages
+- - Sub pages used for kernel code
+- - Detect PMM space needed
+- - For all pages for PMM
+- - - Find first free physical page not used by kernel
+- - - Set up PT entry
+- - Allocate PMM @ virtual address 0, spanning pages.
+- - Walk KPT and init PMM (with ELF AND PMM)
