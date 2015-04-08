@@ -2,6 +2,7 @@
 
 #include "kernel/boot.h"
 #include "klib/debug.h"
+#include "sys/control_registers.h"
 
 using klib::Assert;
 
@@ -30,6 +31,26 @@ uint32 VirtualizeAddress(uint32 raw_address) {
 
 bool Is4KiBAligned(uint32 address) {
   return (address % 4096 == 0);
+}
+
+void DumpKernelMemory() {
+  uint32 current_pdt = get_cr3();
+  uint32 kernel_pdt = (uint32) kernelPageDirectoryTable;
+
+  klib::Debug::Log("Kernel Page Directory Table:");
+  klib::Debug::Log("  Kernel PDT %h, current PDT %h", kernel_pdt, current_pdt);
+  for (size pdt = 0; pdt < 1024; pdt++) {
+    if (kernelPageDirectoryTable[pdt].Value() != 0) {
+      klib::Debug::Log("  %{L4}d| %h", pdt, kernelPageDirectoryTable[pdt].Value());
+    }
+  }
+  
+  klib::Debug::Log("Kernel Page Tables:");
+  for (size pt = 0; pt < 256 * 1024; pt++) {
+    if (kernelPageTables[pt].Value() != 0) {
+      klib::Debug::Log("  %{L4}d| %h", pt, kernelPageTables[pt].Value());
+    }
+  }
 }
 
 }  // anonymous namespace
@@ -75,6 +96,10 @@ void PageDirectoryEntry::SetPageTableAddress(uint32 page_table_address) {
   data_ |= page_table_address;
 }
 
+uint32 PageDirectoryEntry::Value() {
+  return data_;
+}
+
 BIT_FLAG_MEMBER(PageDirectoryEntry, Present,      0)
 BIT_FLAG_MEMBER(PageDirectoryEntry, ReadWrite,    1)
 BIT_FLAG_MEMBER(PageDirectoryEntry, User,         2)
@@ -97,6 +122,10 @@ void PageTableEntry::SetPhysicalAddress(uint32 physical_address) {
   data_ &= ~kAddressMask;
   // Put in the new address.
   data_ |= physical_address;
+}
+
+uint32 PageTableEntry::Value() {
+  return data_;
 }
 
 BIT_FLAG_MEMBER(PageTableEntry, Present,      0)
@@ -122,7 +151,7 @@ void InitializeKernelPageDirectory() {
       kernelPageDirectoryTable[i].SetPresentBit(true);
       kernelPageDirectoryTable[i].SetReadWriteBit(true);
       kernelPageDirectoryTable[i].SetPageTableAddress(
-          (uint32) (&kernelPageTables[i * 1024]));
+          (uint32) (&kernelPageTables[(i - 768) * 1024]));
     }
   }
 
@@ -132,7 +161,17 @@ void InitializeKernelPageDirectory() {
     kernelPageTables[i].SetPresentBit(false);
   }
 
-  // WHERE IS THE MULTIBOOTINFO LOCATED?
+  // Idenity map the first MiB of memory to 0xC0000000. This way we can access
+  // hardware registers (e.g. TextUI memory).
+  for (size page = 0; page < 256; page++) {
+      kernelPageTables[page].SetPresentBit(true);
+      kernelPageTables[page].SetUserBit(false);
+      kernelPageTables[page].SetReadWriteBit(true);
+      kernelPageTables[page].SetPhysicalAddress(page * 4096);
+  }
+
+  // TODO(chrsmith): Figure out where GRUB puts the multiboot info pointer.
+  // It looks like it is in the middle of the kernel's .bss segment.
 
   // Initialize page tables marking kernel code that has already been
   // loaded into memory. This section assumes that GRUB loads the entire
@@ -151,9 +190,29 @@ void InitializeKernelPageDirectory() {
     const kernel::elf::Elf32SectionHeader* section =
         kernel::elf::GetSectionHeader(VirtualizeAddress(elf_ht->addr), i);
     Assert(Is4KiBAligned(section->addr), "Section is not 4KiB aligned.");
+
+    size pages = (section->size / 4096) + 1;  // BUG: Section size is 4KiB aligned.
+    for (size j = 0; j < pages; j++) {
+      uint32 real_section_address = section->addr;
+      // GRUB still loads ELF sections that shouldn't typically be allocated,
+      // e.g. debug symbols. However it doesn't set the virtualized address. So
+      // manually add 0xC0000000 to these addresses.
+      if (!IsInKernelSpace(real_section_address)) {
+	real_section_address += 0xC0000000;
+      }
+
+      uint32 address = real_section_address + j * 4096;
+      size page = (address - 0xC0000000) / 4096;
+      kernelPageTables[page].SetPresentBit(true);
+      kernelPageTables[page].SetUserBit(false);
+      kernelPageTables[page].SetReadWriteBit(true);  // TODO: Check section flags.
+      kernelPageTables[page].SetPhysicalAddress(address - 0xC0000000);
+    }
   }
   
   // Replace page directory table.
+  DumpKernelMemory();
+  load_pdt((uint32) kernelPageDirectoryTable);
 
   // SHOULD WORK JUST FINE. VERIFY IT GOOD.
 

@@ -29,6 +29,8 @@ class PageDirectoryEntry {
   BIT_FLAG_PROPS(Accessed)
   BIT_FLAG_PROPS(Size)
 
+  uint32 Value();
+
  private:
   // Bits
   // 31 - 11: 4KiB aligned pointer to a PageTableEntry.
@@ -61,6 +63,8 @@ class PageTableEntry {
   BIT_FLAG_PROPS(Accessed)
   BIT_FLAG_PROPS(Dirty)
   BIT_FLAG_PROPS(Global)
+
+  uint32 Value();
 
  private:
   // Bits
