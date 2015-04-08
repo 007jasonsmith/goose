@@ -4,6 +4,7 @@
 #include "hal/text_ui.h"
 #include "kernel/elf.h"
 #include "kernel/boot.h"
+#include "kernel/memory.h"
 #include "klib/debug.h"
 #include "klib/limits.h"
 #include "klib/types.h"
@@ -49,6 +50,8 @@ void ShowMemoryMap(shell::ShellStream* shell);
 void ShowKernelPointers(shell::ShellStream* shell);
 // Print all known information about the Kernel's ELF binary.
 void ShowElfInfo(shell::ShellStream* shell);
+// Initialize kernel page tables, etc.
+void InitializeKernelMemory(shell::ShellStream* shell);
 // Experimental code.
 void Experiment(shell::ShellStream* shell);
 // Returns the command with the name, otherwise null.
@@ -58,6 +61,7 @@ const ShellCommand commands[] = {
   { "show-memory-map", &ShowMemoryMap },
   { "show-kernel-pointers", &ShowKernelPointers },
   { "show-elf-info", &ShowElfInfo },
+  { "initialize-kernel-memory", &InitializeKernelMemory },
   { "experiment", &Experiment }
 };
 const size kNumCommands = sizeof(commands) / sizeof(ShellCommand);
@@ -230,6 +234,12 @@ void ShowElfInfo(shell::ShellStream* shell) {
 		     (header->flags & 0x2 ? 'A' : ' '),
 		     (header->flags & 0x4 ? 'X' : ' '));
   }
+}
+
+void InitializeKernelMemory(shell::ShellStream* shell) {
+  shell->WriteLine("Initializing kernel memory...");
+  kernel::InitializeKernelPageDirectory();
+  shell->WriteLine("done");
 }
 
 void Experiment(shell::ShellStream* shell) {

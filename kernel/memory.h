@@ -4,6 +4,7 @@
 #define KERNEL_MEMORY_H_
 
 #include "klib/types.h"
+#include "kernel/boot.h"
 
 namespace kernel {
 
@@ -78,13 +79,8 @@ class PageTableEntry {
 };
 #undef BIT_FLAG_PROPS
 
-// Initialize the starting page tables. No memory will be mapped with the
-// exception of the kernel being properly paged in and mapped to 0xC0000000
-// and above.
-//
-// Will not actually load the page tables. Use sys/paging.h to actually load
-// the page directory table.
-void InitializeStartingPageTables();
+// EXPERIMENTAL
+void InitializeKernelPageDirectory();
 
 }  // namespace kernel
 

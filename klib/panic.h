@@ -5,6 +5,9 @@
 
 namespace klib {
 
+void Assert(bool expr);
+void Assert(bool expr, const char* message);
+
 // Sets the kernel panic function. Panics if already set.
 void SetPanicFn(void (*fn)(const char* message));
 

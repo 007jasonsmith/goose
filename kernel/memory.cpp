@@ -1,14 +1,36 @@
 #include "kernel/memory.h"
 
+#include "kernel/boot.h"
 #include "klib/debug.h"
+
+using klib::Assert;
 
 namespace {
 
 const uint32 kAddressMask = 0b11111111111111111111000000000000;
 const uint32 k4KiBMask    = 0b00000000000000000000111111111111;
 
-kernel::PageDirectoryEntry gPageDirectoryTable[1024] __attribute__((aligned(4096)));
-kernel::PageTableEntry gPageTables[1024 * 1024]      __attribute__((aligned(4096)));
+// Kernel page directory table, containing a mapping for all 4GiB of addressable
+// memory. 
+kernel::PageDirectoryEntry kernelPageDirectoryTable[1024] __attribute__((aligned(4096)));
+// Kernel page tables, containing entries for the top 1GiB of memory.
+// 0xC0000000 - 0xFFFFFFFF.
+kernel::PageTableEntry kernelPageTables[256 * 1024] __attribute__((aligned(4096)));
+
+bool IsInKernelSpace(uint32 raw_address) {
+  return (raw_address > 0xC0000000);
+}
+
+// Virtualize a pointer. Since GRUB's addresses are to _physical_
+// memory address, and by the time the kernel loads virtual memory
+// has been enabled, we need to be careful about accessing it.
+uint32 VirtualizeAddress(uint32 raw_address) {
+  return (raw_address + 0xC0000000);
+}
+
+bool Is4KiBAligned(uint32 address) {
+  return (address % 4096 == 0);
+}
 
 }  // anonymous namespace
 
@@ -90,22 +112,50 @@ BIT_FLAG_MEMBER(PageTableEntry, Global,       8)
 #undef BIT_FLAG_SETTER
 #undef BIT_FLAG_MEMBERS
 
-void InitializeStartingPageTables() {
+void InitializeKernelPageDirectory() {
   // Initialize page directory tables.
   for (size i = 0; i < 1024; i++) {
-    gPageDirectoryTable[i].SetPageTableAddress(
-        (uint32) (&gPageTables[i * 1024]));        
-    gPageDirectoryTable[i].SetPresentBit(false);
-    gPageDirectoryTable[i].SetUserBit(false);
-    gPageDirectoryTable[i].SetReadWriteBit(true);
+    kernelPageDirectoryTable[i].SetPresentBit(false);
+    
+    // Map addresses > 0xC0000000 to kernel page tables.
+    if (i >= 768) {
+      kernelPageDirectoryTable[i].SetPresentBit(true);
+      kernelPageDirectoryTable[i].SetReadWriteBit(true);
+      kernelPageDirectoryTable[i].SetPageTableAddress(
+          (uint32) (&kernelPageTables[i * 1024]));
+    }
   }
 
-  // Initialize page tables.
-  for (size i = 0; i < 1024 * 1024; i++) {
-    gPageTables[i].SetPhysicalAddress(i * 4 * 1024);
-    gPageTables[i].SetPresentBit(false);
-    gPageTables[i].SetUserBit(true);
+  // Initialize page tables. Zero out for now, will map to the ELF
+  // binary info next.
+  for (size i = 0; i < 256 * 1024; i++) {
+    kernelPageTables[i].SetPresentBit(false);
   }
+
+  // WHERE IS THE MULTIBOOTINFO LOCATED?
+
+  // Initialize page tables marking kernel code that has already been
+  // loaded into memory. This section assumes that GRUB loads the entire
+  // ELF binary starting at the 1MiB mark, and that we specify the starting
+  // address at 0xC0100000 (0xC0000000 + 1MiB).
+  const grub::multiboot_info* multiboot_info = GetMultibootInfo();
+  const kernel::elf::ElfSectionHeaderTable* elf_ht =
+      &(multiboot_info->u.elf_sec);
+  Assert((multiboot_info->flags & 0b100000) != 0,
+         "Multiboot flags bit not set.");
+  Assert(sizeof(kernel::elf::Elf32SectionHeader) != elf_ht->size,
+         "ELF section header doesn't match expected size.");
+  Assert(IsInKernelSpace(elf_ht->addr), "Expected ELF header in kernel space.");
+
+  for (size i = 0; i < size(elf_ht->num); i++) {
+    const kernel::elf::Elf32SectionHeader* section =
+        kernel::elf::GetSectionHeader(VirtualizeAddress(elf_ht->addr), i);
+    Assert(Is4KiBAligned(section->addr), "Section is not 4KiB aligned.");
+  }
+  
+  // Replace page directory table.
+
+  // SHOULD WORK JUST FINE. VERIFY IT GOOD.
 
   // Initialize the specific kernel-level pages.
   // Map 0xC0000000-0xC0100000 to 0x00000000-0x00100000
