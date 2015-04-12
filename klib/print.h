@@ -15,6 +15,7 @@ class IOutputFn;
 //
 // %d - Print any integer (signed or unsigned) in base 10.
 // %h - Print any integer (signed or unsigned) in hex.
+// %b - Print any integer (signed or unsigned) in binary.
 // %c - Print a character.
 // %s - Print a C-string.
 //

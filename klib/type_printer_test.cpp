@@ -117,6 +117,23 @@ TEST(TypePrinter, HexInt64s) {
       p.Get(), "0x7FFFFFFFFFFFFFFF 0x8000000000000000 0xFFFFFFFFFFFFFFFF");
 }
 
+TEST(TypePrinter, BinUInt32s) {
+  StringPrinter p;
+  TypePrinter tp(&p);
+
+  p.Reset();
+  tp.PrintBin(Arg::Of(0x12344321U));
+  EXPECT_STREQ(p.Get(), "0b00010010001101000100001100100001");
+
+  p.Reset();
+  tp.PrintBin(Arg::Of(kMaxUInt32));
+  EXPECT_STREQ(p.Get(), "0b11111111111111111111111111111111");
+
+  p.Reset();
+  tp.PrintBin(Arg::Of(0U));
+  EXPECT_STREQ(p.Get(), "0b00000000000000000000000000000000");
+}
+
 TEST(TypePrinter, String) {
   StringPrinter p;
   TypePrinter tp(&p);

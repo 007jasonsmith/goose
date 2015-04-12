@@ -46,6 +46,7 @@ class TypePrinter {
   void PrintChar(Arg arg);
   void PrintDec(Arg arg);
   void PrintHex(Arg arg);
+  void PrintBin(Arg arg);
   void PrintString(Arg arg);
 
  private:
