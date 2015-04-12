@@ -169,6 +169,10 @@ void InitializeKernelPageDirectory() {
       kernel_page_table[pte_index].SetPresentBit(true);
       kernel_page_table[pte_index].SetReadWriteBit(true);
       kernel_page_table[pte_index].SetUserBit(false);
+      // TODO(chris): Set this bit and the corresponding flag in CR4, this
+      // speeds up some TLB goo since it knows these pages are mapped in all
+      // processes. (Which they are, because the Kernel is cool like that.)
+      // kernel_page_table[pte_index].SetGlobalBit(true);
       kernel_page_table[pte_index].SetPhysicalAddress(pte_index * 4096);
   }
 
