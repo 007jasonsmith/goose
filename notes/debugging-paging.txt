@@ -1,0 +1,37 @@
+IP 0xC01033FB
+
+2^20 = 1MiB
+
+     12345678901234567890123456789012
+     ================================
+   0b11000000000100000011001111111011 instruction pointer
+   0b1100000000---------------------- 10 bit PDT index
+   0b----------0100000011------------ 10 bit PT index
+   0b--------------------001111111011 12 bit physical page index
+
+PDT index 768
+PT  index 259
+Offset    509
+
+PDT #768
+  768 | 0b11000000000100001111000000000011
+
+20-bit PT address 0b11000000000100001111
+12-bit PDT flags  0b000000000011
+
+PT address 0xC010F000
+Flags      PRESENT, READ/WRITE
+
+Page table at 0xC010F000, entry #259
+
+  259 | 0b00000000000100000011000000000011
+
+20-bit phy address 0b00000000000100000011
+12-bit PT flags    0b000000000011
+
+Phys address 0x00103000
+Flags        PRESENT, READ/WRITE
+
+Offset 509
+
+Final, physical address is 0x00001031FD?

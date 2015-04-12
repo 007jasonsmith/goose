@@ -15,13 +15,33 @@ get_cr3:
     mov eax, cr3	 ; Move CR3 into AX.
     ret                  ; Return to the calling function.
 	
-global load_pdt
+global set_cr3
 
-; load_pdt:
+; set_cr3:
 ;   Load a page directory table.
 ; stack: [esp + 4] The address of the page to load.
 ;        [esp] return address
-load_pdt:
+set_cr3:
     mov eax, [esp + 4]   ; move the new PDT address into CR3.
     mov cr3, eax        
+    ret                  ; return to the calling function
+
+global get_cr4
+
+; get_cr4:
+;   Return the contents of CR4.
+; stack: [esp] return address
+get_cr4:
+    mov eax, cr4	 ; Move CR4 into AX.
+    ret                  ; Return to the calling function.
+	
+global set_cr4
+
+; set_cr4:
+;   Set CR4.
+; stack: [esp + 4] The new value.
+;        [esp] return address
+set_cr4:
+    mov eax, [esp + 4]   ; move the new PDT address into CR4.
+    mov cr4, eax
     ret                  ; return to the calling function

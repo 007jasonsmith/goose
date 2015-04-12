@@ -13,6 +13,6 @@ void InstallInterruptDescriptorTable();
 void InterruptDescriptorTableSetGate(
     uint8 index, uint32 base, uint16 sel, uint8 flags);
 
-}
+}  // namespace sys
 
 #endif  // SYS_IDT_H_

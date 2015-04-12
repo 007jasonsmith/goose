@@ -13,10 +13,10 @@ const uint32 k4KiBMask    = 0b00000000000000000000111111111111;
 
 // Kernel page directory table, containing a mapping for all 4GiB of addressable
 // memory. 
-kernel::PageDirectoryEntry kernelPageDirectoryTable[1024] __attribute__((aligned(4096)));
+kernel::PageDirectoryEntry kernel_page_directory_table[1024] __attribute__((aligned(4096)));
 // Kernel page tables, containing entries for the top 1GiB of memory.
 // 0xC0000000 - 0xFFFFFFFF.
-kernel::PageTableEntry kernelPageTables[256 * 1024] __attribute__((aligned(4096)));
+kernel::PageTableEntry kernel_page_table[256 * 1024] __attribute__((aligned(4096)));
 
 bool IsInKernelSpace(uint32 raw_address) {
   return (raw_address > 0xC0000000);
@@ -29,26 +29,33 @@ uint32 VirtualizeAddress(uint32 raw_address) {
   return (raw_address + 0xC0000000);
 }
 
+template<typename T>
+T* VirtualizeAddress(T* raw_addr) {
+  uint32 addr = (uint32) raw_addr;
+  return (T*) (addr + 0xC0000000);
+}
+
 bool Is4KiBAligned(uint32 address) {
   return (address % 4096 == 0);
 }
 
 void DumpKernelMemory() {
   uint32 current_pdt = get_cr3();
-  uint32 kernel_pdt = (uint32) kernelPageDirectoryTable;
+  uint32 kernel_pdt = (uint32) kernel_page_directory_table;
 
   klib::Debug::Log("Kernel Page Directory Table:");
   klib::Debug::Log("  Kernel PDT %h, current PDT %h", kernel_pdt, current_pdt);
   for (size pdt = 0; pdt < 1024; pdt++) {
-    if (kernelPageDirectoryTable[pdt].Value() != 0) {
-      klib::Debug::Log("  %{L4}d| %h", pdt, kernelPageDirectoryTable[pdt].Value());
+    if (kernel_page_directory_table[pdt].Value() != 0) {
+      klib::Debug::Log("  %{L4}d| %b", pdt, kernel_page_directory_table[pdt].Value());
     }
   }
   
   klib::Debug::Log("Kernel Page Tables:");
+  klib::Debug::Log("  Kernel PT %h", (uint32) kernel_page_table);
   for (size pt = 0; pt < 256 * 1024; pt++) {
-    if (kernelPageTables[pt].Value() != 0) {
-      klib::Debug::Log("  %{L4}d| %h", pt, kernelPageTables[pt].Value());
+    if (kernel_page_table[pt].Value() != 0) {
+      klib::Debug::Log("  %{L4}d| %b", pt, kernel_page_table[pt].Value());
     }
   }
 }
@@ -141,33 +148,63 @@ BIT_FLAG_MEMBER(PageTableEntry, Global,       8)
 #undef BIT_FLAG_SETTER
 #undef BIT_FLAG_MEMBERS
 
+// Sanity check things. Just map the first 8MiB using 4KiB pages. Similar to how
+// things are set up before C-code gets called.
 void InitializeKernelPageDirectory() {
+  // Initialize page directory tables. Ignore everything but virtual addresses
+  // >= 0xC0000000.
+  for (size i = 0; i < 1024; i++) {
+    kernel_page_directory_table[i].SetPresentBit(false);
+    if (i >= 768) {
+      kernel_page_directory_table[i].SetPresentBit(true);
+      kernel_page_directory_table[i].SetReadWriteBit(true);
+      kernel_page_directory_table[i].SetPageTableAddress(
+          (uint32) (&kernel_page_table[(i - 768) * 1024]));
+    }
+  }
+
+  // For page tables at virtual addresses >= 0xC0000000, map them to physical
+  // addresses starting at 0x00000000.
+  for (size pte_index = 0; pte_index < 8 * 1024; pte_index++) {
+      kernel_page_table[pte_index].SetPresentBit(true);
+      kernel_page_table[pte_index].SetReadWriteBit(true);
+      kernel_page_table[pte_index].SetUserBit(false);
+      kernel_page_table[pte_index].SetPhysicalAddress(pte_index * 4096);
+  }
+
+  DumpKernelMemory();
+  Assert(get_cr4() == 0x00000010, "Expected 4MiB pages to start with.");
+  set_cr4(0);  // Defaults to 4KiB pages.
+  set_cr3((uint32) kernel_page_directory_table);
+}
+
+void InitializeKernelPageDirectoryButNotWork() {
   // Initialize page directory tables.
   for (size i = 0; i < 1024; i++) {
-    kernelPageDirectoryTable[i].SetPresentBit(false);
+    kernel_page_directory_table[i].SetPresentBit(false);
     
     // Map addresses > 0xC0000000 to kernel page tables.
     if (i >= 768) {
-      kernelPageDirectoryTable[i].SetPresentBit(true);
-      kernelPageDirectoryTable[i].SetReadWriteBit(true);
-      kernelPageDirectoryTable[i].SetPageTableAddress(
-          (uint32) (&kernelPageTables[(i - 768) * 1024]));
+      kernel_page_directory_table[i].SetPresentBit(true);
+      kernel_page_directory_table[i].SetReadWriteBit(true);
+      kernel_page_directory_table[i].SetPageTableAddress(
+          (uint32) (&kernel_page_table[(i - 768) * 1024]));
     }
   }
 
   // Initialize page tables. Zero out for now, will map to the ELF
   // binary info next.
   for (size i = 0; i < 256 * 1024; i++) {
-    kernelPageTables[i].SetPresentBit(false);
+    kernel_page_table[i].SetPresentBit(false);
   }
 
   // Idenity map the first MiB of memory to 0xC0000000. This way we can access
   // hardware registers (e.g. TextUI memory).
   for (size page = 0; page < 256; page++) {
-      kernelPageTables[page].SetPresentBit(true);
-      kernelPageTables[page].SetUserBit(false);
-      kernelPageTables[page].SetReadWriteBit(true);
-      kernelPageTables[page].SetPhysicalAddress(page * 4096);
+      kernel_page_table[page].SetPresentBit(true);
+      kernel_page_table[page].SetUserBit(false);
+      kernel_page_table[page].SetReadWriteBit(true);
+      kernel_page_table[page].SetPhysicalAddress(page * 4096);
   }
 
   // TODO(chrsmith): Figure out where GRUB puts the multiboot info pointer.
@@ -177,42 +214,62 @@ void InitializeKernelPageDirectory() {
   // loaded into memory. This section assumes that GRUB loads the entire
   // ELF binary starting at the 1MiB mark, and that we specify the starting
   // address at 0xC0100000 (0xC0000000 + 1MiB).
-  const grub::multiboot_info* multiboot_info = GetMultibootInfo();
-  const kernel::elf::ElfSectionHeaderTable* elf_ht =
+  const grub::multiboot_info* multiboot_info = VirtualizeAddress(GetMultibootInfo());
+  klib::Debug::Log("ElfSectionHeaderTable is at %h",
+                   (uint32) &(multiboot_info->u.elf_sec));
+  const kernel::elf::ElfSectionHeaderTable* elf_sht =
       &(multiboot_info->u.elf_sec);
   Assert((multiboot_info->flags & 0b100000) != 0,
          "Multiboot flags bit not set.");
-  Assert(sizeof(kernel::elf::Elf32SectionHeader) != elf_ht->size,
+  klib::Debug::Log("%d and %d", sizeof(kernel::elf::Elf32SectionHeader), elf_sht->size);
+  Assert(sizeof(kernel::elf::Elf32SectionHeader) == elf_sht->size,
          "ELF section header doesn't match expected size.");
-  Assert(IsInKernelSpace(elf_ht->addr), "Expected ELF header in kernel space.");
-
-  for (size i = 0; i < size(elf_ht->num); i++) {
+  klib::Debug::Log("Setting up page tables for %d ELF header table sections.",
+                   elf_sht->num);
+  for (size i = 0; i < size(elf_sht->num); i++) {
     const kernel::elf::Elf32SectionHeader* section =
-        kernel::elf::GetSectionHeader(VirtualizeAddress(elf_ht->addr), i);
-    Assert(Is4KiBAligned(section->addr), "Section is not 4KiB aligned.");
+        kernel::elf::GetSectionHeader(VirtualizeAddress(elf_sht->addr), i);
 
-    size pages = (section->size / 4096) + 1;  // BUG: Section size is 4KiB aligned.
-    for (size j = 0; j < pages; j++) {
-      uint32 real_section_address = section->addr;
+    // The following code is definitely wrong, but gets the right result in the
+    // end. ELF sections are not guaranteed to be page-aligned. e.g. .text
+    // (appears) to be broken up into multiple sections (".text._ZN3hal6Te").
+    // Because of this multiple sections can overlap in the same page. We simply
+    // re-initialize the page tale entry with the same settings. In theory, the
+    // only time this will be a problem if two ELF sections sharing a page need
+    // different page settings. (read-only/read-write, etc.)
+
+    // BUG: If section size is exactly 4KiB aligned, we waste 1 page.
+    size section_pages = (section->size / 4096) + 1;
+    for (size page_to_map = 0; page_to_map < section_pages; page_to_map++) {
+      klib::Debug::Log("Mapping %{L2}d of %{L2}d pages for ELF section %d",
+                       page_to_map, section_pages, i);
+      uint32 section_address = section->addr;
+      klib::Debug::Log("  Section address is at %h", section->addr);
+
       // GRUB still loads ELF sections that shouldn't typically be allocated,
       // e.g. debug symbols. However it doesn't set the virtualized address. So
       // manually add 0xC0000000 to these addresses.
-      if (!IsInKernelSpace(real_section_address)) {
-	real_section_address += 0xC0000000;
+      if (!IsInKernelSpace(section_address)) {
+	section_address += 0xC0000000;
+        klib::Debug::Log("  Section is not in kernel space, so adding 0xC0000000...");
       }
 
-      uint32 address = real_section_address + j * 4096;
-      size page = (address - 0xC0000000) / 4096;
-      kernelPageTables[page].SetPresentBit(true);
-      kernelPageTables[page].SetUserBit(false);
-      kernelPageTables[page].SetReadWriteBit(true);  // TODO: Check section flags.
-      kernelPageTables[page].SetPhysicalAddress(address - 0xC0000000);
+      uint32 page_virtual_address = section_address + page_to_map * 4096;
+      size page_index = (page_virtual_address - 0xC0000000) / 4096;
+      klib::Debug::Log("  Initializing page table at index %d", page_index);
+      kernel_page_table[page_index].SetPresentBit(true);
+      kernel_page_table[page_index].SetUserBit(false);
+      // TODO: Check section flags.
+      kernel_page_table[page_index].SetReadWriteBit(true);
+      kernel_page_table[page_index].SetPhysicalAddress(
+          page_virtual_address - 0xC0000000);
     }
   }
   
   // Replace page directory table.
   DumpKernelMemory();
-  load_pdt((uint32) kernelPageDirectoryTable);
+  set_cr4(0);  // Defaults to 4KiB pages.
+  set_cr3((uint32) kernel_page_directory_table);
 
   // SHOULD WORK JUST FINE. VERIFY IT GOOD.
 
