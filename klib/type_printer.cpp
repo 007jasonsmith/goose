@@ -65,6 +65,21 @@ void OutputHex(const T x, const uint8 digits_so_far, klib::IOutputFn* out) {
   out->Print(kHexDigits[digit_idx]);
 }
 
+template<typename T>
+void OutputBin(const T x, uint8 bits_so_far, klib::IOutputFn* out) {
+  if (bits_so_far == 0) {
+    out->Print('0');
+    out->Print('b');
+  }
+  if (bits_so_far >= 8 * sizeof(x)) {
+    return;
+  }
+
+  int bit = (x & 1);
+  OutputBin(x >> 1, bits_so_far + 1, out);
+  out->Print(bit == 1 ? '1' : '0');
+}
+
 }  // anonymous namespace
 
 namespace klib {
@@ -184,6 +199,20 @@ void TypePrinter::PrintHex(Arg arg) {
     break;
   case ArgType::UINT64:
     OutputHex(arg.value.ui64, 0, out_);
+    break;
+  default:
+    out_->Print(kInvalidType);
+  }
+}
+
+void TypePrinter::PrintBin(Arg arg) {
+  switch (arg.type) {
+  // TODO(chris): Support signed integers too.
+  case ArgType::UINT32:
+    OutputBin(arg.value.ui32, 0, out_);
+    break;
+  case ArgType::UINT64:
+    OutputBin(arg.value.ui64, 0, out_);
     break;
   default:
     out_->Print(kInvalidType);

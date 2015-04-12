@@ -23,6 +23,9 @@ void PrintArg(klib::Arg arg, char format, klib::IOutputFn* out) {
   case 'h':
     tp.PrintHex(arg);
     break;
+  case 'b':
+    tp.PrintBin(arg);
+    break;
   case 's':
     tp.PrintString(arg);
     break;
