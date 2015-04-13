@@ -45,7 +45,7 @@ os.iso: kernel.elf
                     -o os.iso                    \
                     iso
 
-run: os.iso
+run-bochs: os.iso
 	bochs -f bochsrc.txt -q
 
 run-qemu: os.iso
