@@ -35,3 +35,22 @@ Flags        PRESENT, READ/WRITE
 Offset 509
 
 Final, physical address is 0x00001031FD?
+
+---
+
+Comparing the old PDT (using 4MiB PSE pages) and ours.
+
+Our Page Table #2, Page Table Entry #1.
+  1   0   | 0x00400000 0b00000000010000000000000000000011
+
+4MiB Page Directory Table Entry #768
+
+  0   | 0x00000000 0b00000000000000000000000000000001
+  1   | 0x00400000 0b00000000010000000000000010000011
+  768 | 0x00000000 0b00000000000000000000000011100011
+  769 | 0x00401000 0b00000000010000000001000010000011
+                   0b----------..........------------
+                                               A   RP
+                                                   /r
+                                                   We
+                                                    s

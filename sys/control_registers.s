@@ -18,11 +18,12 @@ get_cr3:
 global set_cr3
 
 ; set_cr3:
-;   Load a page directory table.
+;   Set the contents of CR3, i.e. load a page directory table.
 ; stack: [esp + 4] The address of the page to load.
 ;        [esp] return address
 set_cr3:
     mov eax, [esp + 4]   ; move the new PDT address into CR3.
+    mov ebx, [esp]	 ; DEBUGGING: What is the return address? Guess: 0xc01033ef.
     mov cr3, eax        
     ret                  ; return to the calling function
 

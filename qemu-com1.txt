@@ -1,0 +1,15 @@
+Kernel started.
+Error: Command not found.
+Known Commands:
+  show-memory-map
+  show-kernel-pointers
+  show-elf-info
+  initialize-kernel-memory
+  experiment
+Error: Command not found.
+Error: Command not found.
+Kernel halted.
+*****************
+FRIENDLY SHUTDOWN
+*****************
+Kernel Halted

@@ -48,6 +48,9 @@ os.iso: kernel.elf
 run: os.iso
 	bochs -f bochsrc.txt -q
 
+run-qemu: os.iso
+	qemu -boot d -cdrom os.iso -m 32 -serial file:qemu-com1.txt
+
 %.o: %.cpp
 	$(CC) $(CCFLAGS) $< -o $@
 

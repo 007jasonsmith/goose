@@ -17,6 +17,7 @@ namespace kernel {
 class PageDirectoryEntry {
  public:
   explicit PageDirectoryEntry();
+  explicit PageDirectoryEntry(uint32 data);  // DO NOT SUBMIT
 
   uint32 GetPageTableAddress();
   void SetPageTableAddress(uint32 page_table_address);

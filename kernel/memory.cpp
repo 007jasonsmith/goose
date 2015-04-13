@@ -16,7 +16,7 @@ const uint32 k4KiBMask    = 0b00000000000000000000111111111111;
 kernel::PageDirectoryEntry kernel_page_directory_table[1024] __attribute__((aligned(4096)));
 // Kernel page tables, containing entries for the top 1GiB of memory.
 // 0xC0000000 - 0xFFFFFFFF.
-kernel::PageTableEntry kernel_page_table[256 * 1024] __attribute__((aligned(4096)));
+kernel::PageTableEntry kernel_page_tables[256][1024] __attribute__((aligned(4096)));
 
 bool IsInKernelSpace(uint32 raw_address) {
   return (raw_address > 0xC0000000);
@@ -40,22 +40,46 @@ bool Is4KiBAligned(uint32 address) {
 }
 
 void DumpKernelMemory() {
-  uint32 current_pdt = get_cr3();
+  uint32 current_pdt = VirtualizeAddress(get_cr3());
   uint32 kernel_pdt = (uint32) kernel_page_directory_table;
 
+  uint32* current_pdt_ptr = (uint32*) current_pdt;
+
+  // TEMP
+  klib::Debug::Log("Current PDT (4MiB pages, etc.)");
+  klib::Debug::Log("  Current PDT (CR3) is %h", current_pdt);
+  for (size pdt = 0; pdt < 1024; pdt++) {
+    kernel::PageDirectoryEntry pde = kernel::PageDirectoryEntry(current_pdt_ptr[pdt]);
+    if (pde.Value() != 0) {
+      klib::Debug::Log("  %{L4}d| %h %b",
+		       pdt,
+		       pde.GetPageTableAddress(),
+		       pde.Value());
+    }    
+  }
+
   klib::Debug::Log("Kernel Page Directory Table:");
+  klib::Debug::Log("  CR4 %b", get_cr4());
   klib::Debug::Log("  Kernel PDT %h, current PDT %h", kernel_pdt, current_pdt);
   for (size pdt = 0; pdt < 1024; pdt++) {
     if (kernel_page_directory_table[pdt].Value() != 0) {
-      klib::Debug::Log("  %{L4}d| %b", pdt, kernel_page_directory_table[pdt].Value());
+      klib::Debug::Log("  %{L4}d| %h %b",
+		       pdt,
+		       kernel_page_directory_table[pdt].GetPageTableAddress(),
+		       kernel_page_directory_table[pdt].Value());
     }
   }
   
   klib::Debug::Log("Kernel Page Tables:");
-  klib::Debug::Log("  Kernel PT %h", (uint32) kernel_page_table);
-  for (size pt = 0; pt < 256 * 1024; pt++) {
-    if (kernel_page_table[pt].Value() != 0) {
-      klib::Debug::Log("  %{L4}d| %b", pt, kernel_page_table[pt].Value());
+  klib::Debug::Log("  Kernel PT %h", (uint32) kernel_page_tables);
+  for (size pt = 0; pt < 256; pt++) {
+    for (size pte = 0; pte < 1024; pte++) {
+      if (kernel_page_tables[pt][pte].Value() != 0) {
+	klib::Debug::Log("  %{L3}d %{L4}d| %h %b",
+			 pt, pte,
+			 kernel_page_tables[pt][pte].GetPhysicalAddress(),
+			 kernel_page_tables[pt][pte].Value());
+      }
     }
   }
 }
@@ -88,6 +112,9 @@ void clsname::Set##name##Bit(bool f) {      \
   BIT_FLAG_SETTER(clsname, name, bit)
 
 PageDirectoryEntry::PageDirectoryEntry() : data_(0) {}
+
+// DO NOT SUBMIT
+PageDirectoryEntry::PageDirectoryEntry(uint32 data) : data_(data) {}
 
 uint32 PageDirectoryEntry::GetPageTableAddress() {
   uint32 address = data_ & kAddressMask;
@@ -151,37 +178,33 @@ BIT_FLAG_MEMBER(PageTableEntry, Global,       8)
 // Sanity check things. Just map the first 8MiB using 4KiB pages. Similar to how
 // things are set up before C-code gets called.
 void InitializeKernelPageDirectory() {
+  // TODO(chris): memset to zero out the PDT and PTs.
+
   // Initialize page directory tables. Ignore everything but virtual addresses
   // >= 0xC0000000.
-  for (size i = 0; i < 1024; i++) {
-    kernel_page_directory_table[i].SetPresentBit(false);
-    if (i >= 768) {
-      kernel_page_directory_table[i].SetPresentBit(true);
-      kernel_page_directory_table[i].SetReadWriteBit(true);
-      kernel_page_directory_table[i].SetPageTableAddress(
-          (uint32) (&kernel_page_table[(i - 768) * 1024]));
-    }
+  for (size i = 768; i < 1024; i++) {
+    kernel_page_directory_table[i].SetPresentBit(true);
+    kernel_page_directory_table[i].SetReadWriteBit(true);
+    kernel_page_directory_table[i].SetPageTableAddress(
+        (uint32) (&kernel_page_tables[i - 768]));
   }
 
   // For page tables at virtual addresses >= 0xC0000000, map them to physical
   // addresses starting at 0x00000000.
-  for (size pte_index = 0; pte_index < 8 * 1024; pte_index++) {
-      kernel_page_table[pte_index].SetPresentBit(true);
-      kernel_page_table[pte_index].SetReadWriteBit(true);
-      kernel_page_table[pte_index].SetUserBit(false);
-      // TODO(chris): Set this bit and the corresponding flag in CR4, this
-      // speeds up some TLB goo since it knows these pages are mapped in all
-      // processes. (Which they are, because the Kernel is cool like that.)
-      // kernel_page_table[pte_index].SetGlobalBit(true);
-      kernel_page_table[pte_index].SetPhysicalAddress(pte_index * 4096);
+  for (size pt = 0; pt < 2; pt++) {
+    for (size pte = 0; pte < 1024; pte++) {
+      kernel_page_tables[pt][pte].SetPresentBit(true);
+      kernel_page_tables[pt][pte].SetReadWriteBit(true);
+      uint32 address = pt * 4 * 1024 * 1024 + pte * 4 * 1024;
+      kernel_page_tables[pt][pte].SetPhysicalAddress(address);
+    }
   }
 
   DumpKernelMemory();
-  Assert(get_cr4() == 0x00000010, "Expected 4MiB pages to start with.");
-  set_cr4(0);  // Defaults to 4KiB pages.
   set_cr3((uint32) kernel_page_directory_table);
 }
 
+#if 0
 void InitializeKernelPageDirectoryButNotWork() {
   // Initialize page directory tables.
   for (size i = 0; i < 1024; i++) {
@@ -272,7 +295,6 @@ void InitializeKernelPageDirectoryButNotWork() {
   
   // Replace page directory table.
   DumpKernelMemory();
-  set_cr4(0);  // Defaults to 4KiB pages.
   set_cr3((uint32) kernel_page_directory_table);
 
   // SHOULD WORK JUST FINE. VERIFY IT GOOD.
@@ -284,5 +306,5 @@ void InitializeKernelPageDirectoryButNotWork() {
   //     Used for the kernel's code. GRUB's multiboot
   //     contains the ELF info.
 }
-
+#endif  // #if 0
 }  // namespace kernel
