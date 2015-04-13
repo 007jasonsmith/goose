@@ -197,6 +197,8 @@ void InitializeKernelPageDirectory() {
 
   DumpKernelMemory();
   set_cr3(GetPhysicalAddress((uint32) kernel_page_directory_table));
+  // DON'T DO THIS. WILL FAIL. Get "(invalid)  : FFF" from bochslog.txt.
+  // set_cr3((uint32) kernel_page_directory_table);
 }
 
 // Sanity check things. Just map the first 8MiB using 4KiB pages. Similar to how
