@@ -63,7 +63,7 @@ start_in_higher_half:
     ; Now that eip is correctly fetching instructions ~0xC0100000, we no
     ; longer need to keep the identity pages for 0x00000000.
     mov dword [boot_page_directory_table], 0
-    mov dword [boot_page_directory_table], 1
+    mov dword [boot_page_directory_table+4], 0
     invlpg [0]
     invlpg [1]
 
