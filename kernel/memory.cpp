@@ -179,10 +179,47 @@ BIT_FLAG_MEMBER(PageTableEntry, Global,       8)
 #undef BIT_FLAG_SETTER
 #undef BIT_FLAG_MEMBERS
 
+// Convert a 4MiB page into using a separate page table.
+void InitializeKernelPageDirectory() {
+  // Page table #0, pages from 0x0 to 4MiB.
+  for (size pte = 0; pte < 1024; pte++) {
+    kernel_page_tables[0][pte].SetPresentBit(true);
+    kernel_page_tables[0][pte].SetReadWriteBit(true);
+    uint32 address = pte * 4 * 1024;
+    kernel_page_tables[0][pte].SetPhysicalAddress(address);
+  }
+  // Second PT, 4MiB - 8MiB.
+  for (size pte = 0; pte < 1024; pte++) {
+    kernel_page_tables[1][pte].SetPresentBit(true);
+    kernel_page_tables[1][pte].SetReadWriteBit(true);
+    uint32 address = pte * 4 * 1024 + 4 * 1024 * 1024;
+    kernel_page_tables[1][pte].SetPhysicalAddress(address);
+  }
+
+  // Two 4MiB pages, mapping 0xC0000000 + 8MiB to physical address
+  // 0x00000000 + 8MiB.
+  kernel_page_directory_table[768].SetPresentBit(true);
+  kernel_page_directory_table[768].SetReadWriteBit(true);
+  // kernel_page_directory_table[768].SetSizeBit(true);
+  kernel_page_directory_table[768].SetPageTableAddress(
+      GetPhysicalAddress((uint32) &kernel_page_tables[0]));
+						      
+  kernel_page_directory_table[769].SetPresentBit(true);
+  kernel_page_directory_table[769].SetReadWriteBit(true);
+  kernel_page_directory_table[769].SetPageTableAddress(
+      GetPhysicalAddress((uint32) &kernel_page_tables[1]));
+
+  DumpKernelMemory();
+  set_cr3(GetPhysicalAddress((uint32) kernel_page_directory_table));
+  // DON'T DO THIS. WILL FAIL. Get "(invalid)  : FFF" from bochslog.txt.
+  // set_cr3((uint32) kernel_page_directory_table);
+}
+
+#if 0
 // Since all the other attempts to set up paging have failed,
 // this is just recreating the page directory table the system
 // has at boot. This should work.
-void InitializeKernelPageDirectory() {
+void InitializeKernelPageDirectoryWorks() {
   // Two 4MiB pages, mapping 0xC0000000 + 8MiB to physical address
   // 0x00000000 + 8MiB.
   kernel_page_directory_table[768].SetPresentBit(true);
@@ -203,7 +240,6 @@ void InitializeKernelPageDirectory() {
 
 // Sanity check things. Just map the first 8MiB using 4KiB pages. Similar to how
 // things are set up before C-code gets called.
-#if 0
 void InitializeKernelPageDirectory() {
   // TODO(chris): memset to zero out the PDT and PTs.
 
