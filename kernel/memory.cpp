@@ -29,6 +29,10 @@ uint32 VirtualizeAddress(uint32 raw_address) {
   return (raw_address + 0xC0000000);
 }
 
+uint32 GetPhysicalAddress(uint32 address) {
+  return (address - 0xC0000000);
+}
+
 template<typename T>
 T* VirtualizeAddress(T* raw_addr) {
   uint32 addr = (uint32) raw_addr;
@@ -41,7 +45,7 @@ bool Is4KiBAligned(uint32 address) {
 
 void DumpKernelMemory() {
   uint32 current_pdt = VirtualizeAddress(get_cr3());
-  uint32 kernel_pdt = (uint32) kernel_page_directory_table;
+  uint32 kernel_pdt = GetPhysicalAddress((uint32) kernel_page_directory_table);
 
   uint32* current_pdt_ptr = (uint32*) current_pdt;
 
@@ -175,8 +179,29 @@ BIT_FLAG_MEMBER(PageTableEntry, Global,       8)
 #undef BIT_FLAG_SETTER
 #undef BIT_FLAG_MEMBERS
 
+// Since all the other attempts to set up paging have failed,
+// this is just recreating the page directory table the system
+// has at boot. This should work.
+void InitializeKernelPageDirectory() {
+  // Two 4MiB pages, mapping 0xC0000000 + 8MiB to physical address
+  // 0x00000000 + 8MiB.
+  kernel_page_directory_table[768].SetPresentBit(true);
+  kernel_page_directory_table[768].SetReadWriteBit(true);
+  kernel_page_directory_table[768].SetSizeBit(true);
+  kernel_page_directory_table[768].SetPageTableAddress(0x00000000);
+
+  kernel_page_directory_table[769].SetPresentBit(true);
+  kernel_page_directory_table[769].SetReadWriteBit(true);
+  kernel_page_directory_table[769].SetSizeBit(true);
+  kernel_page_directory_table[769].SetPageTableAddress(0x400000);
+
+  DumpKernelMemory();
+  set_cr3(GetPhysicalAddress((uint32) kernel_page_directory_table));
+}
+
 // Sanity check things. Just map the first 8MiB using 4KiB pages. Similar to how
 // things are set up before C-code gets called.
+#if 0
 void InitializeKernelPageDirectory() {
   // TODO(chris): memset to zero out the PDT and PTs.
 
@@ -185,6 +210,7 @@ void InitializeKernelPageDirectory() {
   for (size i = 768; i < 1024; i++) {
     kernel_page_directory_table[i].SetPresentBit(true);
     kernel_page_directory_table[i].SetReadWriteBit(true);
+    kernel_page_directory_table[i].SetUserBit(true);  // Not needed?
     kernel_page_directory_table[i].SetPageTableAddress(
         (uint32) (&kernel_page_tables[i - 768]));
   }
@@ -195,16 +221,16 @@ void InitializeKernelPageDirectory() {
     for (size pte = 0; pte < 1024; pte++) {
       kernel_page_tables[pt][pte].SetPresentBit(true);
       kernel_page_tables[pt][pte].SetReadWriteBit(true);
+      kernel_page_tables[pt][pte].SetUserBit(true);  // Not needed?
       uint32 address = pt * 4 * 1024 * 1024 + pte * 4 * 1024;
-      kernel_page_tables[pt][pte].SetPhysicalAddress(address);
+      kernel_page_tables[pt][pte].SetPhysicalAddress(GetPhysicalAddress(address));
     }
   }
 
   DumpKernelMemory();
-  set_cr3((uint32) kernel_page_directory_table);
+  set_cr3(GetPhysicalAddress((uint32) kernel_page_directory_table));
 }
 
-#if 0
 void InitializeKernelPageDirectoryButNotWork() {
   // Initialize page directory tables.
   for (size i = 0; i < 1024; i++) {
@@ -295,7 +321,7 @@ void InitializeKernelPageDirectoryButNotWork() {
   
   // Replace page directory table.
   DumpKernelMemory();
-  set_cr3((uint32) kernel_page_directory_table);
+  set_cr3(GetPhysicalAddress((uint32) kernel_page_directory_table));  // ???
 
   // SHOULD WORK JUST FINE. VERIFY IT GOOD.
 
