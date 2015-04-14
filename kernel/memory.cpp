@@ -22,45 +22,27 @@ bool IsInKernelSpace(uint32 raw_address) {
   return (raw_address > 0xC0000000);
 }
 
-// Virtualize a pointer. Since GRUB's addresses are to _physical_
-// memory address, and by the time the kernel loads virtual memory
-// has been enabled, we need to be careful about accessing it.
-uint32 VirtualizeAddress(uint32 raw_address) {
+// Utilities for converting between physical and virtual addresses. These ONLY
+// for static memory in kernel code, which is set in place by the linker script
+// (rebasing the ELF binary to 0xC0100000) and boot loader (loading the binary
+// at 0x00100000). You will be in a world of pain if you use these methods for
+// anything else.
+
+uint32 ConvertPhysicalAddressToVirtual(uint32 raw_address) {
   return (raw_address + 0xC0000000);
 }
 
-uint32 GetPhysicalAddress(uint32 address) {
-  return (address - 0xC0000000);
+uint32 ConvertVirtualAddressToPhysical(uint32 raw_address) {
+  return (raw_address - 0xC0000000);
 }
 
-template<typename T>
-T* VirtualizeAddress(T* raw_addr) {
-  uint32 addr = (uint32) raw_addr;
-  return (T*) (addr + 0xC0000000);
-}
-
-bool Is4KiBAligned(uint32 address) {
-  return (address % 4096 == 0);
-}
-
+// TODO(chris): Clean this up and export, as it will come in handy later.
+/*
 void DumpKernelMemory() {
-  uint32 current_pdt = VirtualizeAddress(get_cr3());
+  uint32 current_pdt = get_cr3());
   uint32 kernel_pdt = GetPhysicalAddress((uint32) kernel_page_directory_table);
 
   uint32* current_pdt_ptr = (uint32*) current_pdt;
-
-  // TEMP
-  klib::Debug::Log("Current PDT (4MiB pages, etc.)");
-  klib::Debug::Log("  Current PDT (CR3) is %h", current_pdt);
-  for (size pdt = 0; pdt < 1024; pdt++) {
-    kernel::PageDirectoryEntry pde = kernel::PageDirectoryEntry(current_pdt_ptr[pdt]);
-    if (pde.Value() != 0) {
-      klib::Debug::Log("  %{L4}d| %h %b",
-		       pdt,
-		       pde.GetPageTableAddress(),
-		       pde.Value());
-    }    
-  }
 
   klib::Debug::Log("Kernel Page Directory Table:");
   klib::Debug::Log("  CR4 %b", get_cr4());
@@ -87,6 +69,7 @@ void DumpKernelMemory() {
     }
   }
 }
+*/
 
 }  // anonymous namespace
 
@@ -116,9 +99,6 @@ void clsname::Set##name##Bit(bool f) {      \
   BIT_FLAG_SETTER(clsname, name, bit)
 
 PageDirectoryEntry::PageDirectoryEntry() : data_(0) {}
-
-// DO NOT SUBMIT
-PageDirectoryEntry::PageDirectoryEntry(uint32 data) : data_(data) {}
 
 uint32 PageDirectoryEntry::GetPageTableAddress() {
   uint32 address = data_ & kAddressMask;
@@ -179,8 +159,122 @@ BIT_FLAG_MEMBER(PageTableEntry, Global,       8)
 #undef BIT_FLAG_SETTER
 #undef BIT_FLAG_MEMBERS
 
-// Convert a 4MiB page into using a separate page table.
 void InitializeKernelPageDirectory() {
+  // TODO(chrsmith): Memset to zero out the PDT and PTs, just to be sure.
+
+  // We only initilize Page Directory Table entries > 768 (0xC0000000).
+  for (size pdte = 768; pdte < 1024; pdte++) {
+    kernel_page_directory_table[pdte].SetPresentBit(true);
+    kernel_page_directory_table[pdte].SetReadWriteBit(true);
+    kernel_page_directory_table[pdte].SetUserBit(false);
+    kernel_page_directory_table[pdte].SetPageTableAddress(
+        ConvertVirtualAddressToPhysical((uint32) kernel_page_tables[pdte - 768]));
+  }
+
+  // Identity map the first MiB of memory to 0xC0000000. This way we can access
+  // hardware registers (e.g. TextUI memory) from the kernel.
+  for (size page_table = 0; page_table < 256; page_table++) {
+    for (size pte = 0; pte < 1024; pte++) {
+      kernel_page_tables[page_table][pte].SetPresentBit(true);
+      kernel_page_tables[page_table][pte].SetReadWriteBit(true);
+      kernel_page_tables[page_table][pte].SetUserBit(false);
+
+      uint32 physical_address = page_table * 4 * 1024 * 1024 + pte * 4096;
+      kernel_page_tables[page_table][pte].SetPhysicalAddress(physical_address);
+    }
+  }
+
+  // Initialize page tables marking kernel code that has already been
+  // loaded into memory. This assumes that the boot loader put the entire ELF
+  // binary in memory starting at the 1MiB mark. We assume that the kernel page
+  // tables are ordered correctly, so it is just a matter of mapping the virtual
+  // addresses used by the loaded ELF code to the physical memory address it is
+  // loaded into. i.e. virt addr X maps to physical address (X - 0xC0000000).
+  //
+  // Note that the boot loader puts the multiboot data structures below the 1MiB
+  // mark, which means we need to convert pointers to the virtualized ones via
+  // the basic paging set up before C-code began executing.
+  const grub::multiboot_info* boot_info = (grub::multiboot_info*)
+      ConvertPhysicalAddressToVirtual((uint32) GetMultibootInfo());
+
+  const kernel::elf::ElfSectionHeaderTable* elf_sht = &(boot_info->u.elf_sec);
+  Assert((boot_info->flags & 0b100000) != 0, "Multiboot flags not set.");
+  Assert(sizeof(kernel::elf::Elf32SectionHeader) == elf_sht->size,
+         "ELF section header doesn't match expected size.");
+
+  for (size section_idx = 0; section_idx < size(elf_sht->num); section_idx++) {
+    uint32 section_header_address = ConvertPhysicalAddressToVirtual(elf_sht->addr);
+    const kernel::elf::Elf32SectionHeader* section =
+        kernel::elf::GetSectionHeader(section_header_address, section_idx);
+
+    uint32 section_physaddr = section->addr;
+    // Undo linker schenanigans to load the ELF binary in high-memory.
+    if (IsInKernelSpace(section_physaddr)) {
+      section_physaddr = ConvertVirtualAddressToPhysical(section_physaddr);
+    }
+
+    // We know where the data exists in physical memory, which page table do we
+    // put the mapping into?
+    size page_table = section_physaddr / 4 * 1024 * 1024;
+    size starting_page_table_entry = (section_physaddr % 4 * 1024 * 1024) / 4096;
+
+
+    // The following code is probably wrong, but gets the right result in the
+    // end. ELF sections are not guaranteed to be page-aligned. e.g. .text
+    // appears to be broken up into multiple sections (".text._ZN3hal6Te").
+    // Because of this multiple sections can overlap in the same page. We simply
+    // re-initialize the page tale entry with the same settings. In theory, the
+    // only time this will be a problem if two ELF sections sharing a page need
+    // different page settings. (One section is read-only the other is
+    // read-write.)
+    size section_pages = (section->size / 4096);
+    section_pages += (section->size % 4096 == 0) ? 0 : 1;  // For rounding.
+    for (size page_to_map = 0; page_to_map < section_pages; page_to_map++) {
+      // NOTE: For ELF sections that are larger than 4MiB this should "just work".
+      // The page table entry will be > 1024, and is part of another page table,
+      // but the way the kernel_page_tables are laid out in memory it will write
+      // to the correct address.
+      size pte = starting_page_table_entry + page_to_map;
+      uint32 page_physaddr = page_table * 4 * 1024 * 1024 + pte * 4096;
+
+      bool is_writeable = (section->flags & 0x1);
+
+      kernel_page_tables[page_table][pte].SetPresentBit(true);
+      kernel_page_tables[page_table][pte].SetUserBit(false);
+      kernel_page_tables[page_table][pte].SetReadWriteBit(is_writeable);
+      kernel_page_tables[page_table][pte].SetPhysicalAddress(page_physaddr);
+    }
+  }
+  
+  set_cr3(ConvertVirtualAddressToPhysical((uint32) kernel_page_directory_table));
+}
+
+
+#if 0
+// Since all the other attempts to set up paging have failed,
+// this is just recreating the page directory table the system
+// has at boot. This should work.
+void InitializeKernelPageDirectoryWorksDoNotMessWith1() {
+  // Two 4MiB pages, mapping 0xC0000000 + 8MiB to physical address
+  // 0x00000000 + 8MiB.
+  kernel_page_directory_table[768].SetPresentBit(true);
+  kernel_page_directory_table[768].SetReadWriteBit(true);
+  kernel_page_directory_table[768].SetSizeBit(true);
+  kernel_page_directory_table[768].SetPageTableAddress(0x00000000);
+
+  kernel_page_directory_table[769].SetPresentBit(true);
+  kernel_page_directory_table[769].SetReadWriteBit(true);
+  kernel_page_directory_table[769].SetSizeBit(true);
+  kernel_page_directory_table[769].SetPageTableAddress(0x400000);
+
+  DumpKernelMemory();
+  set_cr3(GetPhysicalAddress((uint32) kernel_page_directory_table));
+  // DON'T DO THIS. WILL FAIL. Get "(invalid)  : FFF" from bochslog.txt.
+  // set_cr3((uint32) kernel_page_directory_table);
+}
+
+// Convert a 4MiB page into using a separate page table.
+void InitializeKernelPageDirectoryWorksDoNotMessWith2() {
   // Page table #0, pages from 0x0 to 4MiB.
   for (size pte = 0; pte < 1024; pte++) {
     kernel_page_tables[0][pte].SetPresentBit(true);
@@ -213,162 +307,6 @@ void InitializeKernelPageDirectory() {
   set_cr3(GetPhysicalAddress((uint32) kernel_page_directory_table));
   // DON'T DO THIS. WILL FAIL. Get "(invalid)  : FFF" from bochslog.txt.
   // set_cr3((uint32) kernel_page_directory_table);
-}
-
-#if 0
-// Since all the other attempts to set up paging have failed,
-// this is just recreating the page directory table the system
-// has at boot. This should work.
-void InitializeKernelPageDirectoryWorks() {
-  // Two 4MiB pages, mapping 0xC0000000 + 8MiB to physical address
-  // 0x00000000 + 8MiB.
-  kernel_page_directory_table[768].SetPresentBit(true);
-  kernel_page_directory_table[768].SetReadWriteBit(true);
-  kernel_page_directory_table[768].SetSizeBit(true);
-  kernel_page_directory_table[768].SetPageTableAddress(0x00000000);
-
-  kernel_page_directory_table[769].SetPresentBit(true);
-  kernel_page_directory_table[769].SetReadWriteBit(true);
-  kernel_page_directory_table[769].SetSizeBit(true);
-  kernel_page_directory_table[769].SetPageTableAddress(0x400000);
-
-  DumpKernelMemory();
-  set_cr3(GetPhysicalAddress((uint32) kernel_page_directory_table));
-  // DON'T DO THIS. WILL FAIL. Get "(invalid)  : FFF" from bochslog.txt.
-  // set_cr3((uint32) kernel_page_directory_table);
-}
-
-// Sanity check things. Just map the first 8MiB using 4KiB pages. Similar to how
-// things are set up before C-code gets called.
-void InitializeKernelPageDirectory() {
-  // TODO(chris): memset to zero out the PDT and PTs.
-
-  // Initialize page directory tables. Ignore everything but virtual addresses
-  // >= 0xC0000000.
-  for (size i = 768; i < 1024; i++) {
-    kernel_page_directory_table[i].SetPresentBit(true);
-    kernel_page_directory_table[i].SetReadWriteBit(true);
-    kernel_page_directory_table[i].SetUserBit(true);  // Not needed?
-    kernel_page_directory_table[i].SetPageTableAddress(
-        (uint32) (&kernel_page_tables[i - 768]));
-  }
-
-  // For page tables at virtual addresses >= 0xC0000000, map them to physical
-  // addresses starting at 0x00000000.
-  for (size pt = 0; pt < 2; pt++) {
-    for (size pte = 0; pte < 1024; pte++) {
-      kernel_page_tables[pt][pte].SetPresentBit(true);
-      kernel_page_tables[pt][pte].SetReadWriteBit(true);
-      kernel_page_tables[pt][pte].SetUserBit(true);  // Not needed?
-      uint32 address = pt * 4 * 1024 * 1024 + pte * 4 * 1024;
-      kernel_page_tables[pt][pte].SetPhysicalAddress(GetPhysicalAddress(address));
-    }
-  }
-
-  DumpKernelMemory();
-  set_cr3(GetPhysicalAddress((uint32) kernel_page_directory_table));
-}
-
-void InitializeKernelPageDirectoryButNotWork() {
-  // Initialize page directory tables.
-  for (size i = 0; i < 1024; i++) {
-    kernel_page_directory_table[i].SetPresentBit(false);
-    
-    // Map addresses > 0xC0000000 to kernel page tables.
-    if (i >= 768) {
-      kernel_page_directory_table[i].SetPresentBit(true);
-      kernel_page_directory_table[i].SetReadWriteBit(true);
-      kernel_page_directory_table[i].SetPageTableAddress(
-          (uint32) (&kernel_page_table[(i - 768) * 1024]));
-    }
-  }
-
-  // Initialize page tables. Zero out for now, will map to the ELF
-  // binary info next.
-  for (size i = 0; i < 256 * 1024; i++) {
-    kernel_page_table[i].SetPresentBit(false);
-  }
-
-  // Idenity map the first MiB of memory to 0xC0000000. This way we can access
-  // hardware registers (e.g. TextUI memory).
-  for (size page = 0; page < 256; page++) {
-      kernel_page_table[page].SetPresentBit(true);
-      kernel_page_table[page].SetUserBit(false);
-      kernel_page_table[page].SetReadWriteBit(true);
-      kernel_page_table[page].SetPhysicalAddress(page * 4096);
-  }
-
-  // TODO(chrsmith): Figure out where GRUB puts the multiboot info pointer.
-  // It looks like it is in the middle of the kernel's .bss segment.
-
-  // Initialize page tables marking kernel code that has already been
-  // loaded into memory. This section assumes that GRUB loads the entire
-  // ELF binary starting at the 1MiB mark, and that we specify the starting
-  // address at 0xC0100000 (0xC0000000 + 1MiB).
-  const grub::multiboot_info* multiboot_info = VirtualizeAddress(GetMultibootInfo());
-  klib::Debug::Log("ElfSectionHeaderTable is at %h",
-                   (uint32) &(multiboot_info->u.elf_sec));
-  const kernel::elf::ElfSectionHeaderTable* elf_sht =
-      &(multiboot_info->u.elf_sec);
-  Assert((multiboot_info->flags & 0b100000) != 0,
-         "Multiboot flags bit not set.");
-  klib::Debug::Log("%d and %d", sizeof(kernel::elf::Elf32SectionHeader), elf_sht->size);
-  Assert(sizeof(kernel::elf::Elf32SectionHeader) == elf_sht->size,
-         "ELF section header doesn't match expected size.");
-  klib::Debug::Log("Setting up page tables for %d ELF header table sections.",
-                   elf_sht->num);
-  for (size i = 0; i < size(elf_sht->num); i++) {
-    const kernel::elf::Elf32SectionHeader* section =
-        kernel::elf::GetSectionHeader(VirtualizeAddress(elf_sht->addr), i);
-
-    // The following code is definitely wrong, but gets the right result in the
-    // end. ELF sections are not guaranteed to be page-aligned. e.g. .text
-    // (appears) to be broken up into multiple sections (".text._ZN3hal6Te").
-    // Because of this multiple sections can overlap in the same page. We simply
-    // re-initialize the page tale entry with the same settings. In theory, the
-    // only time this will be a problem if two ELF sections sharing a page need
-    // different page settings. (read-only/read-write, etc.)
-
-    // BUG: If section size is exactly 4KiB aligned, we waste 1 page.
-    size section_pages = (section->size / 4096) + 1;
-    for (size page_to_map = 0; page_to_map < section_pages; page_to_map++) {
-      klib::Debug::Log("Mapping %{L2}d of %{L2}d pages for ELF section %d",
-                       page_to_map, section_pages, i);
-      uint32 section_address = section->addr;
-      klib::Debug::Log("  Section address is at %h", section->addr);
-
-      // GRUB still loads ELF sections that shouldn't typically be allocated,
-      // e.g. debug symbols. However it doesn't set the virtualized address. So
-      // manually add 0xC0000000 to these addresses.
-      if (!IsInKernelSpace(section_address)) {
-	section_address += 0xC0000000;
-        klib::Debug::Log("  Section is not in kernel space, so adding 0xC0000000...");
-      }
-
-      uint32 page_virtual_address = section_address + page_to_map * 4096;
-      size page_index = (page_virtual_address - 0xC0000000) / 4096;
-      klib::Debug::Log("  Initializing page table at index %d", page_index);
-      kernel_page_table[page_index].SetPresentBit(true);
-      kernel_page_table[page_index].SetUserBit(false);
-      // TODO: Check section flags.
-      kernel_page_table[page_index].SetReadWriteBit(true);
-      kernel_page_table[page_index].SetPhysicalAddress(
-          page_virtual_address - 0xC0000000);
-    }
-  }
-  
-  // Replace page directory table.
-  DumpKernelMemory();
-  set_cr3(GetPhysicalAddress((uint32) kernel_page_directory_table));  // ???
-
-  // SHOULD WORK JUST FINE. VERIFY IT GOOD.
-
-  // Initialize the specific kernel-level pages.
-  // Map 0xC0000000-0xC0100000 to 0x00000000-0x00100000
-  //     Used for low-level DMA jazz, like TextUI.
-  // Map 0xC0100000-<ker size> to 0x00100000-<ker size>
-  //     Used for the kernel's code. GRUB's multiboot
-  //     contains the ELF info.
 }
 #endif  // #if 0
 }  // namespace kernel

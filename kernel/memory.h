@@ -17,7 +17,6 @@ namespace kernel {
 class PageDirectoryEntry {
  public:
   explicit PageDirectoryEntry();
-  explicit PageDirectoryEntry(uint32 data);  // DO NOT SUBMIT
 
   uint32 GetPageTableAddress();
   void SetPageTableAddress(uint32 page_table_address);
@@ -84,7 +83,9 @@ class PageTableEntry {
 };
 #undef BIT_FLAG_PROPS
 
-// EXPERIMENTAL
+// Initilize the kernel's page directory table with the current binary
+// that is loaded (and executing) in memory. This is a required first
+// step before bootstrapping the physical memory manager.
 void InitializeKernelPageDirectory();
 
 }  // namespace kernel
