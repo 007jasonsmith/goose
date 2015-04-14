@@ -9,6 +9,7 @@
 #include "hal/serial_port.h"
 #include "hal/text_ui.h"
 #include "kernel/boot.h"
+#include "kernel/memory.h"
 #include "shell/shell.h"
 
 using klib::Debug;
@@ -52,6 +53,9 @@ void kmain(uint32 multiboot_magic, const kernel::grub::multiboot_info* mbt) {
   sys::InstallInterruptServiceRoutines();
 
   kernel::SetMultibootInfo(mbt);
+
+  kernel::InitializeKernelPageDirectory();
+
   shell::Run();
 
   Debug::Log("Kernel halted.");
