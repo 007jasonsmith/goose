@@ -10,7 +10,8 @@ OBJECTS = kmain.o kmain_asm.o \
           sys/idt.o sys/idt_asm.o \
           sys/isr.o sys/isr_asm.o \
           sys/control_registers.o \
-          kernel/memory.o kernel/boot.o kernel/elf.o \
+          kernel/memory.o kernel/memory2.o \
+          kernel/boot.o kernel/elf.o \
           shell/shell.o \
           hal/keyboard.o hal/serial_port.o hal/text_ui.o
 

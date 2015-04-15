@@ -27,7 +27,7 @@ struct ElfSectionHeaderTable {
 
 // BUG: This enum was generated from an older spec!
 enum class SectionType : uint32 {
-  NULL     = 0,
+  NULL_SECTION = 0,
   PROGBITS = 1,
   SYMTAB   = 2,
   STRTAB   = 3,

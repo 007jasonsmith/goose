@@ -1,10 +1,16 @@
-rm ./bin/unit-test
+# Note: On a 64-bit system you need to install the following:
+# apt-get install g++-multilib
+clear
 
 set -e
 set -x
-clear
 
 export GTEST_DIR=./third_party/googletest/
+
+if [ -f ./bin/unit-test ]
+  then
+  rm ./bin/unit-test
+fi
 
 # Build GoogleTest if not found.
 if [ ! -f ./bin/libgtest.a ]
@@ -12,6 +18,7 @@ if [ ! -f ./bin/libgtest.a ]
   echo "Building GoogleTest library."
   mkdir -p ./bin/
   g++ \
+    -m32 \
     -isystem $GTEST_DIR/include \
     -I$GTEST_DIR \
     -pthread \
@@ -27,6 +34,7 @@ g++ \
     -I. \
     -std=c++11 \
     -pthread \
+    -m32 \
     -fno-stack-protector -Wall -Wextra \
     ./klib/strings.cpp \
     ./klib/argaccumulator.cpp \
@@ -48,9 +56,13 @@ echo "Building kernel unit tests."
 g++ \
     -I$GTEST_DIR/include \
     -I. \
+    -m32 \
     -std=c++11 \
     -pthread \
-    -fno-stack-protector -Wall -Wextra \
+    -Wall -Wextra \
+    ./klib/panic.cpp \
+    ./kernel/boot.cpp \
+    ./kernel/elf.cpp \
     ./kernel/memory.cpp \
     ./kernel/memory_test.cpp \
     ./kernel/tests_main.cpp \

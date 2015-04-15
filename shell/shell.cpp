@@ -4,7 +4,7 @@
 #include "hal/text_ui.h"
 #include "kernel/elf.h"
 #include "kernel/boot.h"
-#include "kernel/memory.h"
+#include "kernel/memory2.h"
 #include "klib/debug.h"
 #include "klib/limits.h"
 #include "klib/types.h"

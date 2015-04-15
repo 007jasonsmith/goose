@@ -1,5 +1,3 @@
-// Memory map.
-
 #ifndef KERNEL_MEMORY_H_
 #define KERNEL_MEMORY_H_
 
@@ -96,11 +94,6 @@ public:
   BIT_FLAG_PROPS(InUse)
 };
 #undef BIT_FLAG_PROPS
-
-// Initilize the kernel's page directory table with the current binary
-// that is loaded (and executing) in memory. This is a required first
-// step before bootstrapping the physical memory manager.
-void InitializeKernelPageDirectory();
 
 }  // namespace kernel
 

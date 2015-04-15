@@ -5,7 +5,8 @@ namespace elf {
 
 const char* ToString(SectionType type) {
   switch (type) {
-  case SectionType::NULL:     return "NULL";
+  case SectionType::NULL_SECTION: return "NULL";
+
   case SectionType::PROGBITS: return "PROGBITS";
   case SectionType::SYMTAB:   return "SYMTAB";
   case SectionType::STRTAB:   return "STRTAB";
