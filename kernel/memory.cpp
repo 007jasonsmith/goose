@@ -75,22 +75,50 @@ void DumpKernelMemory() {
 
 namespace kernel {
 
+PointerTableEntry::PointerTableEntry() : data_(0) {}
+
+uint32 PointerTableEntry::Address() const {
+  uint32 address = data_ & kAddressMask;
+  return address;
+}
+
+void PointerTableEntry::SetAddress(uint32 address) {
+  // Ensure 4KiB-aligned.
+  address &= kAddressMask;
+  // Zero out the old address.
+  data_ &= ~kAddressMask;
+  // Put in the new address.
+  data_ |= address;
+}
+
+uint32 PointerTableEntry::Value() const {
+  return data_;
+}
+
+bool PointerTableEntry::StatusFlag(size bit) const {
+  uint32 mask = 1;
+  mask <<= bit;
+  mask &= data_;
+  return mask;
+}
+
+void PointerTableEntry::SetStatusFlag(size bit, bool value) {
+  uint32 mask = 1;
+  mask <<= bit;
+  data_ &= ~mask;
+  if (value) {
+    data_ |= mask;
+  }
+}
+
 #define BIT_FLAG_GETTER(clsname, name, bit) \
-bool clsname::Get##name##Bit() {            \
-  uint32 mask = 1;                          \
-  mask <<= bit;                             \
-  mask &= data_;                            \
-  return mask;                              \
+bool clsname::name##Bit() const {           \
+  return StatusFlag(bit);                   \
 }
 
 #define BIT_FLAG_SETTER(clsname, name, bit) \
 void clsname::Set##name##Bit(bool f) {      \
-  uint32 mask = 1;                          \
-  mask <<= bit;                             \
-  data_ &= ~mask;                           \
-  if (f) {                                  \
-    data_ |= mask;                          \
-  }                                         \
+  SetStatusFlag(bit, f);                    \
 }
 
 // Yes, macros calling macros. Deal with it.
@@ -98,26 +126,8 @@ void clsname::Set##name##Bit(bool f) {      \
   BIT_FLAG_GETTER(clsname, name, bit)       \
   BIT_FLAG_SETTER(clsname, name, bit)
 
-PageDirectoryEntry::PageDirectoryEntry() : data_(0) {}
 
-uint32 PageDirectoryEntry::GetPageTableAddress() {
-  uint32 address = data_ & kAddressMask;
-  return address;
-}
-
-void PageDirectoryEntry::SetPageTableAddress(uint32 page_table_address) {
-  // Ensure 4KiB-aligned.
-  page_table_address &= kAddressMask;
-  // Zero out the old address.
-  data_ &= ~kAddressMask;
-  // Put in the new address.
-  data_ |= page_table_address;
-}
-
-uint32 PageDirectoryEntry::Value() {
-  return data_;
-}
-
+PageDirectoryEntry::PageDirectoryEntry() : PointerTableEntry() {}
 BIT_FLAG_MEMBER(PageDirectoryEntry, Present,      0)
 BIT_FLAG_MEMBER(PageDirectoryEntry, ReadWrite,    1)
 BIT_FLAG_MEMBER(PageDirectoryEntry, User,         2)
@@ -126,26 +136,7 @@ BIT_FLAG_MEMBER(PageDirectoryEntry, DisableCache, 4)
 BIT_FLAG_MEMBER(PageDirectoryEntry, Accessed,     5)
 BIT_FLAG_MEMBER(PageDirectoryEntry, Size,         7)
 
-PageTableEntry::PageTableEntry() : data_(0) {}
-
-uint32 PageTableEntry::GetPhysicalAddress() {
-  uint32 address = data_ & kAddressMask;
-  return address;
-}
-
-void PageTableEntry::SetPhysicalAddress(uint32 physical_address) {
-  // Ensure 4KiB-aligned.
-  physical_address &= kAddressMask;
-  // Zero out the old address.
-  data_ &= ~kAddressMask;
-  // Put in the new address.
-  data_ |= physical_address;
-}
-
-uint32 PageTableEntry::Value() {
-  return data_;
-}
-
+PageTableEntry::PageTableEntry() : PointerTableEntry() {}
 BIT_FLAG_MEMBER(PageTableEntry, Present,      0)
 BIT_FLAG_MEMBER(PageTableEntry, ReadWrite,    1)
 BIT_FLAG_MEMBER(PageTableEntry, User,         2)
@@ -167,7 +158,7 @@ void InitializeKernelPageDirectory() {
     kernel_page_directory_table[pdte].SetPresentBit(true);
     kernel_page_directory_table[pdte].SetReadWriteBit(true);
     kernel_page_directory_table[pdte].SetUserBit(false);
-    kernel_page_directory_table[pdte].SetPageTableAddress(
+    kernel_page_directory_table[pdte].SetAddress(
         ConvertVirtualAddressToPhysical((uint32) kernel_page_tables[pdte - 768]));
   }
 
@@ -180,7 +171,7 @@ void InitializeKernelPageDirectory() {
       kernel_page_tables[page_table][pte].SetUserBit(false);
 
       uint32 physical_address = page_table * 4 * 1024 * 1024 + pte * 4096;
-      kernel_page_tables[page_table][pte].SetPhysicalAddress(physical_address);
+      kernel_page_tables[page_table][pte].SetAddress(physical_address);
     }
   }
 
@@ -242,71 +233,11 @@ void InitializeKernelPageDirectory() {
       kernel_page_tables[page_table][pte].SetPresentBit(true);
       kernel_page_tables[page_table][pte].SetUserBit(false);
       kernel_page_tables[page_table][pte].SetReadWriteBit(is_writeable);
-      kernel_page_tables[page_table][pte].SetPhysicalAddress(page_physaddr);
+      kernel_page_tables[page_table][pte].SetAddress(page_physaddr);
     }
   }
   
   set_cr3(ConvertVirtualAddressToPhysical((uint32) kernel_page_directory_table));
 }
 
-
-#if 0
-// Since all the other attempts to set up paging have failed,
-// this is just recreating the page directory table the system
-// has at boot. This should work.
-void InitializeKernelPageDirectoryWorksDoNotMessWith1() {
-  // Two 4MiB pages, mapping 0xC0000000 + 8MiB to physical address
-  // 0x00000000 + 8MiB.
-  kernel_page_directory_table[768].SetPresentBit(true);
-  kernel_page_directory_table[768].SetReadWriteBit(true);
-  kernel_page_directory_table[768].SetSizeBit(true);
-  kernel_page_directory_table[768].SetPageTableAddress(0x00000000);
-
-  kernel_page_directory_table[769].SetPresentBit(true);
-  kernel_page_directory_table[769].SetReadWriteBit(true);
-  kernel_page_directory_table[769].SetSizeBit(true);
-  kernel_page_directory_table[769].SetPageTableAddress(0x400000);
-
-  DumpKernelMemory();
-  set_cr3(GetPhysicalAddress((uint32) kernel_page_directory_table));
-  // DON'T DO THIS. WILL FAIL. Get "(invalid)  : FFF" from bochslog.txt.
-  // set_cr3((uint32) kernel_page_directory_table);
-}
-
-// Convert a 4MiB page into using a separate page table.
-void InitializeKernelPageDirectoryWorksDoNotMessWith2() {
-  // Page table #0, pages from 0x0 to 4MiB.
-  for (size pte = 0; pte < 1024; pte++) {
-    kernel_page_tables[0][pte].SetPresentBit(true);
-    kernel_page_tables[0][pte].SetReadWriteBit(true);
-    uint32 address = pte * 4 * 1024;
-    kernel_page_tables[0][pte].SetPhysicalAddress(address);
-  }
-  // Second PT, 4MiB - 8MiB.
-  for (size pte = 0; pte < 1024; pte++) {
-    kernel_page_tables[1][pte].SetPresentBit(true);
-    kernel_page_tables[1][pte].SetReadWriteBit(true);
-    uint32 address = pte * 4 * 1024 + 4 * 1024 * 1024;
-    kernel_page_tables[1][pte].SetPhysicalAddress(address);
-  }
-
-  // Two 4MiB pages, mapping 0xC0000000 + 8MiB to physical address
-  // 0x00000000 + 8MiB.
-  kernel_page_directory_table[768].SetPresentBit(true);
-  kernel_page_directory_table[768].SetReadWriteBit(true);
-  // kernel_page_directory_table[768].SetSizeBit(true);
-  kernel_page_directory_table[768].SetPageTableAddress(
-      GetPhysicalAddress((uint32) &kernel_page_tables[0]));
-						      
-  kernel_page_directory_table[769].SetPresentBit(true);
-  kernel_page_directory_table[769].SetReadWriteBit(true);
-  kernel_page_directory_table[769].SetPageTableAddress(
-      GetPhysicalAddress((uint32) &kernel_page_tables[1]));
-
-  DumpKernelMemory();
-  set_cr3(GetPhysicalAddress((uint32) kernel_page_directory_table));
-  // DON'T DO THIS. WILL FAIL. Get "(invalid)  : FFF" from bochslog.txt.
-  // set_cr3((uint32) kernel_page_directory_table);
-}
-#endif  // #if 0
 }  // namespace kernel
