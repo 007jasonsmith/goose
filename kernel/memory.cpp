@@ -146,6 +146,9 @@ BIT_FLAG_MEMBER(PageTableEntry, Accessed,     5)
 BIT_FLAG_MEMBER(PageTableEntry, Dirty,        6)
 BIT_FLAG_MEMBER(PageTableEntry, Global,       8)
 
+FrameTableEntry::FrameTableEntry() : PointerTableEntry() {}
+BIT_FLAG_MEMBER(FrameTableEntry, InUse, 0)
+
 #undef BIT_FLAG_GETTER
 #undef BIT_FLAG_SETTER
 #undef BIT_FLAG_MEMBERS

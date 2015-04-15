@@ -84,6 +84,17 @@ class PageTableEntry : public PointerTableEntry {
   BIT_FLAG_PROPS(Dirty)
   BIT_FLAG_PROPS(Global)
 };
+
+// Description of a physical frame.
+class FrameTableEntry : public PointerTableEntry {
+public:
+  explicit FrameTableEntry();
+
+  // Bits
+  // 31 - 11: 4KiB aligned pointer to a page frame.
+  // 0: (U) In-use. Is the frame currently in-use.
+  BIT_FLAG_PROPS(InUse)
+};
 #undef BIT_FLAG_PROPS
 
 // Initilize the kernel's page directory table with the current binary
