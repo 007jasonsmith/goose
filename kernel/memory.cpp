@@ -97,11 +97,11 @@ BIT_FLAG_MEMBER(FrameTableEntry, InUse, 0)
 #undef BIT_FLAG_MEMBERS
 
 PageFrameManager::PageFrameManager() :
-    last_frame_reserved_(0), num_frames_(0) {}
+    next_frame_(0), num_frames_(0) {}
 
 void PageFrameManager::Initialize(const MemoryRegion* regions,
                                   size region_count) {
-  last_frame_reserved_ = 0;
+  next_frame_ = 0;
 
   uint32 last_region_end = 0;
   for (size i = 0; i < region_count; i++) {
@@ -130,9 +130,27 @@ void PageFrameManager::Initialize(const MemoryRegion* regions,
   }
 }
 
-MemoryError PageFrameManager::Frame(uint32* out_address) {
-  SUPPRESS_UNUSED_WARNING(out_address)
-  return MemoryError::NoError;
+MemoryError PageFrameManager::RequestFrame(uint32* out_address) {  
+  if (num_frames_ == 0) {
+    return MemoryError::NoPageFramesAvailable;
+  }
+
+  size total_frames_checked = 0;
+  while (total_frames_checked < num_frames_) {
+    if (next_frame_ >= num_frames_) {
+      next_frame_ = 0;
+    }
+    if (!page_frames_[next_frame_].InUseBit()) {
+      *out_address = page_frames_[next_frame_].Address();
+      page_frames_[next_frame_].SetInUseBit(true);
+      next_frame_++;
+      return MemoryError::NoError;
+    }
+    next_frame_++;
+    total_frames_checked++;
+  }
+
+  return MemoryError::NoPageFramesAvailable;
 }
 
 MemoryError PageFrameManager::FreeFrame(uint32 frame_address) {
@@ -147,6 +165,10 @@ size PageFrameManager::NumFrames() const {
 FrameTableEntry PageFrameManager::FrameAtIndex(size index) const {
   klib::Assert(index >= 0 && index <= 1024 * 1024);
   return page_frames_[index];
+}
+
+size PageFrameManager::NextFrame() const {
+  return next_frame_;
 }
 
 }  // namespace kernel

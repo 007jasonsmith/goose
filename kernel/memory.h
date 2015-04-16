@@ -126,16 +126,20 @@ class PageFrameManager {
 
  public:
   // Returns the next free page frame, marking it as in-use.
-  MemoryError Frame(uint32* out_address);
+  MemoryError RequestFrame(uint32* out_address);
   // Free the given memory frame.
   MemoryError FreeFrame(uint32 frame_address);
 
   size NumFrames() const;
   FrameTableEntry FrameAtIndex(size index) const;
 
+  // TODO(chris): Make this private, only for tests.
+  size NextFrame() const;
+
  private:
-  // Index of the last frame reserved.
-  size last_frame_reserved_;
+  // Index of the next free frame. Loops around once each frame has been
+  // taken.
+  size next_frame_;
 
   // Total number of page frames available.
   size num_frames_;

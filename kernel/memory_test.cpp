@@ -52,13 +52,13 @@ TEST(PageFrameManager, Initialize) {
 
   EXPECT_EQ(pfm.NumFrames(), 3);
 
-  FrameTableEntry pfe;
-  pfe = pfm.FrameAtIndex(0);
-  EXPECT_EQ(pfe.Address(), 0x0000U);
-  pfe = pfm.FrameAtIndex(1);
-  EXPECT_EQ(pfe.Address(), 0x3000U);
-  pfe = pfm.FrameAtIndex(2);
-  EXPECT_EQ(pfe.Address(), 0x4000U);
+  FrameTableEntry fte;
+  fte = pfm.FrameAtIndex(0);
+  EXPECT_EQ(fte.Address(), 0x0000U);
+  fte = pfm.FrameAtIndex(1);
+  EXPECT_EQ(fte.Address(), 0x3000U);
+  fte = pfm.FrameAtIndex(2);
+  EXPECT_EQ(fte.Address(), 0x4000U);
 }
 
 TEST(PageFrameManager, Initialize_MultiFrames) {
@@ -71,9 +71,9 @@ TEST(PageFrameManager, Initialize_MultiFrames) {
 
   EXPECT_EQ(pfm.NumFrames(), 2 * 1024);
 
-  FrameTableEntry pfe;
-  pfe = pfm.FrameAtIndex(0);
-  EXPECT_EQ(pfe.Address(), 0x100000U);
+  FrameTableEntry fte;
+  fte = pfm.FrameAtIndex(0);
+  EXPECT_EQ(fte.Address(), 0x100000U);
 }
 
 
@@ -90,9 +90,30 @@ TEST(PageFrameManager, Initialize_Alignment) {
 
   EXPECT_EQ(pfm.NumFrames(), 1);
 
-  FrameTableEntry pfe;
-  pfe = pfm.FrameAtIndex(0);
-  EXPECT_EQ(pfe.Address(), 11 * 4096U);
+  FrameTableEntry fte;
+  fte = pfm.FrameAtIndex(0);
+  EXPECT_EQ(fte.Address(), 11 * 4096U);
 }
+
+TEST(PageFrameManager, RequestFrame) {
+  MemoryRegion regions[] = {
+    {     0, 8192 }
+  };
+
+  PageFrameManager pfm;
+  pfm.Initialize(regions, 1);
+  EXPECT_EQ(pfm.NumFrames(), 2);
+
+  uint32 address;
+  EXPECT_EQ(pfm.RequestFrame(&address), MemoryError::NoError);
+  EXPECT_EQ(address, 0x0U);
+
+  EXPECT_EQ(pfm.RequestFrame(&address), MemoryError::NoError);
+  EXPECT_EQ(address, 0x1000U);
+
+  EXPECT_EQ(pfm.RequestFrame(&address), MemoryError::NoPageFramesAvailable);
+}
+
+// TODO(chris): Test wrap around once FreeFrame is implemented.
 
 }  // namespace kernel
