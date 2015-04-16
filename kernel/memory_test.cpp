@@ -41,7 +41,7 @@ TEST(PointerTableEntry, StatusFlags) {
   EXPECT_EQ(pde.Value(), 0b10000011U);
 }
 
-TEST(PageFrameManager, Initialize1) {
+TEST(PageFrameManager, Initialize) {
   MemoryRegion regions[] = {
     {     0, 4096 },  // 1 page frame
     { 12288, 8192 },  // 2 page frames
@@ -59,6 +59,40 @@ TEST(PageFrameManager, Initialize1) {
   EXPECT_EQ(pfe.Address(), 0x3000U);
   pfe = pfm.FrameAtIndex(2);
   EXPECT_EQ(pfe.Address(), 0x4000U);
+}
+
+TEST(PageFrameManager, Initialize_MultiFrames) {
+  MemoryRegion regions[] = {
+    { 1024 * 1024, 8 * 1024 * 1024 },  // 8MiB starting at 1MiB.
+  };
+
+  PageFrameManager pfm;
+  pfm.Initialize(regions, 1);
+
+  EXPECT_EQ(pfm.NumFrames(), 2 * 1024);
+
+  FrameTableEntry pfe;
+  pfe = pfm.FrameAtIndex(0);
+  EXPECT_EQ(pfe.Address(), 0x100000U);
+}
+
+
+TEST(PageFrameManager, Initialize_Alignment) {
+  MemoryRegion regions[] = {
+    {     1, 4096 },  // Address non, aligned. 0 frames.
+    { 8192,  4095 },  // Size < 4096. 0 frames.
+    { 5 * 4096 + 1, 4096 * 2 - 2 },  // Almost a full frame. Almost.
+    { 10 * 4096 + 1, 8192 }  // One frame, starting at 11*4096.
+  };
+
+  PageFrameManager pfm;
+  pfm.Initialize(regions, 4);
+
+  EXPECT_EQ(pfm.NumFrames(), 1);
+
+  FrameTableEntry pfe;
+  pfe = pfm.FrameAtIndex(0);
+  EXPECT_EQ(pfe.Address(), 11 * 4096U);
 }
 
 }  // namespace kernel
