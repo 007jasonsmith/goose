@@ -1,11 +1,18 @@
 #include "kernel/memory.h"
 
+#include "klib/macros.h"
+#include "klib/panic.h"
+
 using klib::Assert;
 
 namespace {
 
 const uint32 kAddressMask = 0b11111111111111111111000000000000;
 const uint32 k4KiBMask    = 0b00000000000000000000111111111111;
+
+bool Is4KiBAligned(uint32 address) {
+  return (address % 4096 == 0);
+}
 
 }  // anonymous namespace
 
@@ -88,5 +95,58 @@ BIT_FLAG_MEMBER(FrameTableEntry, InUse, 0)
 #undef BIT_FLAG_GETTER
 #undef BIT_FLAG_SETTER
 #undef BIT_FLAG_MEMBERS
+
+PageFrameManager::PageFrameManager() :
+    last_frame_reserved_(0), num_frames_(0) {}
+
+void PageFrameManager::Initialize(const MemoryRegion* regions,
+                                  size region_count) {
+  last_frame_reserved_ = 0;
+
+  uint32 last_region_end = 0;
+  for (size i = 0; i < region_count; i++) {
+    const MemoryRegion* region = &regions[i];
+
+    // Assert the memory regions are increasing in value.
+    uint32 region_end = region->address + region->size;
+    klib::Assert(region_end > last_region_end, "MemoryRegions not increasing.");
+    last_region_end = region_end;
+
+    uint32 aligned_address = region->address;
+    uint32 region_size = region->size;
+    if (!Is4KiBAligned(region->address)) {
+      aligned_address += 4096 - region->address % 4096;
+      region_size -= (aligned_address - region->address);
+    }
+    klib::Assert(Is4KiBAligned(aligned_address));
+    
+    size region_frames = region_size / 4096;
+    for (size region_frame = 0; region_frame < region_frames; region_frame++) {
+      page_frames_[num_frames_].SetAddress(
+          aligned_address + region_frame * 4096);
+      page_frames_[num_frames_].SetInUseBit(false);
+      num_frames_++;
+    }
+  }
+}
+
+MemoryError PageFrameManager::Frame(uint32* out_address) {
+  SUPPRESS_UNUSED_WARNING(out_address)
+  return MemoryError::NoError;
+}
+
+MemoryError PageFrameManager::FreeFrame(uint32 frame_address) {
+  SUPPRESS_UNUSED_WARNING(frame_address)
+  return MemoryError::NoError;
+}
+
+size PageFrameManager::NumFrames() const {
+  return num_frames_;
+}
+
+FrameTableEntry PageFrameManager::FrameAtIndex(size index) const {
+  klib::Assert(index >= 0 && index <= 1024 * 1024);
+  return page_frames_[index];
+}
 
 }  // namespace kernel

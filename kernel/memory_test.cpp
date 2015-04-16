@@ -41,4 +41,24 @@ TEST(PointerTableEntry, StatusFlags) {
   EXPECT_EQ(pde.Value(), 0b10000011U);
 }
 
+TEST(PageFrameManager, Initialize1) {
+  MemoryRegion regions[] = {
+    {     0, 4096 },  // 1 page frame
+    { 12288, 8192 },  // 2 page frames
+  };
+
+  PageFrameManager pfm;
+  pfm.Initialize(regions, 2);
+
+  EXPECT_EQ(pfm.NumFrames(), 3);
+
+  FrameTableEntry pfe;
+  pfe = pfm.FrameAtIndex(0);
+  EXPECT_EQ(pfe.Address(), 0x0000U);
+  pfe = pfm.FrameAtIndex(1);
+  EXPECT_EQ(pfe.Address(), 0x3000U);
+  pfe = pfm.FrameAtIndex(2);
+  EXPECT_EQ(pfe.Address(), 0x4000U);
+}
+
 }  // namespace kernel

@@ -95,6 +95,57 @@ public:
 };
 #undef BIT_FLAG_PROPS
 
+enum class MemoryError {
+  // No error associated with the operation.
+  NoError = 0,
+
+  // The provided page frame address was invalid.
+  InvalidPageFrameAddress = 1,  
+
+  // The request for a page frame failed because no more are available.
+  NoPageFramesAvailable = 2,
+};
+
+const char* ToString(MemoryError error);
+
+struct MemoryRegion {
+  uint32 address;
+  uint32 size;
+};
+
+// Physical memory manager. Keeping track of all available physical frames
+// and their state.
+// TODO(chris): Switch to using a more efficent mechanism, e.g.
+// http://en.wikipedia.org/wiki/Buddy_memory_allocation
+// As-is this takes up 4MiB of RAM regardless of available system memory.
+class PageFrameManager {
+ public:
+  explicit PageFrameManager();
+
+  void Initialize(const MemoryRegion* regions, size region_count);
+
+ public:
+  // Returns the next free page frame, marking it as in-use.
+  MemoryError Frame(uint32* out_address);
+  // Free the given memory frame.
+  MemoryError FreeFrame(uint32 frame_address);
+
+  size NumFrames() const;
+  FrameTableEntry FrameAtIndex(size index) const;
+
+ private:
+  // Index of the last frame reserved.
+  size last_frame_reserved_;
+
+  // Total number of page frames available.
+  size num_frames_;
+
+  // We provide a page frame entry for every possible page frame, spamming the
+  // full 4GiB of addressable memory. It is unlikely that this will all be
+  // usable, however it is statically allocated here for convience.
+  FrameTableEntry page_frames_[1024 * 1024];
+};
+
 }  // namespace kernel
 
 #endif  // KERNEL_MEMORY_H_
