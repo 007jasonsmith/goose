@@ -8,6 +8,8 @@ namespace kernel {
 // step before bootstrapping the physical memory manager.
 void InitializeKernelPageDirectory();
 
+void InitializePageFrameManager();
+
 }  // namespace kernel
 
 #endif  // KERNEL_MEMORY2_H_

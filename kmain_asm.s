@@ -104,9 +104,11 @@ boot_page_directory_table:
     ;
     ; We map two pages in each region, since our kernel takes up more than
     ; 4 MiB. Be sure to update start_in_higher_half when changing this.
-    dd 0x00000083				; low-memory page #1
-    dd 0x00400083				; low-memory page #2	
-    times (KERNEL_PAGE_NUMBER - 2) dd 0       	; pages before kernel space
-    dd 0x00000083				; high-memory kernel page #1
-    dd 0x00401083				; high-memory kernel page #2
-    times (1024 - KERNEL_PAGE_NUMBER - 2) dd 0  ; pages after the kernel image.
+    dd 0x00000083				; low-memory page
+    dd 0x00400083				; low-memory page
+    dd 0x00800083				; low-memory page
+    times (KERNEL_PAGE_NUMBER - 3) dd 0       	; pages before kernel space
+    dd 0x00000083				; high-memory kernel page
+    dd 0x00400083				; high-memory kernel page
+    dd 0x00800083				; high-memory kernel page
+    times (1024 - KERNEL_PAGE_NUMBER - 3) dd 0  ; pages after the kernel image.

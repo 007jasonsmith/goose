@@ -16,6 +16,8 @@ kernel::PageDirectoryEntry kernel_page_directory_table[1024] __attribute__((alig
 // 0xC0000000 - 0xFFFFFFFF.
 kernel::PageTableEntry kernel_page_tables[256][1024] __attribute__((aligned(4096)));
 
+kernel::PageFrameManager page_frame_manager;
+
 bool IsInKernelSpace(uint32 raw_address) {
   return (raw_address > 0xC0000000);
 }
@@ -161,6 +163,50 @@ void InitializeKernelPageDirectory() {
   }
   
   set_cr3(ConvertVirtualAddressToPhysical((uint32) kernel_page_directory_table));
+}
+
+void InitializePageFrameManager() {
+  klib::Debug::Log("Initializing page frame manager");
+
+  size num_regions = 0;
+  MemoryRegion regions[32];
+
+  // Determine the usable memory regions.
+  const kernel::grub::multiboot_info* mbt =
+      (kernel::grub::multiboot_info*) ConvertPhysicalAddressToVirtual(
+          (uint32) kernel::GetMultibootInfo());
+
+  kernel::grub::multiboot_memory_map* mmap =
+      (kernel::grub::multiboot_memory_map*) ConvertPhysicalAddressToVirtual(
+          mbt->mmap_addr);
+
+  uint32 last_region_end = 0;
+  while((uint32) mmap < (uint32) ConvertPhysicalAddressToVirtual(mbt->mmap_addr) +
+                        mbt->mmap_length) {
+    const uint32 region_start = mmap->base_addr_low;
+    const uint32 region_end = mmap->base_addr_low + mmap->length_low;
+
+    // This is not expected according to APIC spec. But assumed for now.
+    // TODO(chris): Handle this case.
+    if (region_start < last_region_end) {
+      klib::Panic("Memory map regions not sorted.");
+    }
+    last_region_end = region_end;
+
+    if (mmap->type == 1 || mmap->type == 3) {
+      regions[num_regions].address = region_start;
+      regions[num_regions].size = mmap->length_low;
+      num_regions++;
+    }
+
+    mmap = (kernel::grub::multiboot_memory_map*) (
+        (uint32) mmap + mmap->size + sizeof(uint32));
+  }
+
+  klib::Debug::Log("  Found %d usable memory regions.", num_regions);
+  page_frame_manager.Initialize(regions, num_regions);
+  klib::Debug::Log("  page_frame_manager.NumFrames() = %d",
+                   page_frame_manager.NumFrames());
 }
 
 }  // namespace kernel

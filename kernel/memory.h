@@ -112,8 +112,6 @@ enum class MemoryError {
   PageFrameAlreadyFree = 4
 };
 
-const char* ToString(MemoryError error);
-
 struct MemoryRegion {
   uint32 address;
   uint32 size;

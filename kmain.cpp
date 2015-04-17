@@ -54,7 +54,9 @@ void kmain(uint32 multiboot_magic, const kernel::grub::multiboot_info* mbt) {
 
   kernel::SetMultibootInfo(mbt);
 
+  // Initialize memory.
   kernel::InitializeKernelPageDirectory();
+  kernel::InitializePageFrameManager();
 
   shell::Run();
 
