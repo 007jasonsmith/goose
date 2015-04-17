@@ -109,7 +109,10 @@ enum class MemoryError {
   UnalignedAddress = 3,
 
   // Frame was double-freed.
-  PageFrameAlreadyFree = 4
+  PageFrameAlreadyFree = 4,
+
+  // Frame already in use.
+  PageFrameAlreadyInUse = 5
 };
 
 struct MemoryRegion {
@@ -131,6 +134,10 @@ class PageFrameManager {
  public:
   // Returns the next free page frame, marking it as in-use.
   MemoryError RequestFrame(uint32* out_address);
+  
+  // Mark the given frame as in-use.
+  MemoryError ReserveFrame(uint32 address);
+
   // Free the given memory frame.
   MemoryError FreeFrame(uint32 frame_address);
 

@@ -155,6 +155,25 @@ MemoryError PageFrameManager::RequestFrame(uint32* out_address) {
   return MemoryError::NoPageFramesAvailable;
 }
 
+MemoryError PageFrameManager::ReserveFrame(uint32 frame_address) {
+  if (!Is4KiBAligned(frame_address)) {
+    return MemoryError::UnalignedAddress;
+  }
+
+  // TODO(chris): Do a binary search for efficency.
+  for (size i = 0; i < num_frames_; i++) {
+    if (page_frames_[i].Address() == frame_address) {
+      if (page_frames_[i].InUseBit()) {
+        return MemoryError::PageFrameAlreadyInUse;
+      }
+      page_frames_[i].SetInUseBit(true);
+      return MemoryError::NoError;
+    }
+  }
+
+  return MemoryError::InvalidPageFrameAddress;  
+}
+
 MemoryError PageFrameManager::FreeFrame(uint32 frame_address) {
   if (!Is4KiBAligned(frame_address)) {
     return MemoryError::UnalignedAddress;

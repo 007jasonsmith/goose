@@ -105,13 +105,47 @@ TEST(PageFrameManager, RequestFrame) {
   EXPECT_EQ(pfm.NumFrames(), 2);
 
   uint32 address;
-  EXPECT_EQ(pfm.RequestFrame(&address), MemoryError::NoError);
+  EXPECT_EQ(MemoryError::NoError, pfm.RequestFrame(&address));
   EXPECT_EQ(address, 0x0U);
 
-  EXPECT_EQ(pfm.RequestFrame(&address), MemoryError::NoError);
+  EXPECT_EQ(MemoryError::NoError, pfm.RequestFrame(&address));
   EXPECT_EQ(address, 0x1000U);
 
-  EXPECT_EQ(pfm.RequestFrame(&address), MemoryError::NoPageFramesAvailable);
+  EXPECT_EQ(MemoryError::NoPageFramesAvailable, pfm.RequestFrame(&address));
+}
+
+TEST(PageFrameManager, ReserveFrame) {
+  MemoryRegion regions[] = {
+    { 0, 8192 }
+  };
+
+  PageFrameManager pfm;
+  pfm.Initialize(regions, 1);
+  EXPECT_EQ(pfm.NumFrames(), 2);
+
+  EXPECT_EQ(MemoryError::NoError, pfm.ReserveFrame(0x0U));
+  EXPECT_EQ(MemoryError::NoError, pfm.ReserveFrame(0x1000U));
+
+  uint32 address;
+  EXPECT_EQ(MemoryError::NoPageFramesAvailable, pfm.RequestFrame(&address));
+}
+
+TEST(PageFrameManager, ReserveFrame_Errors) {
+  MemoryRegion regions[] = {
+    { 0, 8192 }
+  };
+
+  PageFrameManager pfm;
+  pfm.Initialize(regions, 1);
+  EXPECT_EQ(pfm.NumFrames(), 2);
+
+  EXPECT_EQ(MemoryError::UnalignedAddress, pfm.ReserveFrame(4000U));
+
+  uint32 address;
+  EXPECT_EQ(MemoryError::NoError, pfm.RequestFrame(&address));
+  EXPECT_EQ(0x0U, address);
+  EXPECT_EQ(MemoryError::PageFrameAlreadyInUse, pfm.ReserveFrame(0x0U));
+  EXPECT_EQ(MemoryError::InvalidPageFrameAddress, pfm.ReserveFrame(4096 * 4U));
 }
 
 TEST(PageFrameManager, FreeFrame) {
@@ -124,9 +158,8 @@ TEST(PageFrameManager, FreeFrame) {
   EXPECT_EQ(pfm.NumFrames(), 2);
 
   uint32 address;
-  // Request both frames, then get error NoFramesAvailable.
-  EXPECT_EQ(MemoryError::NoError, pfm.RequestFrame(&address));
-  EXPECT_EQ(address, 0x0U);
+  // Request/reserve both frames, then get error NoFramesAvailable.
+  EXPECT_EQ(MemoryError::NoError, pfm.ReserveFrame(0x0U));
   EXPECT_EQ(MemoryError::NoError, pfm.RequestFrame(&address));
   EXPECT_EQ(address, 0x1000U);
   EXPECT_EQ(MemoryError::NoPageFramesAvailable, pfm.RequestFrame(&address));
@@ -148,9 +181,9 @@ TEST(PageFrameManager, FreeFrame_Errors) {
   pfm.Initialize(regions, 1);
   EXPECT_EQ(pfm.NumFrames(), 2);
 
-  EXPECT_EQ(pfm.FreeFrame(4000U), MemoryError::UnalignedAddress);
-  EXPECT_EQ(pfm.FreeFrame(0x0U), MemoryError::PageFrameAlreadyFree);
-  EXPECT_EQ(pfm.FreeFrame(4096 * 4U), MemoryError::InvalidPageFrameAddress);
+  EXPECT_EQ(MemoryError::UnalignedAddress, pfm.FreeFrame(4000U));
+  EXPECT_EQ(MemoryError::PageFrameAlreadyFree, pfm.FreeFrame(0x0U));
+  EXPECT_EQ(MemoryError::InvalidPageFrameAddress, pfm.FreeFrame(4096 * 4U));
 }
 
 }  // namespace kernel
