@@ -206,4 +206,14 @@ size PageFrameManager::NextFrame() const {
   return next_frame_;
 }
 
+size PageFrameManager::ReservedFrames() const {
+  size reserved_frames = 0;
+  for (size i = 0; i < num_frames_; i++) {
+    if (page_frames_[i].InUseBit()) {
+      reserved_frames++;
+    }
+  }
+  return reserved_frames;
+}
+
 }  // namespace kernel

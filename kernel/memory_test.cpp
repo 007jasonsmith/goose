@@ -130,6 +130,22 @@ TEST(PageFrameManager, ReserveFrame) {
   EXPECT_EQ(MemoryError::NoPageFramesAvailable, pfm.RequestFrame(&address));
 }
 
+TEST(PageFrameManager, ReservesFrames) {
+  MemoryRegion regions[] = {
+    { 0, 8192 }
+  };
+
+  PageFrameManager pfm;
+  pfm.Initialize(regions, 1);
+  EXPECT_EQ(pfm.NumFrames(), 2);
+
+  EXPECT_EQ(0, pfm.ReservedFrames());
+  EXPECT_EQ(MemoryError::NoError, pfm.ReserveFrame(0x0U));
+  EXPECT_EQ(1, pfm.ReservedFrames());
+  EXPECT_EQ(MemoryError::NoError, pfm.ReserveFrame(0x1000U));
+  EXPECT_EQ(2, pfm.ReservedFrames());
+}
+
 TEST(PageFrameManager, ReserveFrame_Errors) {
   MemoryRegion regions[] = {
     { 0, 8192 }

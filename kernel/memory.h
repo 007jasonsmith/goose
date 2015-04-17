@@ -147,6 +147,8 @@ class PageFrameManager {
   // TODO(chris): Make this private, only for tests.
   size NextFrame() const;
 
+  size ReservedFrames() const;
+
  private:
   // Index of the next free frame. Loops around once each frame has been
   // taken.
