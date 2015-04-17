@@ -202,4 +202,18 @@ TEST(PageFrameManager, FreeFrame_Errors) {
   EXPECT_EQ(MemoryError::InvalidPageFrameAddress, pfm.FreeFrame(4096 * 4U));
 }
 
+TEST(PageFrameManager, Example) {
+  MemoryRegion regions[] = {
+    { 0x00000000,   651264 },
+    { 0x00100000, 32440320 },
+    { 0x01FF0000,    65536 }
+  };
+
+  PageFrameManager pfm;
+  pfm.Initialize(regions, 3);
+  EXPECT_EQ(8095, pfm.NumFrames());
+
+  EXPECT_EQ(MemoryError::InvalidPageFrameAddress, pfm.ReserveFrame(0x0009F000U));
+}
+
 }  // namespace kernel
