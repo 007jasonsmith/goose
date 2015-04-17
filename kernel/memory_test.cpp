@@ -97,7 +97,7 @@ TEST(PageFrameManager, Initialize_Alignment) {
 
 TEST(PageFrameManager, RequestFrame) {
   MemoryRegion regions[] = {
-    {     0, 8192 }
+    { 0, 8192 }
   };
 
   PageFrameManager pfm;
@@ -114,6 +114,43 @@ TEST(PageFrameManager, RequestFrame) {
   EXPECT_EQ(pfm.RequestFrame(&address), MemoryError::NoPageFramesAvailable);
 }
 
-// TODO(chris): Test wrap around once FreeFrame is implemented.
+TEST(PageFrameManager, FreeFrame) {
+  MemoryRegion regions[] = {
+    { 0, 8192 }
+  };
+
+  PageFrameManager pfm;
+  pfm.Initialize(regions, 1);
+  EXPECT_EQ(pfm.NumFrames(), 2);
+
+  uint32 address;
+  // Request both frames, then get error NoFramesAvailable.
+  EXPECT_EQ(MemoryError::NoError, pfm.RequestFrame(&address));
+  EXPECT_EQ(address, 0x0U);
+  EXPECT_EQ(MemoryError::NoError, pfm.RequestFrame(&address));
+  EXPECT_EQ(address, 0x1000U);
+  EXPECT_EQ(MemoryError::NoPageFramesAvailable, pfm.RequestFrame(&address));
+
+  // Free a frame, verify it can be retrieved.
+  EXPECT_EQ(MemoryError::NoError, pfm.FreeFrame(0x1000U));
+  EXPECT_EQ(MemoryError::NoError, pfm.RequestFrame(&address));
+  EXPECT_EQ(address, 0x1000U);
+
+  EXPECT_EQ(MemoryError::NoPageFramesAvailable, pfm.RequestFrame(&address));
+}
+
+TEST(PageFrameManager, FreeFrame_Errors) {
+  MemoryRegion regions[] = {
+    { 0, 8192 }
+  };
+
+  PageFrameManager pfm;
+  pfm.Initialize(regions, 1);
+  EXPECT_EQ(pfm.NumFrames(), 2);
+
+  EXPECT_EQ(pfm.FreeFrame(4000U), MemoryError::UnalignedAddress);
+  EXPECT_EQ(pfm.FreeFrame(0x0U), MemoryError::PageFrameAlreadyFree);
+  EXPECT_EQ(pfm.FreeFrame(4096 * 4U), MemoryError::InvalidPageFrameAddress);
+}
 
 }  // namespace kernel

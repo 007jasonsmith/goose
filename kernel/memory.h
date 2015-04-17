@@ -104,6 +104,12 @@ enum class MemoryError {
 
   // The request for a page frame failed because no more are available.
   NoPageFramesAvailable = 2,
+
+  // The specified address was invalid because it was not properly aligned.
+  UnalignedAddress = 3,
+
+  // Frame was double-freed.
+  PageFrameAlreadyFree = 4
 };
 
 const char* ToString(MemoryError error);

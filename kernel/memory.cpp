@@ -45,6 +45,8 @@ bool PointerTableEntry::StatusFlag(size bit) const {
   return mask;
 }
 
+// TODO(chris): Rumor has it there is an x86 op code that does exactly this.
+// Create an inline header file with some inline assembly, etc.
 void PointerTableEntry::SetStatusFlag(size bit, bool value) {
   uint32 mask = 1;
   mask <<= bit;
@@ -154,8 +156,22 @@ MemoryError PageFrameManager::RequestFrame(uint32* out_address) {
 }
 
 MemoryError PageFrameManager::FreeFrame(uint32 frame_address) {
-  SUPPRESS_UNUSED_WARNING(frame_address)
-  return MemoryError::NoError;
+  if (!Is4KiBAligned(frame_address)) {
+    return MemoryError::UnalignedAddress;
+  }
+
+  // TODO(chris): Do a binary search for efficency.
+  for (size i = 0; i < num_frames_; i++) {
+    if (page_frames_[i].Address() == frame_address) {
+      if (!page_frames_[i].InUseBit()) {
+        return MemoryError::PageFrameAlreadyFree;
+      }
+      page_frames_[i].SetInUseBit(false);
+      return MemoryError::NoError;
+    }
+  }
+
+  return MemoryError::InvalidPageFrameAddress;
 }
 
 size PageFrameManager::NumFrames() const {
