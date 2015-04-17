@@ -132,6 +132,18 @@ void PageFrameManager::Initialize(const MemoryRegion* regions,
   }
 }
 
+const char* ToString(MemoryError err) {
+  switch (err) {
+    case MemoryError::NoError: return "NoError";
+    case MemoryError::InvalidPageFrameAddress: return "InvalidPageFrameAddress";
+    case MemoryError::NoPageFramesAvailable:   return "NoPageFramesAvailable";
+    case MemoryError::UnalignedAddress:        return "UnalignedAddress";
+    case MemoryError::PageFrameAlreadyFree:    return "PageFrameAlreadyFree";
+    case MemoryError::PageFrameAlreadyInUse:   return "PageFrameAlreadyInUse";
+  }
+  return "UNKNOWN";
+}
+
 MemoryError PageFrameManager::RequestFrame(uint32* out_address) {  
   if (num_frames_ == 0) {
     return MemoryError::NoPageFramesAvailable;

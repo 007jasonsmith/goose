@@ -222,8 +222,9 @@ void SyncPhysicalAndVirtualMemory() {
         MemoryError err = page_frame_manager.ReserveFrame(
             kernel_page_tables[pde][pte].Address());
         if (err != MemoryError::NoError) {
-          klib::Debug::Log("Got MemoryError[%d] after reserving address %h at pde %d pte %d",
-                           (uint32) err, kernel_page_tables[pde][pte].Address(), pde, pte);
+          klib::Debug::Log("Got MemoryError: %s", ToString(err));
+	  klib::Debug::Log("While reserving address %h at pde %d pte %d",
+			   kernel_page_tables[pde][pte].Address(), pde, pte);
         }
         Assert(err == MemoryError::NoError);
       }

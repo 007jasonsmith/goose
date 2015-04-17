@@ -115,6 +115,8 @@ enum class MemoryError {
   PageFrameAlreadyInUse = 5
 };
 
+const char* ToString(MemoryError err);
+
 struct MemoryRegion {
   uint32 address;
   uint32 size;
