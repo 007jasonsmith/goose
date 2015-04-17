@@ -76,6 +76,7 @@ void DumpKernelMemory() {
 namespace kernel {
 
 void InitializeKernelPageDirectory() {
+  klib::Debug::Log("Initializing kernel page directory.");
   // TODO(chrsmith): Memset to zero out the PDT and PTs, just to be sure.
 
   // We only initilize Page Directory Table entries > 768 (0xC0000000).
@@ -163,6 +164,7 @@ void InitializeKernelPageDirectory() {
   }
   
   set_cr3(ConvertVirtualAddressToPhysical((uint32) kernel_page_directory_table));
+  klib::Debug::Log("  Kernel page directory table loaded.");
 }
 
 void InitializePageFrameManager() {
@@ -207,6 +209,29 @@ void InitializePageFrameManager() {
   page_frame_manager.Initialize(regions, num_regions);
   klib::Debug::Log("  page_frame_manager.NumFrames() = %d",
                    page_frame_manager.NumFrames());
+}
+
+void SyncPhysicalAndVirtualMemory() {
+  klib::Debug::Log("Syncing Physical and Virtual memory");
+  klib::Debug::Log("  %d reserved page frames before.",
+                   page_frame_manager.ReservedFrames());
+  // Only scan kernel page directory entries.
+  for (size pde = 0; pde < 256; pde++) {
+    for (size pte = 0; pte < 1024; pte++) {
+      if (kernel_page_tables[pde][pte].PresentBit()) {
+        MemoryError err = page_frame_manager.ReserveFrame(
+            kernel_page_tables[pde][pte].Address());
+        if (err != MemoryError::NoError) {
+          klib::Debug::Log("Got MemoryError[%d] after reserving address %h at pde %d pte %d",
+                           (uint32) err, kernel_page_tables[pde][pte].Address(), pde, pte);
+        }
+        Assert(err == MemoryError::NoError);
+      }
+    }
+  }
+
+  klib::Debug::Log("  %d reserved page frames after.",
+                   page_frame_manager.ReservedFrames());
 }
 
 }  // namespace kernel

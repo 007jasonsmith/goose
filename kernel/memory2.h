@@ -10,6 +10,11 @@ void InitializeKernelPageDirectory();
 
 void InitializePageFrameManager();
 
+// Once the page frame manager and kernel page directory are set up correctly,
+// the final step is to synchronize the two. After this point the kernel has
+// an accurate accounting of the machine's memory.
+void SyncPhysicalAndVirtualMemory();
+
 }  // namespace kernel
 
 #endif  // KERNEL_MEMORY2_H_
