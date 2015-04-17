@@ -132,8 +132,8 @@ void InitializeKernelPageDirectory() {
 
     // We know where the data exists in physical memory, which page table do we
     // put the mapping into?
-    size page_table = section_physaddr / 4 * 1024 * 1024;
-    size starting_page_table_entry = (section_physaddr % 4 * 1024 * 1024) / 4096;
+    size page_table = section_physaddr / (4 * 1024 * 1024);
+    size starting_page_table_entry = (section_physaddr % (4 * 1024 * 1024)) / 4096;
 
 
     // The following code is probably wrong, but gets the right result in the
