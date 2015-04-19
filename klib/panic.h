@@ -3,10 +3,15 @@
 #ifndef KLIB_PANIC_H_
 #define KLIB_PANIC_H_
 
+#define Assert(EXPR)                             \
+  if (!(EXPR)) {                                 \
+    klib::AssertImpl(#EXPR, __FILE__, __LINE__); \
+  }
+
+
 namespace klib {
 
-void Assert(bool expr);
-void Assert(bool expr, const char* message);
+void AssertImpl(const char* expr, const char* file, int line);
 
 // Sets the kernel panic function. Panics if already set.
 void SetPanicFn(void (*fn)(const char* message));

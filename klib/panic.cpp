@@ -1,5 +1,8 @@
 #include "klib/panic.h"
 
+#include "klib/print.h"
+#include "klib/type_printer.h"
+
 namespace {
 
 void (*panic_fn)(const char* message) = nullptr;
@@ -8,14 +11,11 @@ void (*panic_fn)(const char* message) = nullptr;
 
 namespace klib {
 
-void Assert(bool expr) {
-  Assert(expr, "Assertion failure.");
-}
-
-void Assert(bool expr, const char* message) {
-  if (!expr) {
-    Panic(message);
-  }
+void AssertImpl(const char* expr, const char* file, int line) {
+  StringPrinter sp;
+  klib::Print("Assertion failure: \"%s\" in \"%s\":%d", &sp,
+              expr, file, line);
+  Panic(sp.Get());
 }
 
 void SetPanicFn(void (*fn)(const char* message)) {
