@@ -3,8 +3,6 @@
 #include "klib/macros.h"
 #include "klib/panic.h"
 
-using klib::Assert;
-
 namespace {
 
 const uint32 kAddressMask = 0b11111111111111111111000000000000;
@@ -111,7 +109,7 @@ void PageFrameManager::Initialize(const MemoryRegion* regions,
 
     // Assert the memory regions are increasing in value.
     uint32 region_end = region->address + region->size;
-    klib::Assert(region_end > last_region_end, "MemoryRegions not increasing.");
+    Assert(region_end > last_region_end);
     last_region_end = region_end;
 
     uint32 aligned_address = region->address;
@@ -120,7 +118,7 @@ void PageFrameManager::Initialize(const MemoryRegion* regions,
       aligned_address += 4096 - region->address % 4096;
       region_size -= (aligned_address - region->address);
     }
-    klib::Assert(Is4KiBAligned(aligned_address));
+    Assert(Is4KiBAligned(aligned_address));
     
     size region_frames = region_size / 4096;
     for (size region_frame = 0; region_frame < region_frames; region_frame++) {
@@ -210,7 +208,7 @@ size PageFrameManager::NumFrames() const {
 }
 
 FrameTableEntry PageFrameManager::FrameAtIndex(size index) const {
-  klib::Assert(index >= 0 && index <= 1024 * 1024);
+  Assert(index >= 0 && index <= 1024 * 1024);
   return page_frames_[index];
 }
 

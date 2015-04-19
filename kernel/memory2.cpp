@@ -5,8 +5,6 @@
 #include "klib/debug.h"
 #include "sys/control_registers.h"
 
-using klib::Assert;
-
 namespace {
 
 // Kernel page directory table, containing a mapping for all 4GiB of addressable
@@ -79,7 +77,10 @@ void InitializeKernelPageDirectory() {
   klib::Debug::Log("Initializing kernel page directory.");
   // TODO(chrsmith): Memset to zero out the PDT and PTs, just to be sure.
 
-  // We only initilize Page Directory Table entries > 768 (0xC0000000).
+  // Initilize kernel-space page directory entries. (> 768 is 0xC0000000.)
+  for (size pdte = 0; pdte < 768; pdte++) {
+    kernel_page_directory_table[pdte].SetPresentBit(false);
+  }
   for (size pdte = 768; pdte < 1024; pdte++) {
     kernel_page_directory_table[pdte].SetPresentBit(true);
     kernel_page_directory_table[pdte].SetReadWriteBit(true);
@@ -90,15 +91,11 @@ void InitializeKernelPageDirectory() {
 
   // Identity map the first MiB of memory to 0xC0000000. This way we can access
   // hardware registers (e.g. TextUI memory) from the kernel.
-  for (size page_table = 0; page_table < 256; page_table++) {
-    for (size pte = 0; pte < 1024; pte++) {
-      kernel_page_tables[page_table][pte].SetPresentBit(true);
-      kernel_page_tables[page_table][pte].SetReadWriteBit(true);
-      kernel_page_tables[page_table][pte].SetUserBit(false);
-
-      uint32 physical_address = page_table * 4 * 1024 * 1024 + pte * 4096;
-      kernel_page_tables[page_table][pte].SetAddress(physical_address);
-    }
+  for (size pte = 0; pte < 256; pte++) {
+    kernel_page_tables[0][pte].SetPresentBit(true);
+    kernel_page_tables[0][pte].SetReadWriteBit(true);
+    kernel_page_tables[0][pte].SetUserBit(false);
+    kernel_page_tables[0][pte].SetAddress(pte * 4096U);
   }
 
   // Initialize page tables marking kernel code that has already been
@@ -115,9 +112,8 @@ void InitializeKernelPageDirectory() {
       ConvertPhysicalAddressToVirtual((uint32) GetMultibootInfo());
 
   const kernel::elf::ElfSectionHeaderTable* elf_sht = &(boot_info->u.elf_sec);
-  Assert((boot_info->flags & 0b100000) != 0, "Multiboot flags not set.");
-  Assert(sizeof(kernel::elf::Elf32SectionHeader) == elf_sht->size,
-         "ELF section header doesn't match expected size.");
+  Assert((boot_info->flags & 0b100000) != 0);
+  Assert(sizeof(kernel::elf::Elf32SectionHeader) == elf_sht->size);
 
   for (size section_idx = 0; section_idx < size(elf_sht->num); section_idx++) {
     uint32 section_header_address = ConvertPhysicalAddressToVirtual(elf_sht->addr);
@@ -221,12 +217,16 @@ void SyncPhysicalAndVirtualMemory() {
       if (kernel_page_tables[pde][pte].PresentBit()) {
         MemoryError err = page_frame_manager.ReserveFrame(
             kernel_page_tables[pde][pte].Address());
-        if (err != MemoryError::NoError) {
-          klib::Debug::Log("Got MemoryError: %s", ToString(err));
-	  klib::Debug::Log("While reserving address %h at pde %d pte %d",
-			   kernel_page_tables[pde][pte].Address(), pde, pte);
-        }
-        Assert(err == MemoryError::NoError);
+	// The first 1MiB contains reserved regions, that are referenced but
+	// not set as usable memory.
+	if (!(pde == 0 && pte <= 256)) {
+	  if (err != MemoryError::NoError) {
+	    klib::Debug::Log("Got MemoryError: %s", ToString(err));
+	    klib::Debug::Log("While reserving address %h at pde %d pte %d",
+			     kernel_page_tables[pde][pte].Address(), pde, pte);
+	  }
+	  Assert(err == MemoryError::NoError);
+	}
       }
     }
   }
