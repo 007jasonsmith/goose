@@ -1,7 +1,7 @@
 // Type for printing types.
 
-#ifndef KLIB_TYPEPRINTER_H_
-#define KLIB_TYPEPRINTER_H_
+#ifndef KLIB_TYPE_PRINTER_H_
+#define KLIB_TYPE_PRINTER_H_
 
 #include "klib/argaccumulator.h"
 #include "klib/types.h"
@@ -55,4 +55,4 @@ class TypePrinter {
 
 }  // namespace klib
 
-#endif  // KLIB_TYPEPRINTER_H_
+#endif  // KLIB_TYPE_PRINTER_H_
