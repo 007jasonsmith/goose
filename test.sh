@@ -60,7 +60,11 @@ g++ \
     -std=c++11 \
     -pthread \
     -Wall -Wextra \
+    ./klib/argaccumulator.cpp \
     ./klib/panic.cpp \
+    ./klib/type_printer.cpp \
+    ./klib/print.cpp \
+    ./klib/strings.cpp \
     ./kernel/boot.cpp \
     ./kernel/elf.cpp \
     ./kernel/memory.cpp \

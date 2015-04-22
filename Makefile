@@ -15,12 +15,12 @@ OBJECTS = kmain.o kmain_asm.o \
           shell/shell.o \
           hal/keyboard.o hal/serial_port.o hal/text_ui.o
 
-CC = gcc
-CCFLAGS = -m32 -nostdlib -nostdinc -fno-builtin -fno-stack-protector \
-         -nostartfiles -nodefaultlibs -Wall -Wextra -Werror -c \
-         -fno-exceptions -fno-rtti \
-         -std=c++11 \
-	 -I .
+CPP = g++
+CPPFLAGS = -m32 -nostdlib -nostdinc -fno-builtin -fno-stack-protector \
+           -nostartfiles -nodefaultlibs -Wall -Wextra -Werror -c \
+           -fno-exceptions -fno-rtti \
+           -std=c++11 \
+	   -I .
 
 LD = ld
 LDFLAGS = -T link.ld -melf_i386
@@ -53,7 +53,7 @@ run-qemu: os.iso
 	qemu -boot d -cdrom os.iso -m 32 -serial file:qemu-com1.txt
 
 %.o: %.cpp
-	$(CC) $(CCFLAGS) $< -o $@
+	$(CPP) $(CPPFLAGS) $< -o $@
 
 %o: %.s
 	$(AS) $(ASFLAGS) $< -o $@
