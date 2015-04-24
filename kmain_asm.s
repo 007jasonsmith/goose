@@ -31,8 +31,8 @@ align 4                         ; the code must be 4 byte aligned
 ; This is called from link.ld, to begin execution from GRUB. Since we link the
 ; kernel binary to be in high memory, we need to actually place the code in
 ; low memory until we enable paging. 
-loader equ (actual_loader - KERNEL_VIRTUAL_BASE)
 global loader
+loader equ (actual_loader - KERNEL_VIRTUAL_BASE)
 
 actual_loader:
     ; NOTE: Paging isn't enabled, so all addresses must be physical and/or
