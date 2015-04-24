@@ -3,6 +3,15 @@
 
 #include "klib/types.h"
 
+extern "C" {
+
+// You shouldn't call this inefficient version of memcpy. Unfortunately clang
+// requires it, since it replaces memory copy operations with calls to memcpy.
+void *memcpy(void *dest, const void *src, size n);
+
+}  // extern "C"
+
+
 namespace klib {
 
 size length(const char* buf);
