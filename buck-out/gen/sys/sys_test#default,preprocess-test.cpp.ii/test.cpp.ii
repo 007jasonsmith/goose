@@ -1,0 +1,59 @@
+# 1 "sys/test.cpp"
+# 1 "<command-line>"
+# 1 "sys/test.cpp"
+# 1 "./sys/io.h" 1
+
+
+
+# 1 "./klib/types.h" 1
+# 11 "./klib/types.h"
+typedef unsigned char byte;
+
+typedef char int8;
+typedef short int16;
+typedef int int32;
+typedef long long int int64;
+
+typedef unsigned char uint8;
+typedef unsigned short uint16;
+typedef unsigned int uint32;
+typedef unsigned long long int uint64;
+
+
+
+
+static_assert(sizeof(byte) == 1, "sizeof(" "byte" ") != " "1");
+
+static_assert(sizeof(int8) == 1, "sizeof(" "int8" ") != " "1");
+static_assert(sizeof(int16) == 2, "sizeof(" "int16" ") != " "2");
+static_assert(sizeof(int32) == 4, "sizeof(" "int32" ") != " "4");
+static_assert(sizeof(int64) == 8, "sizeof(" "int64" ") != " "8");
+
+static_assert(sizeof(uint8) == 1, "sizeof(" "uint8" ") != " "1");
+static_assert(sizeof(uint16) == 2, "sizeof(" "uint16" ") != " "2");
+static_assert(sizeof(uint32) == 4, "sizeof(" "uint32" ") != " "4");
+static_assert(sizeof(uint64) == 8, "sizeof(" "uint64" ") != " "8");
+
+
+
+
+typedef int size;
+
+
+
+typedef size* raw_ptr;
+# 5 "./sys/io.h" 2
+
+extern "C" {
+# 18 "./sys/io.h"
+void outb(uint32 port, uint32 data);
+# 27 "./sys/io.h"
+unsigned char inb(uint32 port);
+
+}
+# 2 "sys/test.cpp" 2
+
+int main(void) {
+  inb(0);
+  return 0;
+}

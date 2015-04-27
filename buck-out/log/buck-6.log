@@ -1,0 +1,11 @@
+[2015-04-24 12:56:57.997][debug][command:6a02da6b-0993-4cf7-a58d-9cff02c8218f][tid:01][com.facebook.buck.cli.Main] Starting up (build date 2015-04-23 13:15:42 -0700, rev 56bc2eba8692cc8dfa18e00de1c11d020f653bdf), args: [clean]
+[2015-04-24 12:56:58.087][debug][command:6a02da6b-0993-4cf7-a58d-9cff02c8218f][tid:01][com.facebook.buck.io.ExecutableFinder] Executable 'python2' mapped to 'Optional.of(/usr/bin/python2)'
+[2015-04-24 12:56:58.162][debug][command:6a02da6b-0993-4cf7-a58d-9cff02c8218f][tid:01][com.facebook.buck.io.ExecutableFinder] Executable 'python2' mapped to 'Optional.of(/usr/bin/python2)'
+[2015-04-24 12:56:58.163][debug][command:6a02da6b-0993-4cf7-a58d-9cff02c8218f][tid:01][com.facebook.buck.io.ExecutableFinder] Executable 'python2' mapped to 'Optional.of(/usr/bin/python2)'
+[2015-04-24 12:56:58.194][debug][command:6a02da6b-0993-4cf7-a58d-9cff02c8218f][tid:01][com.facebook.buck.event.listener.SuperConsoleEventBusListener] Starting render scheduler (interval 100 ms)
+[2015-04-24 12:56:58.260][debug][command:6a02da6b-0993-4cf7-a58d-9cff02c8218f][tid:13][com.facebook.buck.event.listener.LoggingBuildListener] CommandStarted(clean, isDaemon: false)
+[2015-04-24 12:56:58.326][debug][command:6a02da6b-0993-4cf7-a58d-9cff02c8218f][tid:01][com.facebook.buck.parser.Parser] Cleaning cache of build files with inputs under symlink []
+[2015-04-24 12:56:58.327][debug][command:6a02da6b-0993-4cf7-a58d-9cff02c8218f][tid:13][com.facebook.buck.event.listener.LoggingBuildListener] CommandFinished(clean, isDaemon: false)
+[2015-04-24 12:56:58.327][debug][command:6a02da6b-0993-4cf7-a58d-9cff02c8218f][tid:01][com.facebook.buck.event.listener.SuperConsoleEventBusListener] Stopping render scheduler
+[2015-04-24 12:56:58.328][debug][command:6a02da6b-0993-4cf7-a58d-9cff02c8218f][tid:01][com.facebook.buck.event.listener.ChromeTraceBuildListener] Writing Chrome trace to buck-out/log/traces/build.2015-04-24.12-56-58.6a02da6b-0993-4cf7-a58d-9cff02c8218f.trace
+[2015-04-24 12:56:58.440][debug][command:6a02da6b-0993-4cf7-a58d-9cff02c8218f][tid:01][com.facebook.buck.cli.Main] Done.

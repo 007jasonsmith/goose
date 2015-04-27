@@ -1,0 +1,12 @@
+2015-04-27T17:31:44.589	INFO	Build started
+2015-04-27T17:31:45.163	INFO	BuildRuleStarted(//sys:sys_test#compile-io_gas.s.o,default)
+2015-04-27T17:31:45.295	INFO	BuildRuleFinished(//sys:sys_test#compile-io_gas.s.o,default): SUCCESS LOCAL_KEY_UNCHANGED_HIT MATCHING_RULE_KEY 4821fc6ef18621038a9d034c26182cc9ef0da606
+2015-04-27T17:31:45.295	INFO	BuildRuleStarted(//sys:sys_test#default,header-symlink-tree)
+2015-04-27T17:31:45.297	INFO	BuildRuleFinished(//sys:sys_test#default,header-symlink-tree): SUCCESS LOCAL_KEY_UNCHANGED_HIT MATCHING_RULE_KEY 32837f59d7251a3116e84db9c355470a601d98bc
+2015-04-27T17:31:45.297	INFO	BuildRuleStarted(//sys:sys_test#default,preprocess-test.cpp.ii)
+2015-04-27T17:31:45.322	INFO	BuildRuleFinished(//sys:sys_test#default,preprocess-test.cpp.ii): SUCCESS LOCAL_KEY_UNCHANGED_HIT MATCHING_RULE_KEY c5a86cee38f646197fb93d1513efa6ab4f4be6a1
+2015-04-27T17:31:45.323	INFO	BuildRuleStarted(//sys:sys_test#compile-test.cpp.o,default)
+2015-04-27T17:31:45.329	INFO	BuildRuleFinished(//sys:sys_test#compile-test.cpp.o,default): SUCCESS LOCAL_KEY_UNCHANGED_HIT MATCHING_RULE_KEY 5bc0cfe681ed387f1a375cf9f7c5532bb5ba2050
+2015-04-27T17:31:45.329	INFO	BuildRuleStarted(//sys:sys_test#binary)
+2015-04-27T17:31:45.427	INFO	BuildRuleFinished(//sys:sys_test#binary): FAIL MISS MISSING 99ccd8d8d8d21699b9e3c59613a5448902fbab63
+2015-04-27T17:31:45.430	INFO	Build finished
