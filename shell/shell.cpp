@@ -52,6 +52,8 @@ void ShowKernelPointers(shell::ShellStream* shell);
 void ShowElfInfo(shell::ShellStream* shell);
 // Initialize kernel page tables, etc.
 void InitializeKernelMemory(shell::ShellStream* shell);
+// Self-test kernel memory allocation.
+void SelfTestKernelMemoryAllocation(shell::ShellStream* shell);
 // Experimental code.
 void Experiment(shell::ShellStream* shell);
 // Returns the command with the name, otherwise null.
@@ -62,6 +64,7 @@ const ShellCommand commands[] = {
   { "show-kernel-pointers", &ShowKernelPointers },
   { "show-elf-info", &ShowElfInfo },
   { "initialize-kernel-memory", &InitializeKernelMemory },
+  { "self-test-kernel-memory", &SelfTestKernelMemoryAllocation },
   { "experiment", &Experiment }
 };
 const size kNumCommands = sizeof(commands) / sizeof(ShellCommand);
@@ -241,6 +244,22 @@ void InitializeKernelMemory(shell::ShellStream* shell) {
   kernel::InitializeKernelPageDirectory();
   shell->WriteLine("done");
 }
+
+void SelfTestKernelMemoryAllocation(shell::ShellStream* shell) {
+  shell->WriteLine("Testing kernel memory allocation.");
+  size page_size[] = {1, 1, 16, 42, 100, 8};
+  size num_page_sizes = 6;
+  for (size tests = 0; tests < 24; tests++) {
+    uint32 address = 0;
+    Assert(
+        kernel::AllocateKernelPage(&address, page_size[tests % num_page_sizes]) ==
+	   kernel::MemoryError::NoError);
+    Assert(
+        kernel::FreeKernelPage(address, page_size[tests % num_page_sizes]) ==
+	   kernel::MemoryError::NoError);    
+  }
+}
+
 
 void Experiment(shell::ShellStream* shell) {
   // Delete and hack as necessary. If it is useful, submit the code.

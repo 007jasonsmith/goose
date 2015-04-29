@@ -235,4 +235,105 @@ void SyncPhysicalAndVirtualMemory() {
                    page_frame_manager.ReservedFrames());
 }
 
+// TODO(chris): IMPORTANT. We aren't keeping track of who/what has
+// ownership of each page. (e.g. a PID).
+
+MemoryError AllocateKernelPage(uint32* out_address, size pages) {
+  // TODO(chris): Support more pages at a time...
+  Assert(pages > 0 && pages < 128);
+
+  // TODO(chris): Check that we have enough addressable memory in the
+  // kernel page tables. For now we just panic on error.
+  // TODO(chris): Loop around and check again, hopefully things don't get
+  // fragmented, etc.
+
+  // The last location of virtual memory used. Incremented every time
+  // the function is called. We start at page directory entry *768*, so that
+  // any memory returned by this function will be usable even if executing
+  // in another process's address space. (Banking on the kernel being loaded
+  // into the higher-half of memory.)
+  static size pde_index = 768;
+  static size pt_index = 0;
+  bool found_free_address_range = false;
+  for (; pde_index < 1024; pde_index++) {
+    // If the page directory table is present, then walk through and find
+    // the first range of free pages.
+    if (kernel_page_directory_table[pt_index].PresentBit()) {
+      size streak_of_free_pages = 0;
+      for (pt_index = 0; pt_index < 1024 - (pages - 1); pt_index++) {
+	bool free = kernel_page_tables[pde_index - 768][pt_index].PresentBit();
+	if (free) {
+	  streak_of_free_pages++;
+	} else {
+	  streak_of_free_pages = 0;
+	}
+	if (streak_of_free_pages == pages) {
+	  pt_index = pt_index - (pages - 1);  // Point to starting free PTE.
+	  found_free_address_range = true;
+	  break;
+	}
+      }	
+    }
+
+    // The page directory table entry does not exist, so initialize it.
+    // ...
+    if (!kernel_page_directory_table[pt_index].PresentBit()) {
+      // TODO(chris): Implement, and unify code with earlier PDT/PT init code.
+      klib::Panic("TODO: Initialize Page Directory Table Entry.");
+    }
+
+    // Exit look case.
+    if (found_free_address_range) {
+      break;
+    }
+  }
+  if (pde_index >= 1024) {
+    klib::Panic("Out of addressable memory in kernel space.");
+  }
+
+  // With the free address range (pde_index, pt_index), we now need to set up
+  // the page table entries.
+  for (int page_idx = 0; page_idx < pages; page_idx++) {
+    uint32 page_frame_address = 0;
+    MemoryError err = page_frame_manager.RequestFrame(&page_frame_address);
+    // TODO(chrsmith): Handle it.
+    Assert(err == MemoryError::NoError);
+
+    PageTableEntry* pte = &kernel_page_tables[pde_index - 768][pt_index];
+    Assert(pte->PresentBit() == false);
+    pte->SetPresentBit(true);
+    pte->SetReadWriteBit(true);
+    pte->SetUserBit(false);
+    pte->SetAddress(page_frame_address);
+  }
+
+  // TODO(chrsmith): Create conversion function.
+  *out_address = (uint32) pde_index * 4 * 1024 * 1024 + (uint32) pt_index * 4 * 1024;
+
+  return MemoryError::NoError;
+}
+
+MemoryError FreeKernelPage(uint32 starting_page_address, size pages) {
+  // TODO(chris): Support more pages at a time...
+  Assert(pages > 0 && pages < 128);
+  Assert(IsInKernelSpace(starting_page_address));
+  // TODO(chrsmith): Create conversion function.
+  size pde_index = starting_page_address / (4 * 1024 * 1024);
+  Assert(pde_index >= 768);
+
+  // TODO(chris): If freed all PTEs in a PDE, then remove the PDE present bit.
+  size pt_index = (starting_page_address % (4 * 1024 * 1024)) / (4 * 1024);
+  for (size page = 0; page < pages; page++) {
+    PageTableEntry* pte = &kernel_page_tables[pde_index - 768][pt_index + page];
+
+    Assert(pte->PresentBit());
+    pte->SetPresentBit(false);
+
+    // TODO(chris): Assert(page_frame_manager.FrameInUse(pte->GetAddress()));
+    page_frame_manager.FreeFrame(pte->Address());
+  }
+
+  return MemoryError::NoError;
+}
+
 }  // namespace kernel
