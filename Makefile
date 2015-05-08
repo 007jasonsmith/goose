@@ -20,11 +20,12 @@ CPP = clang++
 
 # For clang conversion
 # Removed args: -nostartfiles -nodefaultlibs
-# Added args:   -Wreturn-type
+# Added args:   -Wreturn-type -mno-mmx -mno-sse
 CPPFLAGS = -m32 \
            -nostdlib -nostdinc \
            -fno-builtin -fno-stack-protector \
            -Wreturn-type \
+           -mno-mmx -mno-sse \
            -Wall -Wextra -Werror -c \
            -fno-exceptions -fno-rtti \
            -std=c++11 \
