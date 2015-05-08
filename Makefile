@@ -16,13 +16,15 @@ OBJECTS = kmain.o kmain_asm.o \
           hal/keyboard.o hal/serial_port.o hal/text_ui.o
 
 # CPP = g++
-CPP = clang
+CPP = clang++
 
 # For clang conversion
 # Removed args: -nostartfiles -nodefaultlibs
+# Added args:   -Wreturn-type
 CPPFLAGS = -m32 \
            -nostdlib -nostdinc \
            -fno-builtin -fno-stack-protector \
+           -Wreturn-type \
            -Wall -Wextra -Werror -c \
            -fno-exceptions -fno-rtti \
            -std=c++11 \

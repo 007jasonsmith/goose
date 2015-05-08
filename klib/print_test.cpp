@@ -104,7 +104,7 @@ TEST(PrintAlignment, LeftAligned) {
 
   for (size i = 0; i < num_test_cases; i++) {
     PrintStringTestCase test = test_cases[i];
-    
+
     StringPrinter p;
     Print(test.input, &p, test.arg);
     EXPECT_STREQ(p.Get(), test.want);
@@ -123,7 +123,7 @@ TEST(PrintAlignment, CenterAligned) {
 
   for (size i = 0; i < num_test_cases; i++) {
     PrintStringTestCase test = test_cases[i];
-    
+
     StringPrinter p;
     Print(test.input, &p, test.arg);
     EXPECT_STREQ(p.Get(), test.want);
@@ -140,7 +140,7 @@ TEST(PrintAlignment, RightAligned) {
 
   for (size i = 0; i < num_test_cases; i++) {
     PrintStringTestCase test = test_cases[i];
-    
+
     StringPrinter p;
     Print(test.input, &p, test.arg);
     EXPECT_STREQ(p.Get(), test.want);
@@ -157,7 +157,7 @@ TEST(PrintAlignment, Truncation) {
 
   for (size i = 0; i < num_test_cases; i++) {
     PrintStringTestCase test = test_cases[i];
-    
+
     StringPrinter p;
     Print(test.input, &p, test.arg);
     EXPECT_STREQ(p.Get(), test.want);

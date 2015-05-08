@@ -7,29 +7,26 @@ set -x
 
 export GTEST_DIR=./third_party/googletest/
 
-if [ -f ./bin/unit-test ]
-  then
-  rm ./bin/unit-test
-fi
+# Clang conversion
+# export CC=g++
+export CC=clang++
 
 # Build GoogleTest if not found.
-if [ ! -f ./bin/libgtest.a ]
-  then
-  echo "Building GoogleTest library."
-  mkdir -p ./bin/
-  g++ \
-    -m32 \
-    -isystem $GTEST_DIR/include \
-    -I$GTEST_DIR \
-    -pthread \
-    -c $GTEST_DIR/src/gtest-all.cc
+# sudo apt-get install libc++6
+echo "Building GoogleTest library."
+mkdir -p ./bin/
+$CC \
+  -m32 \
+  -pthread \
+  -I $GTEST_DIR \
+  -I $GTEST_DIR/include \
+  -c $GTEST_DIR/src/gtest-all.cc
 
- ar -rv ./bin/libgtest.a gtest-all.o
-fi
+ar -rv ./bin/libgtest.a gtest-all.o
 
 # TODO(chris): Move this to the Makefile.
 echo "Building klib unit tests."
-g++ \
+$CC \
     -I$GTEST_DIR/include \
     -I. \
     -std=c++11 \
@@ -42,18 +39,18 @@ g++ \
     ./klib/type_printer.cpp \
     ./klib/type_printer_test.cpp \
     ./klib/print_test.cpp \
+    ./klib/debug.cpp \
+    ./klib/debug_test.cpp \
     ./klib/tests_main.cpp \
     ./klib/print.cpp \
     ./bin/libgtest.a \
-    -o ./bin/unit-test
+    -o ./bin/klib-tests
 
 echo "Running."
-./bin/unit-test
-
-rm ./bin/unit-test
+./bin/klib-tests
 
 echo "Building kernel unit tests."
-g++ \
+$CC \
     -I$GTEST_DIR/include \
     -I. \
     -m32 \
@@ -71,7 +68,7 @@ g++ \
     ./kernel/memory_test.cpp \
     ./kernel/tests_main.cpp \
     ./bin/libgtest.a \
-    -o ./bin/unit-test
+    -o ./bin/kernel-tests
 
 echo "Running."
-./bin/unit-test
+./bin/kernel-tests
