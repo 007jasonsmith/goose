@@ -24,12 +24,11 @@ const uint32 kMultibootMagicNumber = 0x2BADB002;
 void __cxa_pure_virtual();
 
 // Kernel panic function handler.
-void PanicHandler(const char* message); 
+void PanicHandler(const char* message);
 
 // Friendly system shutdown screen.
 void FriendlyShutdown(const char* message);
 
-const char version[] = "v0.1a";
 void kmain(uint32 multiboot_magic, const kernel::grub::multiboot_info* mbt) {
   // Initialize device drivers.
   hal::SerialPort::Initialize();
