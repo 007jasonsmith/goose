@@ -15,9 +15,15 @@ OBJECTS = kmain.o kmain_asm.o \
           shell/shell.o \
           hal/keyboard.o hal/serial_port.o hal/text_ui.o
 
-CPP = g++
-CPPFLAGS = -m32 -nostdlib -nostdinc -fno-builtin -fno-stack-protector \
-           -nostartfiles -nodefaultlibs -Wall -Wextra -Werror -c \
+# CPP = g++
+CPP = clang
+
+# For clang conversion
+# Removed args: -nostartfiles -nodefaultlibs
+CPPFLAGS = -m32 \
+           -nostdlib -nostdinc \
+           -fno-builtin -fno-stack-protector \
+           -Wall -Wextra -Werror -c \
            -fno-exceptions -fno-rtti \
            -std=c++11 \
 	   -I .

@@ -48,6 +48,23 @@ bool SerialPort::IsTransmitEmpty() {
 }
 
 void SerialPortOutputFn::Print(char c) {
+  // DEBUGGING: Ensure c is printable.
+  bool is_printable = false;
+  is_printable |= (c >= 'a' && c <= 'z');
+  is_printable |= (c >= 'A' && c <= 'Z');
+  is_printable |= (c >= '0' && c <= '9');
+
+  const char valid_symbols[] = "-_!@#$%^&*()[]{},.:<>/?'\" \r\n";
+  for (size i = 0; i < (size) sizeof(valid_symbols); i++) {
+    if (c == valid_symbols[i]) {
+      is_printable = true;
+      break;
+    }
+  }
+
+  if (!is_printable) {
+    c = '?';
+  }
   SerialPort::WriteByte(byte(c));
 }
 

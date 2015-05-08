@@ -8,7 +8,7 @@
 namespace {
 
 // Kernel page directory table, containing a mapping for all 4GiB of addressable
-// memory. 
+// memory.
 kernel::PageDirectoryEntry kernel_page_directory_table[1024] __attribute__((aligned(4096)));
 // Kernel page tables, containing entries for the top 1GiB of memory.
 // 0xC0000000 - 0xFFFFFFFF.
@@ -53,7 +53,7 @@ void DumpKernelMemory() {
 		       kernel_page_directory_table[pdt].Value());
     }
   }
-  
+
   klib::Debug::Log("Kernel Page Tables:");
   klib::Debug::Log("  Kernel PT %h", (uint32) kernel_page_tables);
   for (size pt = 0; pt < 256; pt++) {
@@ -158,7 +158,7 @@ void InitializeKernelPageDirectory() {
       kernel_page_tables[page_table][pte].SetAddress(page_physaddr);
     }
   }
-  
+
   set_cr3(ConvertVirtualAddressToPhysical((uint32) kernel_page_directory_table));
   klib::Debug::Log("  Kernel page directory table loaded.");
 }
@@ -201,16 +201,19 @@ void InitializePageFrameManager() {
         (uint32) mmap + mmap->size + sizeof(uint32));
   }
 
-  klib::Debug::Log("  Found %d usable memory regions.", num_regions);
+  // DEBUGGING: Logging statements removed due to potential compiler problem.
+  // klib::Debug::Log("  Found %d usable memory regions.", num_regions);
   page_frame_manager.Initialize(regions, num_regions);
-  klib::Debug::Log("  page_frame_manager.NumFrames() = %d",
-                   page_frame_manager.NumFrames());
+  // klib::Debug::Log("  page_frame_manager.NumFrames() = %d",
+  //                  page_frame_manager.NumFrames());
 }
 
 void SyncPhysicalAndVirtualMemory() {
   klib::Debug::Log("Syncing Physical and Virtual memory");
-  klib::Debug::Log("  %d reserved page frames before.",
-                   page_frame_manager.ReservedFrames());
+  // DEBUGGING: Logging statements removed due to potential compiler problem.
+  // klib::Debug::Log("  %d reserved page frames before.",
+  //                  page_frame_manager.ReservedFrames());
+
   // Only scan kernel page directory entries.
   for (size pde = 0; pde < 256; pde++) {
     for (size pte = 0; pte < 1024; pte++) {
@@ -221,9 +224,9 @@ void SyncPhysicalAndVirtualMemory() {
 	// not set as usable memory.
 	if (!(pde == 0 && pte <= 256)) {
 	  if (err != MemoryError::NoError) {
-	    klib::Debug::Log("Got MemoryError: %s", ToString(err));
-	    klib::Debug::Log("While reserving address %h at pde %d pte %d",
-			     kernel_page_tables[pde][pte].Address(), pde, pte);
+	    // klib::Debug::Log("Got MemoryError: %s", ToString(err));
+	    // klib::Debug::Log("While reserving address %h at pde %d pte %d",
+	    // 	                kernel_page_tables[pde][pte].Address(), pde, pte);
 	  }
 	  Assert(err == MemoryError::NoError);
 	}
@@ -231,8 +234,8 @@ void SyncPhysicalAndVirtualMemory() {
     }
   }
 
-  klib::Debug::Log("  %d reserved page frames after.",
-                   page_frame_manager.ReservedFrames());
+  // klib::Debug::Log("  %d reserved page frames after.",
+  //                  page_frame_manager.ReservedFrames());
 }
 
 // TODO(chris): IMPORTANT. We aren't keeping track of who/what has
@@ -272,7 +275,7 @@ MemoryError AllocateKernelPage(uint32* out_address, size pages) {
 	  found_free_address_range = true;
 	  break;
 	}
-      }	
+      }
     }
 
     // The page directory table entry does not exist, so initialize it.

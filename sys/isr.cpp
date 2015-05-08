@@ -237,6 +237,17 @@ void interrupt_handler(regs* r) {
     description = kInterruptDescriptions[r->int_no];
   }
 
+  // DEBUGGING: Possible compiler bug? Something is amiss with our
+  // variadic arg packs. Avoiding escaping by modifying a string:
+  Debug::Log("");
+  Debug::Log("-----------------");
+  Debug::Log("interrupt_handler");
+  char int_no_msg[] = "interrupt #00\0";
+  int_no_msg[11] = '0' + (r->int_no / 10);
+  int_no_msg[12] = '0' + (r->int_no % 10);
+  Debug::Log(int_no_msg);
+  Debug::Log("-----------------");
+
   Debug::Log("Received interrupt %s[%d] with code %d",
 	     description, r->int_no, r->err_code);
   if (r->int_no == 14) {
