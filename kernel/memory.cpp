@@ -6,7 +6,6 @@
 namespace {
 
 const uint32 kAddressMask = 0b11111111111111111111000000000000;
-const uint32 k4KiBMask    = 0b00000000000000000000111111111111;
 
 bool Is4KiBAligned(uint32 address) {
   return (address % 4096 == 0);

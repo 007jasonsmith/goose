@@ -1,5 +1,5 @@
 #ifndef SYS_CONTROL_REGISTERS_H_
-#define SYS_CONTORL_REGISTERS_H_
+#define SYS_CONTROL_REGISTERS_H_
 
 #include "klib/types.h"
 
