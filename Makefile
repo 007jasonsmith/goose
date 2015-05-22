@@ -1,7 +1,6 @@
-# Required software:
-# sudo apt-get install bochs-sdl
+# For information about required software and libraries,
+# see tools.md.
 
-# TODO(chris): Automatically generate C_FILES, S_FILES, etc.
 OBJECTS = kmain.o kmain_asm.o \
           klib/argaccumulator.o klib/strings.o klib/type_printer.o \
           klib/debug.o klib/panic.o klib/print.o \
@@ -15,12 +14,9 @@ OBJECTS = kmain.o kmain_asm.o \
           shell/shell.o \
           hal/keyboard.o hal/serial_port.o hal/text_ui.o
 
-# CPP = g++
 CPP = clang++
 
 # For clang conversion
-# Removed args: -nostartfiles -nodefaultlibs
-# Added args:   -Wreturn-type -mno-mmx -mno-sse
 CPPFLAGS = -m32 \
            -nostdlib -nostdinc \
            -fno-builtin -fno-stack-protector \
