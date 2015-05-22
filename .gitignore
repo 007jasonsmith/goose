@@ -10,3 +10,4 @@ os.iso
 # Logs
 bochslog.txt
 com1-out.txt
+qemu-com1.txt
