@@ -10,6 +10,7 @@ sudo apt-get should install the following:
 - genisoimage
 - bochs
 - bochs-sdl
+- qemu
 
 For the Clang build:
 
